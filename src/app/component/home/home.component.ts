@@ -5,6 +5,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { isPlatformBrowser } from '@angular/common';
+import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
@@ -34,7 +35,8 @@ export class HomeComponent{
   constructor(
     private el: ElementRef,
     private postService: PostsService,
-    private sharedScrollService: SharedScrollService,    
+    private sharedScrollService: SharedScrollService,  
+    private authService:AuthService,  
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
   activeTab: string = 'frontend';
@@ -52,8 +54,13 @@ export class HomeComponent{
         this.scheduleNextPost();
       }
     });
-    this.sharedScrollService.scrollEvent.subscribe(() => {
-      this.scrollToTrending();
+    this.sharedScrollService.scrollToFeature.subscribe(() => {
+      this.scrollToFeature();
+    });
+    this.sharedScrollService.scrollLetestSection.subscribe(() => {
+      setTimeout(() => {
+        this.scrollToTrending();
+      });
     });
     this.postService.loadFeaturedData().subscribe((val) => {
       this.bigFeaturePost = val[val.length - 1];
@@ -75,6 +82,15 @@ export class HomeComponent{
     const trendingSection = this.el.nativeElement.querySelector('#trendingSection');
     if (trendingSection) {
       trendingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+  handleLinkClick(frontend: any): void {
+    this.authService.loginSweetAlert(frontend);    
+  } 
+  scrollToFeature() {
+    const LetestPosts = this.el.nativeElement.querySelector('#FeaturePosts');
+    if (LetestPosts) {
+      LetestPosts.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
 }

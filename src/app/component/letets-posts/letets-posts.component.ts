@@ -3,6 +3,7 @@ import { PostsService } from '../../services/posts.service';
 import { SharedScrollService } from '../../services/shared-scroll.service';
 import { isPlatformBrowser } from '@angular/common';
 import Aos from 'aos';
+import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-letets-posts',
   templateUrl: './letets-posts.component.html',
@@ -14,6 +15,7 @@ export class LetetsPostsComponent implements OnInit {
     private postService: PostsService,
     private el: ElementRef,
     private sharedScrollService: SharedScrollService,
+    private authService:AuthService,
     @Inject(PLATFORM_ID) private platformId: Object 
   ) { }
   socialIconsData = [
@@ -32,7 +34,7 @@ export class LetetsPostsComponent implements OnInit {
     this.postService.loadLetestPosts().subscribe((val) => {
       this.letestArray = val;
     });
-    this.sharedScrollService.letestSection.subscribe(() => {
+    this.sharedScrollService.scrollLetestSection.subscribe(() => {
       setTimeout(() => {
         this.scrollToLatest();
       });
@@ -69,4 +71,7 @@ export class LetetsPostsComponent implements OnInit {
   openShareWindow(url: string) {
     window.open(url, '_blank', 'width=600,height=400');
   }
+  handleLinkClick(frontend: any): void {
+    this.authService.loginSweetAlert(frontend);    
+  } 
 }

@@ -6,17 +6,20 @@
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item dropdown active">
-                        <a routerLink="/" class="nav-link dropdown-toggle">Home</a>
+                        <a routerLink="/" class="nav-link dropdown-toggle">
+                          Home <i class="fas fa-caret-down"></i>
+                        </a>
                         <ul class="dropdown-menu">
-                            <li *ngFor="let category of categoryArray">
-                                <a class="dropdown-item" [routerLink]="'/' + category.permalink"
-                                    [queryParams]="{id:category.catID}">{{ category.catname }}</a>
-                            </li>
+                          <li *ngFor="let category of categoryArray">
+                            <a class="dropdown-item" [routerLink]="'/' + category.permalink"
+                               [queryParams]="{id:category.catID}">{{ category.catname }}</a>
+                          </li>
                         </ul>
-                    </li>
+                      </li>                      
                     <li class="nav-item">
                         <a href="#" class="nav-link" (click)="scrollToLetest()">Latest</a>
                     </li>
+                    <li><a href="#" class="nav-link" (click)="scrollToFeature()">Featured</a></li>
                     <!-- <li class="nav-item">
                         <a href="#" class="nav-link" (click)="scrollToTrending()">Trending</a>
                     </li> -->
@@ -25,6 +28,9 @@
                     </li>
                     <li class="nav-item">
                         <a routerLink="/contact-us" class="nav-link">Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <a routerLink="/auth" class="nav-link">Login</a>
                     </li>
                 </ul>
             </div>
@@ -41,12 +47,12 @@
                         <a href="https://www.linkedin.com/in/abid-ansari-523699248/"><i class="fab fa-linkedin"></i></a>
                     </li>
                     <li class="list-inline-item">
-                        <a href="#"><i class="far fa-envelope"></i></a>
+                        <a href="#" (click)="sendEmail()"><i class="far fa-envelope"></i></a>
                     </li>
                 </ul>
                 <div class="header-buttons">
                     <button class="search icon-button" (click)="toggleSearchPopup()">
-                        <i class="icon-magnifier"></i>
+                        <i class="fas fa-search"></i>
                     </button>
                     <button class="burger-menu icon-button" (click)="toggleCanvasMenu()">
                         <span class="burger-icon"></span>
@@ -60,9 +66,7 @@
 <div class="canvas-menu d-flex align-items-end flex-column" [ngClass]="{'open': isCanvasMenuOpen}">
     <button class="btn-close" aria-label="Close" type="button" (click)="toggleCanvasMenu()"></button>
 
-    <div class="logo">
-        <img src="../assets/images/logo.svg" alt="">
-    </div>
+    <app-logo></app-logo>
     <nav>
         <ul class="vertical-menu">
             <li class="active">
@@ -76,7 +80,7 @@
                 </ul>
             </li>
             <li><a href="#" (click)="scrollToLetest()">Latest</a></li>
-            <li><a href="#" (click)="scrollToTrending()">Trending</a></li>
+            <li><a href="#" (click)="scrollToFeature()">Featured</a></li>
             <li><a routerLink="/about-us">About Us</a></li>
             <li><a routerLink="/contact-us">Contact</a></li>
         </ul>
@@ -102,17 +106,25 @@
 <!-- search pop up  -->
 <div class="search-popup" [ngClass]="{'visible': isSearchPopupOpen}">
     <button class="btn-close" aria-label="Close" type="button" (click)="toggleSearchPopup()"></button>
-
+  
     <div class="search-content">
-        <div class="text-center">
-            <h3 class="mb-4 mt-0">Press ESC to close</h3>
-        </div>
-
-        <form action="" class="d-flex search-form">
-            <input type="search" placeholder="Search and press enter ..." aria-label="Search" class="form-control me-2">
-            <button class="btn btn-default btn-lg" type="submit">
-                <i class="icon-magnifier"></i>
-            </button>
-        </form>
+      <div class="text-center">
+        <h3 class="mb-4 mt-0">Press ESC to close</h3>
+      </div>
+  
+      <form class="d-flex search-form" (ngSubmit)="onSubmit()">
+        <input type="text" placeholder="Search and press enter ..." aria-label="Search" class="form-control me-2"
+               [formControl]="searchControl" [matAutocomplete]="auto">
+        <mat-autocomplete #auto="matAutocomplete">
+          <mat-option *ngFor="let option of filteredOptions | async" [value]="option">
+            {{ option }}
+          </mat-option>
+        </mat-autocomplete>
+  
+        <button class="btn btn-default btn-lg" type="submit">
+          <i class="fas fa-search"></i>
+        </button>
+      </form>
     </div>
-</div>
+  </div>
+  

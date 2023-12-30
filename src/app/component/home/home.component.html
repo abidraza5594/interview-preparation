@@ -89,7 +89,7 @@
             <div class="row gy-4">
                 <!-- left part 1st section  -->
                 <div class="col-lg-8">
-                    <div class="section-header">
+                    <div class="section-header" id="FeaturePosts">
                         <h3 class="section-title">Featured</h3>
                     </div>
                     <div class="padding-30 rounded bordered">
@@ -104,7 +104,7 @@
                                         </span>
                                         <a href="#">
                                             <div class="inner" *ngIf="bigFeaturePost"
-                                                [routerLink]="'/posts/' + bigFeaturePost.id">
+                                                (click)="handleLinkClick(bigFeaturePost)">
                                                 <img src={{bigFeaturePost.data.postImgPath}} alt="">
                                             </div>
                                         </a>
@@ -120,7 +120,7 @@
                                             {{bigFeaturePost.data.createdAt.toMillis() | date}}</li>
                                     </ul>
                                     <h5 class="post-title mb-3 mt-3">
-                                        <a [routerLink]="'/posts/' + bigFeaturePost.id"
+                                        <a href="#" (click)="handleLinkClick(bigFeaturePost)"
                                             *ngIf="bigFeaturePost">{{bigFeaturePost.data.title}}</a>
                                     </h5>
                                     <p class="excerpt mb-0" *ngIf="bigFeaturePost">{{bigFeaturePost.data.excerpt}}</p>
@@ -132,7 +132,7 @@
                                 <div class="post post-list-sm square" *ngFor="let featurePosr of featuredArray"
                                     data-aos="fade-left">
                                     <div class="thumb rounded">
-                                        <a [routerLink]="'/posts/' + featurePosr.id">
+                                        <a (click)="handleLinkClick(featurePosr)">
                                             <div class="inner">
                                                 <img src={{featurePosr.data.postImgPath}} alt="">
                                             </div>
@@ -140,7 +140,7 @@
                                     </div>
                                     <div class="details clearfix">
                                         <h6 class="post-title my-0">
-                                            <a [routerLink]="'/posts/' + featurePosr.id">
+                                            <a href="#" (click)="handleLinkClick(featurePosr)">
                                                 {{featurePosr.data.title}}
                                             </a>
                                         </h6>

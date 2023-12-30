@@ -26,6 +26,7 @@ export class PostsDetailsComponent implements OnInit {
   commentCategoryId: any
   commentArray: Array<any> = []
   loginUser:any
+  
 
   constructor(
     private route: ActivatedRoute,
@@ -137,12 +138,10 @@ export class PostsDetailsComponent implements OnInit {
       }
     }
   }
-  
   getFormattedDateTimeWithTime(): string {
     // Format the current date and time as 'MMM d, y h:mm a'
     return formatDate(new Date(), 'MMM d, y h:mm a', 'en-US');
   }
-  
   // Recursive function to mark all form controls as touched
   markFormGroupTouched(formGroup: FormGroup) {
     Object.values(formGroup.controls).forEach(control => {

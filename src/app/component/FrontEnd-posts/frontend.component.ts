@@ -2,6 +2,7 @@ import { Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
 import { PostsService } from '../../services/posts.service';
 import AOS from 'aos';
 import { isPlatformBrowser } from '@angular/common';
+import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-populars-posts',
   templateUrl: './frontend.component.html',
@@ -11,6 +12,7 @@ export class FrontEndComponent implements OnInit {
   frontEndPostArray: Array<any> = [];
   loading: boolean = false;
   constructor(private postService: PostsService,
+    private authService:AuthService,
     @Inject(PLATFORM_ID) private platformId: Object) {}
   ngOnInit() {
     if (isPlatformBrowser(this.platformId)) {
@@ -29,4 +31,8 @@ export class FrontEndComponent implements OnInit {
       }
     );
   }
+
+  handleLinkClick(frontend: any): void {
+    this.authService.loginSweetAlert(frontend);    
+  } 
 }

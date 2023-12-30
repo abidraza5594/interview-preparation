@@ -75,6 +75,10 @@ pre {
     display: block;
     white-space: pre;
   }
+.swal2-confirm{
+    background-color: var(--secondary-color) !important;
+    color: white !important;
+}
 img {
     max-width: 100%;
     height: auto;
@@ -251,7 +255,7 @@ body.down .header-default.clone {
     border-right: transparent;
     border-bottom: 0;
     border-left: transparent;
-    content: "";
+    /* content: ""; */
     font-family: "simple-line-icons";
 }
 .burger-icon::before, .burger-icon::after {
@@ -1066,8 +1070,8 @@ section {
 }
 .widget {
     border: 1px solid #ebebeb;
-    padding: 35px 30px;
-    margin-bottom: 40px;
+    padding: 20px 14px;
+    margin-bottom: 53px;
 }
 .widget:last-child {
     margin-bottom: 0;
@@ -1287,3 +1291,5 @@ footer .footer-inner .copyright {
         font-size: 16px;
     }
 }
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }

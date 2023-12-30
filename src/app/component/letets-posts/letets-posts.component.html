@@ -1,8 +1,8 @@
 <div class="spacer" data-height="50"></div>
-<div class="section-header">
+<div class="section-header" id="LetestPosts">
     <h3 class="section-title">Latest Posts</h3>
 </div>
-<div class="padding-30 rounded bordered" id="LetestPosts">
+<div class="padding-30 rounded bordered">
     <div class="row">
         <div class="col-md-12 col-sm-6">
             <div class="post post-list clearfix" *ngFor="let letestPost of letestArray; let i = index" [attr.data-aos]="i % 2 === 0 ? 'fade-down-right' : 'fade-down-left'">
@@ -11,7 +11,7 @@
                         <i class="icon-picture"></i>
                     </span>
                     <a href="#">
-                        <div class="inner" [routerLink]="'/' + letestPost.id" [queryParams]="{id: letestPost.id}">
+                        <div class="inner" (click)="handleLinkClick(letestPost)">
                             <img src="{{ letestPost.data.postImgPath }}" alt="">
                         </div>
                     </a>
@@ -30,7 +30,7 @@
                         <li class="list-inline-item">{{ letestPost.data.createdAt.toMillis() | date }}</li>
                     </ul>
                     <h5 class="post-tile">
-                        <a [routerLink]="'/' + letestPost.id" [queryParams]="{id: letestPost.id}">
+                        <a href="#" (click)="handleLinkClick(letestPost)">
                             {{ letestPost.data.title }}
                         </a>
                     </h5>

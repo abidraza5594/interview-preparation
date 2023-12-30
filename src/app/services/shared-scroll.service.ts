@@ -7,15 +7,15 @@ export class SharedScrollService {
 
   constructor() { }
 
-  scrollEvent: EventEmitter<void> = new EventEmitter<void>();
-  letestSection: EventEmitter<void> = new EventEmitter<void>();
+  scrollToFeature: EventEmitter<void> = new EventEmitter<void>();
+  scrollLetestSection: EventEmitter<void> = new EventEmitter<void>();
 
   emitScrollEvent() {
-    this.scrollEvent.emit();
+    this.scrollToFeature.emit();
   }
 
   goToLetestSection(){
-    this.letestSection.emit();
+    this.scrollLetestSection.emit();
   }
   
 }

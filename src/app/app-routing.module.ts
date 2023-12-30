@@ -12,8 +12,8 @@ const routes: Routes = [
   { path: 'contact-us', component: ContactUsComponent },
   { path: 'about-us', component: AboutUsComponent},
   // { path: 'posts/:category/:id', component: PostsDetailsComponent },
-  { path: ':id', component: PostsDetailsComponent ,canActivate:[AuthGuard]},  
-  // { path: ':id', component: PostsDetailsComponent},  
+  // { path: ':id', component: PostsDetailsComponent ,canActivate:[AuthGuard]},  
+  { path: ':id', component: PostsDetailsComponent},  
 ];
 @NgModule({
   imports: [RouterModule.forRoot(routes)],

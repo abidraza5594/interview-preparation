@@ -3,9 +3,11 @@
 import { Injectable } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
-import { Router } from '@angular/router';
+import { NavigationExtras, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { BehaviorSubject } from 'rxjs';
+import Swal from 'sweetalert2';
+
 
 @Injectable({
   providedIn: 'root'
@@ -51,7 +53,6 @@ export class AuthService {
     try {
       const userCredential = await this.afAuth.signInWithEmailAndPassword(email, password);
       const user = userCredential.user;
-
       this.toaster.success('Login Successfully');
       this.loadUser();
       this.loggedIn.next(true);
@@ -100,4 +101,40 @@ export class AuthService {
   getCurrentUser(): any {
     return this.afAuth.currentUser;
   }
+
+  loginSweetAlert(frontend: any): void {
+    const isUserLoggedIn = this.checkIfUserLoggedIn();
+    if (isUserLoggedIn) {
+      this.navigateToDetailsPage(frontend);
+    } else {
+      this.showLoginRequiredAlert();
+    }
+  }
+  navigateToDetailsPage(frontend: any): void {
+    const navigationExtras = {
+      queryParams: { id: frontend.id },
+    };
+    this.router.navigate([`/${frontend.data.permalink}`], navigationExtras);
+  }
+  checkIfUserLoggedIn(): boolean {
+    const storedUserString = localStorage.getItem('user');
+    return !!storedUserString;
+  }
+  showLoginRequiredAlert(): void {
+    Swal.fire({
+      title: 'Login Required',
+      text: 'Please login to view details.',
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonText: 'OK',
+      cancelButtonText: 'Cancel',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.router.navigate(['/auth']);
+      } else {
+        // You can add additional logic or leave it empty if not needed
+      }
+    });
+  }
+
 }

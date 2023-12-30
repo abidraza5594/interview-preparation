@@ -20,6 +20,10 @@ import { AngularFirestoreModule } from '@angular/fire/compat/firestore';
 import { AngularFireAuthModule } from '@angular/fire/compat/auth';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { LogoComponent } from './component/logo/logo.component'
+
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatInputModule } from '@angular/material/input';
+
 const enviroment={
   firebase: {
      apiKey: "AIzaSyB9s3N-ytJfSrwc3DNHXOxTaQ41Y-hSqTU",
@@ -57,6 +61,8 @@ const enviroment={
     AngularFireAuthModule,
     BrowserAnimationsModule,
     ToastrModule.forRoot(),
+    MatAutocompleteModule,
+    MatInputModule,
   ],
   bootstrap: [AppComponent]
 })
