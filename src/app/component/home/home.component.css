@@ -1,0 +1,42 @@
+.stickyPart{
+    position: sticky;
+    top: 10px; 
+}
+.loading-placeholder {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+.placeholder-glow .category-badge,
+.placeholder-glow .post-title,
+.placeholder-glow .meta li,
+.placeholder-glow .thumb {
+    animation: placeholderGlow 1.5s infinite;
+}
+@keyframes placeholderGlow {
+    0% {
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(0, 123, 255, 0.7);
+    }
+    100% {
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+    }
+}
+.loading-placeholder .category-badge,
+.loading-placeholder .post-title,
+.loading-placeholder .meta li {
+    background-color: #eee;
+    height: 30px;
+    margin-bottom: 10px;
+}
+.loading-placeholder .post-title {
+    width: 70%;
+}
+.loading-placeholder .thumb {
+    background-color: #ddd;
+    height: 450px; 
+    margin-top: 10px;
+}

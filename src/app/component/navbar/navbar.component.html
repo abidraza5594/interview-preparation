@@ -1,0 +1,118 @@
+<header class="header-default">
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-xl">
+            <!-- logo  -->
+            <app-logo></app-logo>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item dropdown active">
+                        <a routerLink="/" class="nav-link dropdown-toggle">Home</a>
+                        <ul class="dropdown-menu">
+                            <li *ngFor="let category of categoryArray">
+                                <a class="dropdown-item" [routerLink]="'/' + category.permalink"
+                                    [queryParams]="{id:category.catID}">{{ category.catname }}</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" (click)="scrollToLetest()">Latest</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" (click)="scrollToTrending()">Trending</a>
+                    </li>
+                    <li class="nav-item">
+                        <a routerLink="/about-us" class="nav-link">About Us</a>
+                    </li>
+                    <li class="nav-item">
+                        <a routerLink="/contact-us" class="nav-link">Contact</a>
+                    </li>
+                </ul>
+            </div>
+            <!-- right side of header  -->
+            <div class="header-right">
+                <ul class="social-icons list-unstyled list-inline mb-0">
+                    <li class="list-inline-item">
+                        <a href="https://www.facebook.com/abidansari.ansari.127"><i class="fab fa-facebook-f"></i></a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="https://www.instagram.com/abidansari5594/"><i class="fab fa-instagram"></i></a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="https://www.linkedin.com/in/abid-ansari-523699248/"><i class="fab fa-linkedin"></i></a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="#"><i class="far fa-envelope"></i></a>
+                    </li>
+                </ul>
+                <div class="header-buttons">
+                    <button class="search icon-button" (click)="toggleSearchPopup()">
+                        <i class="icon-magnifier"></i>
+                    </button>
+                    <button class="burger-menu icon-button" (click)="toggleCanvasMenu()">
+                        <span class="burger-icon"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+<!-- canvas menu  -->
+<div class="canvas-menu d-flex align-items-end flex-column" [ngClass]="{'open': isCanvasMenuOpen}">
+    <button class="btn-close" aria-label="Close" type="button" (click)="toggleCanvasMenu()"></button>
+
+    <div class="logo">
+        <img src="../assets/images/logo.svg" alt="">
+    </div>
+    <nav>
+        <ul class="vertical-menu">
+            <li class="active">
+                <a routerLink="/">Home</a>
+                <ul class="submenu">
+                    <li><a href="#">Fashion</a></li>
+                    <li><a href="#">Movies</a></li>
+                    <li><a href="#">Electronic</a></li>
+                    <li><a href="#">Cricket</a></li>
+                    <li><a href="#">Technology</a></li>
+                </ul>
+            </li>
+            <li><a href="#" (click)="scrollToLetest()">Latest</a></li>
+            <li><a href="#" (click)="scrollToTrending()">Trending</a></li>
+            <li><a routerLink="/about-us">About Us</a></li>
+            <li><a routerLink="/contact-us">Contact</a></li>
+        </ul>
+    </nav>
+    <ul class="social-icons list-unstyled list-inline mb-0 mt-auto w-100">
+        <li class="list-inline-item">
+            <a href="#"><i class="fab fa-facebook-f"></i></a>
+        </li>
+        <li class="list-inline-item">
+            <a href="#"><i class="fab fa-twitter"></i></a>
+        </li>
+        <li class="list-inline-item">
+            <a href="#"><i class="fab fa-itunes"></i></a>
+        </li>
+        <li class="list-inline-item">
+            <a href="#"><i class="fab fa-pinterest"></i></a>
+        </li>
+        <li class="list-inline-item">
+            <a href="#"><i class="fab fa-youtube"></i></a>
+        </li>
+    </ul>
+</div>
+<!-- search pop up  -->
+<div class="search-popup" [ngClass]="{'visible': isSearchPopupOpen}">
+    <button class="btn-close" aria-label="Close" type="button" (click)="toggleSearchPopup()"></button>
+
+    <div class="search-content">
+        <div class="text-center">
+            <h3 class="mb-4 mt-0">Press ESC to close</h3>
+        </div>
+
+        <form action="" class="d-flex search-form">
+            <input type="search" placeholder="Search and press enter ..." aria-label="Search" class="form-control me-2">
+            <button class="btn btn-default btn-lg" type="submit">
+                <i class="icon-magnifier"></i>
+            </button>
+        </form>
+    </div>
+</div>

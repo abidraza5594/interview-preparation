@@ -1,0 +1,27 @@
+<small>Enter message (optional) and click the button "Send"</small>
+<div class="wrapper centered">
+  <form [formGroup]="contactForm" (ngSubmit)="submitForm()">
+    <article class="letter">
+      <div class="side">
+        <h1>Contact us</h1>
+        <p>
+          <textarea formControlName="message" placeholder="Your message"></textarea>
+        </p>
+      </div>
+      <div class="side">
+        <p>
+          <input type="text" formControlName="name" placeholder="Your name">
+        </p>
+        <p>
+          <input type="email" formControlName="email" placeholder="Your email">
+        </p>
+        <p>
+          <button type="submit">Send</button>
+        </p>
+      </div>
+    </article>
+  </form>
+  <div class="envelope front"></div>
+  <div class="envelope back"></div>
+</div>
+<p class="result-message centered" *ngIf="messageSent">Thank you for your message</p>

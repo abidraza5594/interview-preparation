@@ -1,0 +1,70 @@
+<div class="spacer" data-height="50"></div>
+<div class="section-header">
+    <h3 class="section-title">Latest Posts</h3>
+</div>
+<div class="padding-30 rounded bordered" id="LetestPosts">
+    <div class="row">
+        <div class="col-md-12 col-sm-6">
+            <div class="post post-list clearfix" *ngFor="let letestPost of letestArray; let i = index" [attr.data-aos]="i % 2 === 0 ? 'fade-down-right' : 'fade-down-left'">
+                <div class="thumb rounded">
+                    <span class="post-format-sm">
+                        <i class="icon-picture"></i>
+                    </span>
+                    <a href="#">
+                        <div class="inner" [routerLink]="'/' + letestPost.id" [queryParams]="{id: letestPost.id}">
+                            <img src="{{ letestPost.data.postImgPath }}" alt="">
+                        </div>
+                    </a>
+                </div> 
+                <div class="details">
+                    <ul class="meta list-inline mb-3">
+                        <li class="list-inline-item">
+                            <a href="#">
+                                <img src="../assets/images/other/author-sm.jpg" class="author" alt="">
+                                Abid Ansari
+                            </a>
+                        </li>
+                        <li class="list-inline-item">
+                            <a href="#">Trending</a>
+                        </li>
+                        <li class="list-inline-item">{{ letestPost.data.createdAt.toMillis() | date }}</li>
+                    </ul>
+                    <h5 class="post-tile">
+                        <a [routerLink]="'/' + letestPost.id" [queryParams]="{id: letestPost.id}">
+                            {{ letestPost.data.title }}
+                        </a>
+                    </h5>
+                    <p class="excerpt mb-0">
+                        {{ letestPost.data.excerpt }}
+                    </p>
+                    <div class="post-bottom clearfix d-flex align-items-center">
+                        <div class="social-share me-auto">
+                            <button class="toggle-button icon-share" (click)="toggleSocialIcons(letestPost.id)"></button>
+                            <ul class="icons list-unstyled list-inline mb-0" *ngIf="isSocialIconsVisible[letestPost.id]">
+                                <li class="list-inline-item">
+                                    <a (click)="shareOnFacebook(letestPost)"><i class="fab fa-facebook-f"></i></a>
+                                </li>
+                                <li class="list-inline-item">
+                                    <a (click)="shareOnTwitter(letestPost)"><i class="fab fa-twitter"></i></a>
+                                </li>
+                                <li class="list-inline-item">
+                                    <a (click)="shareOnLinkedIn(letestPost)"><i class="fab fa-linkedin-in"></i></a>
+                                </li>
+                                <li class="list-inline-item">
+                                    <a (click)="shareOnWhatsApp(letestPost)"><i class="fab fa-whatsapp"></i></a>
+                                    <span class="d-none d-md-inline">Share on WhatsApp (Mobile Only)</span>
+                                </li>                                
+                            </ul>                            
+                        </div>
+                        <div class="more-button float-end">
+                            <a href="#"><span class="icon-options"></span></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="text-center">
+            <button class="btn btn-simple">Load More</button>
+        </div>
+    </div>
+</div>

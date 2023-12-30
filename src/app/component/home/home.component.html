@@ -1,0 +1,291 @@
+<div class="site-wrapper">
+    <div class="main-overlay"></div>
+    <section id="hero">
+        <div class="container-xl">
+            <div class="row gy-4">
+                <div class="col-lg-8">
+                    <ng-container *ngIf="displayedPosts.length > 0; else loadingPlaceholder">
+                        <div class="post featured-post-lg" [@slideInOut]="animationState">
+                            <div class="details clearfix" data-aos="fade-right">
+                                <a href="#" class="category-badge">{{ displayedPosts[0].data.category.Category }}</a>
+                                <h2 class="post-title">
+                                    <a [routerLink]="'/' + displayedPosts[0].id"
+                                        [queryParams]="{id: displayedPosts[0].id}">
+                                        {{ displayedPosts[0].data.title }}
+                                    </a>
+                                </h2>
+                                <ul class="meta list-inline mb-0">
+                                    <li class="list-inline-item">
+                                        <a href="#">Techie Coder</a>
+                                    </li>
+                                    <li class="list-inline-item">{{ displayedPosts[0].data.createdAt.toMillis() | date
+                                        }}</li>
+                                </ul>
+                            </div>
+                            <a [routerLink]="'/' + displayedPosts[0].id" [queryParams]="{id: displayedPosts[0].id}">
+                                <div class="thumb rounded" data-aos="fade-right">
+                                    <img class="inner data-bg-image" src="{{ displayedPosts[0].data.postImgPath }}"
+                                        alt="" />
+                                </div>
+                            </a>
+                        </div>
+                    </ng-container>
+                    <ng-template #loadingPlaceholder>
+                        <div class="loading-placeholder placeholder-glow" style="background-color: #79869a;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="category-badge placeholder"></div>
+                                <div class="post-title placeholder text-center text-sm">loading..</div>
+                                <ul class="meta list-inline mb-0">
+                                    <li class="list-inline-item placeholder"></li>
+                                    <li class="list-inline-item placeholder"></li>
+                                </ul>
+                            </div>
+                            <div class="thumb rounded placeholder"></div>
+                        </div>
+                    </ng-template>
+                </div>
+                <!-- post-list.component.html -->
+                <div class="col-lg-4">
+                    <div class="post-tabs rounded bordered">
+                        <ul class="nav nav-tabs nav-pills nav-fill" id="postTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button (click)="setActiveTab('frontend')" [class.active]="activeTab === 'frontend'"
+                                    class="nav-link" id="popular-tab" type="button">
+                                    Frontend
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button (click)="setActiveTab('backend')" [class.active]="activeTab === 'backend'"
+                                    class="nav-link" id="recent-tab" type="button">
+                                    Backend
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="postsTabContent">
+                            <div *ngIf="activeTab === 'frontend' || activeTab === 'backend'"
+                                class="tab-pane fade show active" id="posts" role="tabpanel">
+                                <!-- Post content here -->
+                                <div *ngIf="activeTab === 'frontend'">
+                                    <!-- Popular posts content here -->
+                                    <app-populars-posts></app-populars-posts>
+                                    <!-- ... -->
+                                </div>
+                                <div *ngIf="activeTab === 'backend'">
+                                    <!-- Recent posts content here -->
+                                    <app-recents-posts></app-recents-posts>
+                                    <!-- ... -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- main content  -->
+    <section class="main-content">
+        <div class="container-xl">
+            <div class="row gy-4">
+                <!-- left part 1st section  -->
+                <div class="col-lg-8">
+                    <div class="section-header">
+                        <h3 class="section-title">Featured</h3>
+                    </div>
+                    <div class="padding-30 rounded bordered">
+                        <div class="row gy-5">
+                            <div class="col-sm-6">
+                                <!-- post  -->
+                                <div class="post" data-aos="fade-right">
+                                    <div class="thumb rounded">
+                                        <a href="#" class="category-badge position-absolute">Lifestyle</a>
+                                        <span class="post-format">
+                                            <i class="icon-picture"></i>
+                                        </span>
+                                        <a href="#">
+                                            <div class="inner" *ngIf="bigFeaturePost"
+                                                [routerLink]="'/posts/' + bigFeaturePost.id">
+                                                <img src={{bigFeaturePost.data.postImgPath}} alt="">
+                                            </div>
+                                        </a>
+                                    </div>
+                                    <ul class="meta list-inline mt-4 mb-0">
+                                        <li class="list-inline-item">
+                                            <a href="#">
+                                                <img class="author" src="../assets/images/other/author-sm.jpg" alt="">
+                                                Abid Ansari
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item" *ngIf="bigFeaturePost">
+                                            {{bigFeaturePost.data.createdAt.toMillis() | date}}</li>
+                                    </ul>
+                                    <h5 class="post-title mb-3 mt-3">
+                                        <a [routerLink]="'/posts/' + bigFeaturePost.id"
+                                            *ngIf="bigFeaturePost">{{bigFeaturePost.data.title}}</a>
+                                    </h5>
+                                    <p class="excerpt mb-0" *ngIf="bigFeaturePost">{{bigFeaturePost.data.excerpt}}</p>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="spacer text-center text-black text-lg" data-height="50" data-aos="fade-left"
+                                    *ngIf="featuredArray.length===0">Loding..</div>
+                                <div class="post post-list-sm square" *ngFor="let featurePosr of featuredArray"
+                                    data-aos="fade-left">
+                                    <div class="thumb rounded">
+                                        <a [routerLink]="'/posts/' + featurePosr.id">
+                                            <div class="inner">
+                                                <img src={{featurePosr.data.postImgPath}} alt="">
+                                            </div>
+                                        </a>
+                                    </div>
+                                    <div class="details clearfix">
+                                        <h6 class="post-title my-0">
+                                            <a [routerLink]="'/posts/' + featurePosr.id">
+                                                {{featurePosr.data.title}}
+                                            </a>
+                                        </h6>
+                                        <ul class="meta list-inline mt-1 mb-0">
+                                            <!-- <li class="list-inline-item">{{ featurePosr.data.createdAt | date:'dd MMM yyyy' }}</li> -->
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ----------------------Letest Post ------------------ -->
+                    <app-letets-posts></app-letets-posts>
+                    <!-- left part over here  -->
+                </div>
+                <!-- right part starts from here  -->
+                <div class="col-lg-4">
+                    <div class="sidebar m-0 p-0 stickyPart">
+                        <div class="widget rounded">
+                            <div class="widget-about text-center" data-aos="zoom-in-left">
+                                <div style="margin-top: -30px;"><app-logo></app-logo></div>
+                                <p class="mb-4" style="text-align: justify;">
+                                    Crack any interview with confidence! Our platform is your secret weapon for
+                                    mastering a wide range of questions and scenarios. Elevate your skills, showcase
+                                    your strengths, and secure that dream job.
+                                </p>
+                                <ul class="social-icons list-unstyled list-inline mb-0">
+                                    <li class="list-inline-item">
+                                        <a href="https://www.facebook.com/abidansari.ansari.127">
+                                            <i class="fab fa-facebook-f"></i>
+                                        </a>
+                                    </li>
+                                    <li class="list-inline-item">
+                                        <a href="https://www.instagram.com/abidansari5594/">
+                                            <i class="fab fa-instagram"></i>
+                                        </a>
+                                    </li>
+                                    <li class="list-inline-item">
+                                        <a href="https://www.linkedin.com/in/abid-ansari-523699248/">
+                                            <i class="fab fa-linkedin"></i>
+                                        </a>
+                                    </li>
+                                    <li class="list-inline-item">
+                                        <a href="#"><i class="far fa-envelope"></i></a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="widget rounded" style="margin-top: -50px;" data-aos="zoom-out-up">
+                            <div class="widget-header text-center">
+                                <h3 class="widget-title">Newsletter</h3>
+                            </div>
+                            <div class="widget-content">
+                                <span class="newsletter-headline text-center mb-3">Join 5000+ subscribers</span>
+                                <form action="#">
+                                    <div class="mb-2">
+                                        <input type="email" class="form-control w-100 text-center"
+                                            placeholder="Email address...">
+                                    </div>
+                                    <button class="btn btn-default btn-full">Sign Up</button>
+                                </form>
+                                <span class="newsletter-privacy text-center mt-3">
+                                    By signing up, you agree to our <a href="#">Privacy policy</a>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <div class="instagram">
+        <div class="container-xl">
+            <a href="#" class="btn btn-default btn-instagram">Ace Any Interview</a>
+            <div class="instagram-feed d-flex flex-wrap">
+                <div class="insta-item col-sm-2 col-6 col-md-2">
+                    <a href="#">
+                        <img src="../assets/images/insta/insta-1.jpg" alt="">
+                    </a>
+                </div>
+                <div class="insta-item col-sm-2 col-6 col-md-2">
+                    <a href="#">
+                        <img src="../assets/images/insta/insta-2.jpg" alt="">
+                    </a>
+                </div>
+                <div class="insta-item col-sm-2 col-6 col-md-2">
+                    <a href="#">
+                        <img src="../assets/images/insta/insta-3.jpg" alt="">
+                    </a>
+                </div>
+                <div class="insta-item col-sm-2 col-6 col-md-2">
+                    <a href="#">
+                        <img src="../assets/images/insta/insta-4.jpg" alt="">
+                    </a>
+                </div>
+                <div class="insta-item col-sm-2 col-6 col-md-2">
+                    <a href="#">
+                        <img src="../assets/images/insta/insta-5.jpg" alt="">
+                    </a>
+                </div>
+                <div class="insta-item col-sm-2 col-6 col-md-2">
+                    <a href="#">
+                        <img src="../assets/images/insta/insta-6.jpg" alt="">
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <div class="container-xl">
+            <div class="footer-inner">
+                <div class="row d-flex align-items-center gy-4">
+                    <div class="col-md-4">
+                        <span class="copyright">&copy; 2021 interview preparation</span>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <ul class="social-icons list-unstyled list-inline mb-0">
+                            <li class="list-inline-item">
+                                <a href="https://www.facebook.com/abidansari.ansari.127">
+                                    <i class="fab fa-facebook-f"></i>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://www.instagram.com/abidansari5594/">
+                                    <i class="fab fa-instagram"></i>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://www.linkedin.com/in/abid-ansari-523699248/">
+                                    <i class="fab fa-linkedin"></i>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="#"><i class="far fa-envelope"></i></a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="#" id="return-to-top" class="float-md-end">
+                            <i class="icon-arrow-up"></i>
+                            Back to Top
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+</div>
