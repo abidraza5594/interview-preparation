@@ -58,7 +58,7 @@
                             <div class="d-flex mb-4" *ngFor="let com of commentArray">
                               <!-- Parent comment-->
                               <div class="flex-shrink-0">
-                                <img class="rounded-circle" src="https://dummyimage.com/50x50/ced4da/6c757d.jpg" alt="..." />
+                                <img class="rounded-circle" style="width: 40px;" src={{com.data.userIMG}} alt="..." />
                               </div>
                               <div class="ms-3">
                                 <div class="fw-bold">{{com.data.userName}}</div>
@@ -99,13 +99,6 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-sm-6">
-                            <ul class="list-unstyled mb-0">
-                                <li><a href="#!">Web Design</a></li>
-                                <li><a href="#!">HTML</a></li>
-                                <li><a href="#!">Freebies</a></li>
-                            </ul>
-                        </div>
-                        <div class="col-sm-6">
                             <ul class="list-unstyled mb-0" *ngIf="category">
                                 <li *ngFor=" let cat of category">
                                     <a [routerLink]="'/' + cat.data.permalink"
@@ -132,6 +125,6 @@
 <!-- Footer-->
 <footer class="py-5 bg-dark">
     <div class="container">
-        <p class="m-0 text-center text-white">Copyright &copy; Your Website 2023</p>
+        <p class="m-0 text-center text-white">Copyright &copy; Interview Preparation 2024</p>
     </div>
 </footer>

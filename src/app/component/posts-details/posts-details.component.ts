@@ -1,5 +1,5 @@
-import { Component, ElementRef,HostListener, OnInit, ViewChild } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms'; 
+import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { NgZone } from '@angular/core';
 import { PostsService } from '../../services/posts.service';
@@ -25,8 +25,8 @@ export class PostsDetailsComponent implements OnInit {
   commentForm: FormGroup;
   commentCategoryId: any
   commentArray: Array<any> = []
-  loginUser:any
-  
+  loginUser: any
+
 
   constructor(
     private route: ActivatedRoute,
@@ -62,7 +62,7 @@ export class PostsDetailsComponent implements OnInit {
 
   ngOnInit() {
     this.afAuth.authState.subscribe(user => {
-      this.loginUser=user?.displayName
+      this.loginUser = user?.displayName
     });
 
     this.postService.loadFrontEndPost().subscribe(data => {
@@ -80,6 +80,7 @@ export class PostsDetailsComponent implements OnInit {
           return dateTimeB - dateTimeA;
         });
         // Assigning the sorted comments to commentArray
+        console.log(Comments)
         this.commentArray = Comments;
       });
 
@@ -105,14 +106,14 @@ export class PostsDetailsComponent implements OnInit {
   submitComment() {
     // Mark all controls in the form as touched
     this.markFormGroupTouched(this.commentForm);
-  
+
     if (this.commentForm.valid) {
       const user = this.authService.getCurrentUser();
-  
+
       if (user && this.authService.isAuthenticated()) {
         // User is authenticated
         let userName: string;
-        
+
         if (user.displayName) {
           // If display name is available, use it
           userName = user.displayName;
@@ -120,15 +121,23 @@ export class PostsDetailsComponent implements OnInit {
           // If display name is not available, use a default or the email
           userName = user.email ? user.email.split('@')[0] : 'Anonymous';
         }
-  
+
+        const userFromLocalStorageString = localStorage.getItem("user");
+        const userFromLocalStorage = userFromLocalStorageString ? JSON.parse(userFromLocalStorageString) : null;
+        const userIMG = userFromLocalStorage && userFromLocalStorage.user && userFromLocalStorage.user.photoURL
+          ? userFromLocalStorage.user.photoURL
+          : "https://icon-library.com/images/default-user-icon/default-user-icon-13.jpg";
+
         const comment = {
           comment: this.commentForm.value.comment,
           commentCategoryId: this.commentCategoryId,
           dateTime: this.getFormattedDateTimeWithTime(),
           userName: this.loginUser,
-          userId: user.uid || 'unknownUserId', // Provide a fallback if user.uid is undefined
+          userId: user.uid || 'unknownUserId',
+          userIMG: userIMG
         };
-  
+
+
         this.commentService.saveCommentData(comment);
         this.commentForm.reset();
       } else {
