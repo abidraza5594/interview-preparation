@@ -20,7 +20,7 @@
                     <ul class="meta list-inline mb-3">
                         <li class="list-inline-item">
                             <a href="#">
-                                <img src="../assets/images/other/author-sm.jpg" class="author" alt="">
+                                <img src="https://media.licdn.com/dms/image/D4D03AQHbDFz46FdS3Q/profile-displayphoto-shrink_800_800/0/1702389833531?e=1709769600&v=beta&t=Y-9LbkrJOSoI0RG_Sbjru57OY_-5qCd66T5q51Kz5j0" class="author" style="width: 30px;" alt="">
                                 Abid Ansari
                             </a>
                         </li>
@@ -35,11 +35,12 @@
                         </a>
                     </h5>
                     <p class="excerpt mb-0">
-                        {{ letestPost.data.excerpt }}
+                        {{ getFirst20Words(letestPost.data.excerpt) }}...
                     </p>
                     <div class="post-bottom clearfix d-flex align-items-center">
                         <div class="social-share me-auto">
-                            <button class="toggle-button icon-share" (click)="toggleSocialIcons(letestPost.id)"></button>
+                            <i style="cursor: pointer;" class="fa-solid fa-share-nodes fa-fade toggle-button icon-share" (click)="toggleSocialIcons(letestPost.id)"></i>
+                            <!-- <button class="toggle-button icon-share" (click)="toggleSocialIcons(letestPost.id)"></button> -->
                             <ul class="icons list-unstyled list-inline mb-0" *ngIf="isSocialIconsVisible[letestPost.id]">
                                 <li class="list-inline-item">
                                     <a (click)="shareOnFacebook(letestPost)"><i class="fab fa-facebook-f"></i></a>
@@ -52,7 +53,7 @@
                                 </li>
                                 <li class="list-inline-item">
                                     <a (click)="shareOnWhatsApp(letestPost)"><i class="fab fa-whatsapp"></i></a>
-                                    <span class="d-none d-md-inline">Share on WhatsApp (Mobile Only)</span>
+                                    <span class="d-none d-md-inline">Mobile Only</span>
                                 </li>                                
                             </ul>                            
                         </div>

@@ -23,6 +23,7 @@
     /* Colors */
     --primary-color: linear-gradient(315deg, #6e72fc 0%, var(--secondary-color) 74%);
     --secondary-color: #2ecc71;
+    --lightSecondry-color:#64dd96;
     --accent-color: #e74c3c;
     --background-color: #ecf0f1;
     --text-color: #333;
@@ -79,10 +80,14 @@ pre {
     background-color: var(--secondary-color) !important;
     color: white !important;
 }
+h2 strong{
+    color: var(--secondary-color);
+}
 img {
     max-width: 100%;
     height: auto;
 }
+
 .text-center {
     text-align: center;
 }

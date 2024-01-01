@@ -2,15 +2,6 @@
 * {
   box-sizing: border-box;
 }
-body {
-  margin: 0;
-  padding: 0;
-  background-color: #c8e7d8;
-  color: #4e5e72;
-  text-align: center;
-  font-family: monospace;
-  overflow: hidden;
-}
 h1, p {
   margin: 0;
   padding: 0;
@@ -53,13 +44,13 @@ input {
 button {
  padding: 0.5rem 1rem;
  border-radius: 0.25rem;
- background-color: rgba(78, 94, 114, 0.9);
+ background-color: var(--secondary-color);
  color: white;
  font-size: 1rem;
  transition: background-color 0.2s;
   &:hover,:focus {
     outline: none;
-    background-color: rgba(78, 94, 114, 1);
+    background-color: var(--lightSecondry-color);
   }
 }
 input[type=text]:focus,
@@ -117,7 +108,7 @@ textarea:focus {
   display: block;
   width: 12rem;
   height: 6rem;
-  background-color: #e9dc9d;
+  background-color: var(--lightSecondry-color);
   transform: rotate(30deg);
   transform-origin: 0 0;
   box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
@@ -140,7 +131,7 @@ textarea:focus {
     display: block;
     width: 10rem;
     height: 10rem;
-    background-color: #e9dc9d;
+    background-color: var(--lightSecondry-color);
     border-radius: 1rem;
     content: '';
     transform: scaleY(0.6) rotate(45deg)

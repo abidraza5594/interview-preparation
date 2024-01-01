@@ -74,4 +74,8 @@ export class LetetsPostsComponent implements OnInit {
   handleLinkClick(frontend: any): void {
     this.authService.loginSweetAlert(frontend);    
   } 
+  getFirst20Words(text: string): string {
+    const words = text.split(' ').slice(0, 20);
+    return words.join(' ');
+  }
 }

@@ -3,6 +3,9 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { AngularFireAuth } from '@angular/fire/compat/auth';
+import { Router } from '@angular/router';
+
 
 @Component({
   selector: 'app-auth',
@@ -65,4 +68,9 @@ export class AuthComponent implements OnInit {
   deactivateContainer() {
     this.isActive = false;
   }
+
+  signInWithGoogle() {
+    this.authService.googleSignIn();
+  }
+  
 }

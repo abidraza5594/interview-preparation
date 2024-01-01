@@ -93,4 +93,14 @@ export class HomeComponent{
       LetestPosts.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
+  sendEmail() {
+    window.location.href = 'mailto:abidraza8104@gmail.com.com?subject=Subject&body=Unlock interview success! Dive into expert-curated coding questions. Elevate your skills with Interview Preparation. Explore now: https://interviewpreparation.netlify.app/.';
+  }
+  sendWhatsAppMessage() {
+    const recipientNumber = '+918104184175';
+    const message = 'Hello, this is a WhatsApp message from my Angular app!';
+
+    const whatsappLink = this.sharedScrollService.generateWhatsAppLink(recipientNumber, message);
+    window.location.href = whatsappLink;
+  }
 }

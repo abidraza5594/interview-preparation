@@ -30,4 +30,11 @@ export class CommentsService {
     )
   }
 
+
+  saveContactUS(commentData:any){
+    this.afs.collection("contactUs").add(commentData).then(docRef=>{
+      this.toaster.success("We Received Your Message Successfully");    
+    })
+  }
+
 }

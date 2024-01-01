@@ -7,6 +7,8 @@ import { NavigationExtras, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { BehaviorSubject } from 'rxjs';
 import Swal from 'sweetalert2';
+import { GoogleAuthProvider, GithubAuthProvider, FacebookAuthProvider, user} from '@angular/fire/auth'
+
 
 
 @Injectable({
@@ -21,6 +23,7 @@ export class AuthService {
     private toaster: ToastrService,
     private router: Router,
     private afs: AngularFirestore
+    
   ) {
     // Check initial authentication state
     this.afAuth.authState.subscribe(user => {
@@ -126,7 +129,7 @@ export class AuthService {
       text: 'Please login to view details.',
       icon: 'info',
       showCancelButton: true,
-      confirmButtonText: 'OK',
+      confirmButtonText: 'Login',
       cancelButtonText: 'Cancel',
     }).then((result) => {
       if (result.isConfirmed) {
@@ -135,6 +138,16 @@ export class AuthService {
         // You can add additional logic or leave it empty if not needed
       }
     });
+  }
+  //sign in with google
+  googleSignIn() {
+    return this.afAuth.signInWithPopup(new GoogleAuthProvider).then(user => {
+      this.router.navigate(['/']);
+      this.toaster.success('Login Successfully');
+      localStorage.setItem('user', JSON.stringify(user));
+    }, err => {
+      this.toaster.error(err.message);
+    })
   }
 
 }

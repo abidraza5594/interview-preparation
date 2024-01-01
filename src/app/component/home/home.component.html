@@ -16,7 +16,7 @@
                                 </h2>
                                 <ul class="meta list-inline mb-0">
                                     <li class="list-inline-item">
-                                        <a href="#">Techie Coder</a>
+                                        <a href="#">Abid Ansari</a>
                                     </li>
                                     <li class="list-inline-item">{{ displayedPosts[0].data.createdAt.toMillis() | date
                                         }}</li>
@@ -112,7 +112,7 @@
                                     <ul class="meta list-inline mt-4 mb-0">
                                         <li class="list-inline-item">
                                             <a href="#">
-                                                <img class="author" src="../assets/images/other/author-sm.jpg" alt="">
+                                                <img class="author" src="https://media.licdn.com/dms/image/D4D03AQHbDFz46FdS3Q/profile-displayphoto-shrink_800_800/0/1702389833531?e=1709769600&v=beta&t=Y-9LbkrJOSoI0RG_Sbjru57OY_-5qCd66T5q51Kz5j0" style="width: 30px;" alt="">
                                                 Abid Ansari
                                             </a>
                                         </li>
@@ -123,7 +123,7 @@
                                         <a href="#" (click)="handleLinkClick(bigFeaturePost)"
                                             *ngIf="bigFeaturePost">{{bigFeaturePost.data.title}}</a>
                                     </h5>
-                                    <p class="excerpt mb-0" *ngIf="bigFeaturePost">{{bigFeaturePost.data.excerpt}}</p>
+                                    <!-- <p class="excerpt mb-0" *ngIf="bigFeaturePost">{{bigFeaturePost.data.excerpt}}</p> -->
                                 </div>
                             </div>
                             <div class="col-sm-6">
@@ -174,16 +174,14 @@
                                         </a>
                                     </li>
                                     <li class="list-inline-item">
-                                        <a href="https://www.instagram.com/abidansari5594/">
-                                            <i class="fab fa-instagram"></i>
-                                        </a>
+                                        <a (click)="sendWhatsAppMessage()"><i class="fab fa-whatsapp"></i></a>
                                     </li>
                                     <li class="list-inline-item">
                                         <a href="https://www.linkedin.com/in/abid-ansari-523699248/">
                                             <i class="fab fa-linkedin"></i>
                                         </a>
                                     </li>
-                                    <li class="list-inline-item">
+                                    <li class="list-inline-item" (click)="sendEmail()">
                                         <a href="#"><i class="far fa-envelope"></i></a>
                                     </li>
                                 </ul>
@@ -218,7 +216,7 @@
             <div class="instagram-feed d-flex flex-wrap">
                 <div class="insta-item col-sm-2 col-6 col-md-2">
                     <a href="#">
-                        <img src="../assets/images/insta/insta-1.jpg" alt="">
+                        <img src="../assets/images/insta/insta-1.avif" alt="">
                     </a>
                 </div>
                 <div class="insta-item col-sm-2 col-6 col-md-2">
@@ -228,22 +226,22 @@
                 </div>
                 <div class="insta-item col-sm-2 col-6 col-md-2">
                     <a href="#">
-                        <img src="../assets/images/insta/insta-3.jpg" alt="">
+                        <img src="../assets/images/insta/insta-3.avif" alt="">
                     </a>
                 </div>
                 <div class="insta-item col-sm-2 col-6 col-md-2">
                     <a href="#">
-                        <img src="../assets/images/insta/insta-4.jpg" alt="">
+                        <img src="../assets/images/insta/insta-7.avif" alt="">
                     </a>
                 </div>
                 <div class="insta-item col-sm-2 col-6 col-md-2">
                     <a href="#">
-                        <img src="../assets/images/insta/insta-5.jpg" alt="">
+                        <img src="../assets/images/insta/insta-5.avif" alt="">
                     </a>
                 </div>
                 <div class="insta-item col-sm-2 col-6 col-md-2">
                     <a href="#">
-                        <img src="../assets/images/insta/insta-6.jpg" alt="">
+                        <img src="../assets/images/insta/insta-6.avif" alt="">
                     </a>
                 </div>
             </div>
@@ -264,16 +262,14 @@
                                 </a>
                             </li>
                             <li class="list-inline-item">
-                                <a href="https://www.instagram.com/abidansari5594/">
-                                    <i class="fab fa-instagram"></i>
-                                </a>
+                                <a (click)="sendWhatsAppMessage()"><i class="fab fa-whatsapp"></i></a>
                             </li>
                             <li class="list-inline-item">
                                 <a href="https://www.linkedin.com/in/abid-ansari-523699248/">
                                     <i class="fab fa-linkedin"></i>
                                 </a>
                             </li>
-                            <li class="list-inline-item">
+                            <li class="list-inline-item" (click)="sendEmail()">
                                 <a href="#"><i class="far fa-envelope"></i></a>
                             </li>
                         </ul>
