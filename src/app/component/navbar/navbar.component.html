@@ -11,8 +11,7 @@
                         </a>
                         <ul class="dropdown-menu">
                           <li *ngFor="let category of categoryArray">
-                            <a class="dropdown-item" [routerLink]="'/' + category.permalink"
-                               [queryParams]="{id:category.catID}">{{ category.catname }}</a>
+                            <a href="#" class="dropdown-item" (click)="handleLinkClick(category)">{{ category.catname }}</a>
                           </li>
                         </ul>
                       </li>                      
@@ -29,8 +28,11 @@
                     <li class="nav-item">
                         <a routerLink="/contact-us" class="nav-link">Contact</a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item" *ngIf="!isShowLogOut">
                         <a routerLink="/auth" class="nav-link">Login</a>
+                    </li>
+                    <li class="nav-item" *ngIf="isShowLogOut">
+                        <a routerLink="/auth" class="nav-link" (click)="logOut()">LogOut</a>
                     </li>
                 </ul>
             </div>

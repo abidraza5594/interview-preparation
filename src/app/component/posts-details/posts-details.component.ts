@@ -21,13 +21,11 @@ export class PostsDetailsComponent implements OnInit {
   singlePostArray: any;
   category: any;
   arrayOfAllQuestion: any[] = [];
-  @ViewChild('contentContainer', { static: true }) contentContainer!: ElementRef;
+  @ViewChild('contentContainer', { static: false }) contentContainer!: ElementRef;
   commentForm: FormGroup;
   commentCategoryId: any
   commentArray: Array<any> = []
   loginUser: any
-
-
   constructor(
     private route: ActivatedRoute,
     private postService: PostsService,
@@ -68,7 +66,6 @@ export class PostsDetailsComponent implements OnInit {
     this.postService.loadFrontEndPost().subscribe(data => {
       this.category = data
     })
-
     this.route.params.subscribe((val: any) => {
       let id = this.route.snapshot.queryParamMap.get("id")
       this.commentCategoryId = id
@@ -79,41 +76,42 @@ export class PostsDetailsComponent implements OnInit {
           const dateTimeB = new Date((b.data as { dateTime: string }).dateTime).getTime();
           return dateTimeB - dateTimeA;
         });
-        // Assigning the sorted comments to commentArray
-        console.log(Comments)
         this.commentArray = Comments;
       });
-
       this.postService.loadOnePost(id).subscribe(
         (post: any) => {
           this.zone.run(() => {
             this.singlePostArray = post;
+            
+            // Initialize the array before extracting questions
+            this.arrayOfAllQuestion = [];
+            
             // Assuming your extractQuestions method returns an array of questions
-            this.arrayOfAllQuestion = this.contentExtraction.extractQuestions(post.content).map((question, index) => ({
+            const extractedQuestions = this.contentExtraction.extractQuestions(post.content);
+            
+            // Assign the extracted questions to arrayOfAllQuestion
+            this.arrayOfAllQuestion = extractedQuestions.map((question, index) => ({
               question,
               id: `question_${index}`
             }));
-
+            console.log(this.arrayOfAllQuestion)
           });
         },
         error => {
           console.error('Error loading post:', error);
         }
       );
+      
     });
   }
-
   submitComment() {
     // Mark all controls in the form as touched
     this.markFormGroupTouched(this.commentForm);
-
     if (this.commentForm.valid) {
       const user = this.authService.getCurrentUser();
-
       if (user && this.authService.isAuthenticated()) {
         // User is authenticated
         let userName: string;
-
         if (user.displayName) {
           // If display name is available, use it
           userName = user.displayName;
@@ -121,7 +119,6 @@ export class PostsDetailsComponent implements OnInit {
           // If display name is not available, use a default or the email
           userName = user.email ? user.email.split('@')[0] : 'Anonymous';
         }
-
         const userFromLocalStorageString = localStorage.getItem("user");
         const userFromLocalStorage = userFromLocalStorageString ? JSON.parse(userFromLocalStorageString) : null;
         const userIMG = userFromLocalStorage && userFromLocalStorage.user && userFromLocalStorage.user.photoURL
@@ -136,8 +133,6 @@ export class PostsDetailsComponent implements OnInit {
           userId: user.uid || 'unknownUserId',
           userIMG: userIMG
         };
-
-
         this.commentService.saveCommentData(comment);
         this.commentForm.reset();
       } else {
@@ -161,5 +156,29 @@ export class PostsDetailsComponent implements OnInit {
       }
     });
   }
+
+  // ...
+
+scrollToQuestionOnInit(question:any) {
+  const contentElement: HTMLElement = this.contentContainer.nativeElement;
+
+  // Find all <h3> elements
+  const h3Elements = contentElement.querySelectorAll('h3');
+
+  // Example question to scroll to
+  const questionToScroll = question;
+
+  // Iterate through the <h3> elements and find the one with matching text content
+  for (let i = 0; i < h3Elements.length; i++) {
+    const h3Element = h3Elements[i] as HTMLElement;
+    if (h3Element.textContent?.trim() === questionToScroll) {
+      // Scroll to the target element
+      h3Element.scrollIntoView({ behavior: 'smooth' });
+      break;
+    }
+  }
+}
+// ...
+
 
 }

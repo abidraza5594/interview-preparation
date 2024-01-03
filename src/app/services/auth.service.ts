@@ -93,7 +93,7 @@ export class AuthService {
       localStorage.removeItem('user');
       this.loggedIn.next(false);
       this.isLoggedInGuard = false;
-      this.router.navigate(['/login']);
+      this.router.navigate(['/']);
     });
   }
 
@@ -121,8 +121,9 @@ export class AuthService {
   }
   checkIfUserLoggedIn(): boolean {
     const storedUserString = localStorage.getItem('user');
-    return !!storedUserString;
-  }
+    const storedUserObject = storedUserString ? JSON.parse(storedUserString) : null;
+    return !!storedUserObject && (!!storedUserObject.displayName || !!storedUserObject.user);
+  }   
   showLoginRequiredAlert(): void {
     Swal.fire({
       title: 'Login Required',

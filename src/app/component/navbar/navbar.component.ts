@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnInit } from '@angular/core';
 import { PostsService } from '../../services/posts.service';
 import { SharedScrollService } from '../../services/shared-scroll.service';
 import { Router } from '@angular/router';
@@ -21,14 +21,16 @@ export class NavbarComponent implements OnInit {
   searchControl = new FormControl();
   filteredOptions!: Observable<string[]>;
   categoryArray: any[] = [];
+  isShowLogOut:boolean=false
 
   constructor(
     private postService: PostsService,
     private shereScrollService: SharedScrollService,
     private categoryService: CategoryService,
-    private authService:AuthService,
+    private authService: AuthService,
     private router: Router,
-  ) {}
+    private cdr: ChangeDetectorRef
+  ) { }
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
     if (event.key === 'Escape' && this.isSearchPopupOpen) {
@@ -64,6 +66,11 @@ export class NavbarComponent implements OnInit {
     window.location.href = whatsappLink;
   }
   ngOnInit() {
+    // Subscribe to the isAuthenticated observable from AuthService
+    this.authService.isAuthenticated().subscribe((loggedIn) => {
+      this.isShowLogOut = loggedIn;
+    });
+
     this.postService.loadLetestPosts().subscribe(val => {
       this.allPost = val;
       this.filteredOptions = this.searchControl.valueChanges.pipe(
@@ -71,20 +78,20 @@ export class NavbarComponent implements OnInit {
         map(value => this._filter(value))
       );
     });
-    this.categoryService.loadData().subscribe(val=>{
-      let cat=[]
-      for(let p of this.allPost){
-        let postcatID=p.id
-        let postcat=p.data.category.Category
-        for(let c of val){
-          let catobj=((c.data as any).category)
-          if(postcat===catobj){
-            let catOBJ={catname:catobj,catID:postcatID,permalink:p.data.permalink}
+    this.categoryService.loadData().subscribe(val => {
+      let cat = []
+      for (let p of this.allPost) {
+        let postcatID = p.id
+        let postcat = p.data.category.Category
+        for (let c of val) {
+          let catobj = ((c.data as any).category)
+          if (postcat === catobj) {
+            let catOBJ = { catname: catobj, catID: postcatID, permalink: p.data.permalink }
             cat.push(catOBJ)
           }
         }
       }
-      this.categoryArray=cat
+      this.categoryArray = cat
     })
   }
   private _filter(value: string): string[] {
@@ -110,5 +117,15 @@ export class NavbarComponent implements OnInit {
     } else {
       console.error('Selected post not found:', this.searchControl.value);
     }
+  }
+  handleLinkClick(frontend: any): void {
+    const frontendData = {
+      id: frontend.catID,
+      data: {permalink: frontend.permalink}
+    };
+    this.authService.loginSweetAlert(frontendData);
+  }
+  logOut(){
+    this.authService.logOut()
   }
 }

@@ -1,130 +1,201 @@
 <div class="progress-container">
-    <div class="progress-indicator" [style.width]="getScrollIndicatorWidth()"></div>
-  </div>
-  <div class="scroll-container" (scroll)="onScroll($event)">
-    <!-- Your content goes here -->
-  </div>
+  <div
+    class="progress-indicator"
+    [style.width]="getScrollIndicatorWidth()"
+  ></div>
+</div>
+<div class="scroll-container" (scroll)="onScroll($event)">
+  <!-- Your content goes here -->
+</div>
 <div class="container mt-5 postDetailscontainer">
-    <div class="row">
-        <div class="col-lg-8">
-            <!-- Post content-->
-            <article>
-                <!-- Post header-->
-                <header class="mb-4">
-                    <!-- Post title-->
-                    <h1 class="fw-bolder mb-1 p-3" *ngIf="singlePostArray">{{ singlePostArray.title }}</h1>
-                    <!-- Post meta content-->
-                    <div class="text-muted fst-italic mb-2 p-3" *ngIf="singlePostArray">
-                        {{singlePostArray.createdAt.toMillis() | date}}</div>
-                    <!-- Post categories-->
-                    <a class="badge bg-secondary text-decoration-none link-light p-3 ml-3" href="#!">Web Design</a>
-                    <a class="badge bg-secondary text-decoration-none link-light p-3 m-3" href="#!">Freebies</a>
-                </header>
-                <!-- Preview image figure-->
-                <figure class="mb-4"><img class="img-fluid rounded" *ngIf="singlePostArray" src={{singlePostArray.postImgPath}} alt="..." style="width: 300px;" /></figure>
-                <!-- Post content-->
-                <section class="mb-5 p-3" [innerHTML]="singlePostArray?.content"></section>
-                <div class="text-center" *ngIf="!singlePostArray">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
+  <div class="row">
+    <div class="col-lg-8">
+      <!-- Post content-->
+      <article>
+        <!-- Post header-->
+        <header class="mb-4">
+          <!-- Post title-->
+          <h1 class="fw-bolder mb-1 p-3" *ngIf="singlePostArray">
+            {{ singlePostArray.title }}
+          </h1>
+          <!-- Post meta content-->
+          <div class="text-muted fst-italic mb-2 p-3" *ngIf="singlePostArray">
+            {{ singlePostArray.createdAt.toMillis() | date }}
+          </div>
+          <!-- Post categories-->
+          <a
+            class="badge bg-secondary text-decoration-none link-light p-3 ml-3"
+            href="#!"
+            >Web Design</a
+          >
+          <a
+            class="badge bg-secondary text-decoration-none link-light p-3 m-3"
+            href="#!"
+            >Freebies</a
+          >
+        </header>
+        <!-- Preview image figure-->
+        <figure class="mb-4">
+          <img
+            class="img-fluid rounded"
+            *ngIf="singlePostArray"
+            src="{{ singlePostArray.postImgPath }}"
+            alt="..."
+            style="width: 300px"
+          />
+        </figure>
+        <!-- Post content-->
+        <section
+          class="mb-5 p-3"
+          [innerHTML]="singlePostArray?.content"
+          #contentContainer
+        ></section>
+        <div class="text-center" *ngIf="!singlePostArray">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+        <div class="d-flex align-items-center" *ngIf="!singlePostArray">
+          <strong role="status">Loading...</strong>
+          <div class="spinner-border ms-auto" aria-hidden="true"></div>
+        </div>
+      </article>
+      <!-- Comments section-->
+      <section class="mb-5">
+        <div class="card bg-light">
+          <div class="card-body">
+            <!-- Comment form-->
+            <form
+              [formGroup]="commentForm"
+              class="mb-4"
+              (ngSubmit)="submitComment()"
+            >
+              <textarea
+                formControlName="comment"
+                class="form-control"
+                rows="3"
+                placeholder="Join the discussion and leave a comment!"
+              ></textarea>
+              <div
+                *ngIf="
+                  commentForm.get('comment')?.hasError('required') &&
+                  commentForm.get('comment')?.touched
+                "
+                class="text-danger"
+              >
+                Comment is required.
+              </div>
+              <div
+                *ngIf="
+                  commentForm.get('comment')?.hasError('minlength') &&
+                  commentForm.get('comment')?.touched
+                "
+                class="text-danger"
+              >
+                Comment must be at least 5 characters long.
+              </div>
+              <button type="submit" class="btn btn-primary">
+                Submit Comment
+              </button>
+            </form>
+
+            <!-- Comment with nested comments-->
+            <div *ngIf="commentArray">
+              <div class="d-flex mb-4" *ngFor="let com of commentArray">
+                <!-- Parent comment-->
+                <div class="flex-shrink-0">
+                  <img
+                    class="rounded-circle"
+                    style="width: 40px"
+                    src="{{ com.data.userIMG }}"
+                    alt="..."
+                  />
                 </div>
-                <div class="d-flex align-items-center" *ngIf="!singlePostArray">
-                    <strong role="status">Loading...</strong>
-                    <div class="spinner-border ms-auto" aria-hidden="true"></div>
-                </div>
-            </article>
-            <!-- Comments section-->
-            <section class="mb-5">
-                <div class="card bg-light">
+                <div class="ms-3">
+                  <div class="fw-bold">{{ com.data.userName }}</div>
+                  <div class="card mt-3">
                     <div class="card-body">
-                        <!-- Comment form-->
-                        <form [formGroup]="commentForm" class="mb-4" (ngSubmit)="submitComment()">
-                            <textarea formControlName="comment" class="form-control" rows="3"
-                                placeholder="Join the discussion and leave a comment!"></textarea>
-                            <div *ngIf="commentForm.get('comment')?.hasError('required') && commentForm.get('comment')?.touched"
-                                class="text-danger">
-                                Comment is required.
-                            </div>
-                            <div *ngIf="commentForm.get('comment')?.hasError('minlength') && commentForm.get('comment')?.touched"
-                                class="text-danger">
-                                Comment must be at least 5 characters long.
-                            </div>
-                            <button type="submit" class="btn btn-primary">Submit Comment</button>
-                        </form>
+                      <p class="card-text">{{ com.data.comment }}</p>
+                      <small class="text-muted">{{ com.data.dateTime }}</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                        <!-- Comment with nested comments-->
-                        <div *ngIf="commentArray">
-                            <div class="d-flex mb-4" *ngFor="let com of commentArray">
-                              <!-- Parent comment-->
-                              <div class="flex-shrink-0">
-                                <img class="rounded-circle" style="width: 40px;" src={{com.data.userIMG}} alt="..." />
-                              </div>
-                              <div class="ms-3">
-                                <div class="fw-bold">{{com.data.userName}}</div>
-                                <div class="card mt-3">
-                                  <div class="card-body">
-                                    <p class="card-text">{{ com.data.comment }}</p>
-                                    <small class="text-muted">{{ com.data.dateTime }}</small>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          
-                        <div *ngIf="!commentArray">
-                            Loging comment
-                        </div>
-
-                    </div>
-                </div>
-            </section>
+            <div *ngIf="!commentArray">Loging comment</div>
+          </div>
         </div>
-        <!-- Side widgets-->
-        <div class="col-lg-4">
-            <!-- Search widget-->
-            <div class="card mb-4">
-                <div class="card-header">Search</div>
-                <div class="card-body">
-                    <div class="input-group">
-                        <input class="form-control" type="text" placeholder="Enter search term..."
-                            aria-label="Enter search term..." aria-describedby="button-search" />
-                        <button class="btn btn-primary" id="button-search" type="button">Go!</button>
-                    </div>
-                </div>
-            </div>
-            <!-- Categories widget-->
-            <div class="card mb-4">
-                <div class="card-header">Categories</div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <ul class="list-unstyled mb-0" *ngIf="category">
-                                <li *ngFor=" let cat of category">
-                                    <a [routerLink]="'/' + cat.data.permalink"
-                                        [queryParams]="{id:cat.id}">{{cat.data.category.Category}}</a>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Side widget-->
-            <div class="card mb-4 stickypart">
-                <div class="card-header" *ngIf="singlePostArray"><b>Master these {{singlePostArray.category.Category}}
-                        topics to ace your interview.</b></div>
-                <ul *ngIf="arrayOfAllQuestion" class="list-group questionslists">
-                    <li *ngFor="let q of arrayOfAllQuestion; let i = index" class="list-group-item">
-                        <a class="text-decoration-none">{{ q.question }}</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
+      </section>
     </div>
+    <!-- Side widgets-->
+    <div class="col-lg-4">
+      <!-- Search widget-->
+      <div class="card mb-4">
+        <div class="card-header">Search</div>
+        <div class="card-body">
+          <div class="input-group">
+            <input
+              class="form-control"
+              type="text"
+              placeholder="Enter search term..."
+              aria-label="Enter search term..."
+              aria-describedby="button-search"
+            />
+            <button class="btn btn-primary" id="button-search" type="button">
+              Go!
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Categories widget-->
+      <div class="card mb-4">
+        <div class="card-header">Categories</div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-sm-6">
+              <ul class="list-unstyled mb-0" *ngIf="category">
+                <li *ngFor="let cat of category">
+                  <a
+                    [routerLink]="'/' + cat.data.permalink"
+                    [queryParams]="{ id: cat.id }"
+                    >{{ cat.data.category.Category }}</a
+                  >
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Side widget-->
+      <div class="card mb-4 stickypart">
+        <div class="card-header" *ngIf="singlePostArray">
+          <b
+            >Master these {{ singlePostArray.category.Category }} topics to ace
+            your interview.</b
+          >
+        </div>
+        <ul *ngIf="arrayOfAllQuestion" class="list-group questionslists">
+          <li
+            *ngFor="let q of arrayOfAllQuestion; let i = index"
+            class="list-group-item"
+          >
+            <a style="cursor: pointer;"
+              class="text-decoration-none"
+              (click)="scrollToQuestionOnInit(q.question.text)"
+              >{{ q.question.text }}</a
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </div>
 <!-- Footer-->
 <footer class="py-5 bg-dark">
-    <div class="container">
-        <p class="m-0 text-center text-white">Copyright &copy; Interview Preparation 2024</p>
-    </div>
+  <div class="container">
+    <p class="m-0 text-center text-white">
+      Copyright &copy; Interview Preparation 2024
+    </p>
+  </div>
 </footer>
