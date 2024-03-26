@@ -9,8 +9,7 @@
                             <div class="details clearfix" data-aos="fade-right">
                                 <a href="#" class="category-badge">{{ displayedPosts[0].data.category.Category }}</a>
                                 <h2 class="post-title">
-                                    <a [routerLink]="'/' + displayedPosts[0].id"
-                                        [queryParams]="{id: displayedPosts[0].id}">
+                                    <a href="#" (click)="handleLinkClick(displayedPosts[0])">
                                         {{ displayedPosts[0].data.title }}
                                     </a>
                                 </h2>
@@ -22,7 +21,7 @@
                                         }}</li>
                                 </ul>
                             </div>
-                            <a [routerLink]="'/' + displayedPosts[0].id" [queryParams]="{id: displayedPosts[0].id}">
+                            <a href="#" (click)="handleLinkClick(displayedPosts[0])">
                                 <div class="thumb rounded" data-aos="fade-right">
                                     <img class="inner data-bg-image" src="{{ displayedPosts[0].data.postImgPath }}"
                                         alt="" />
@@ -193,12 +192,16 @@
                             </div>
                             <div class="widget-content">
                                 <span class="newsletter-headline text-center mb-3">Join 5000+ subscribers</span>
-                                <form action="#">
+                                <form [formGroup]="newsLetterForm">
                                     <div class="mb-2">
                                         <input type="email" class="form-control w-100 text-center"
-                                            placeholder="Email address...">
+                                        formControlName="newsLetterEmail"
+                                        placeholder="Email address...">
                                     </div>
-                                    <button class="btn btn-default btn-full">Sign Up</button>
+                                    <div class="text-danger small" *ngIf="newsLetterForm.get('newsLetterEmail').hasError('required') && newsLetterForm.get('newsLetterEmail').touched">
+                                        Email is required.
+                                      </div>                                      
+                                    <button class="btn btn-default btn-full" (click)="newsLetterEmailHandler()">Sign Up</button>
                                 </form>
                                 <span class="newsletter-privacy text-center mt-3">
                                     By signing up, you agree to our <a href="#">Privacy policy</a>

@@ -129,27 +129,22 @@
       </section>
     </div>
     <!-- Side widgets-->
-    <div class="col-lg-4">
-      <!-- Search widget-->
-      <div class="card mb-4">
-        <div class="card-header">Search</div>
-        <div class="card-body">
-          <div class="input-group">
-            <input
-              class="form-control"
-              type="text"
-              placeholder="Enter search term..."
-              aria-label="Enter search term..."
-              aria-describedby="button-search"
-            />
-            <button class="btn btn-primary" id="button-search" type="button">
-              Go!
-            </button>
-          </div>
-        </div>
-      </div>
-      <!-- Categories widget-->
-      <div class="card mb-4">
+    <div class="col-lg-4 order-md-first d-flex flex-column">
+      <div class="d-flex search-form">
+        <input type="text" placeholder="Search Questions..." aria-label="Search" class="form-control me-2"
+          [(ngModel)]="questions" [matAutocomplete]="auto" name="questions"
+          (input)="searchQuestions()">
+        <mat-autocomplete #auto="matAutocomplete">
+          <mat-option *ngFor="let option of filteredOptions" [value]="option">
+            {{ option }}
+          </mat-option>
+        </mat-autocomplete>
+        <button class="btn btn-default btn-lg" type="submit" (click)="scroltoQuestion()">
+          <i class="fas fa-search"></i>
+        </button>
+      </div>      
+      <!-- Categories-->
+      <div class="card mb-4 mt-3">
         <div class="card-header">Categories</div>
         <div class="card-body">
           <div class="row">
@@ -159,15 +154,14 @@
                   <a
                     [routerLink]="'/' + cat.data.permalink"
                     [queryParams]="{ id: cat.id }"
-                    >{{ cat.data.category.Category }}</a
-                  >
+                    >{{ cat.data.category.Category }}</a>
                 </li>
               </ul>
             </div>
           </div>
         </div>
       </div>
-      <!-- Side widget-->
+      <!-- all questions-->
       <div class="card mb-4 stickypart">
         <div class="card-header" *ngIf="singlePostArray">
           <b
@@ -180,11 +174,11 @@
             *ngFor="let q of arrayOfAllQuestion; let i = index"
             class="list-group-item"
           >
-            <a style="cursor: pointer;"
+            <a
+              style="cursor: pointer"
               class="text-decoration-none"
               (click)="scrollToQuestionOnInit(q.question.text)"
-              >{{ q.question.text }}</a
-            >
+              >{{ q.question.text }}</a>
           </li>
         </ul>
       </div>

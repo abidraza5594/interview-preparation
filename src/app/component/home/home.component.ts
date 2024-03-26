@@ -1,11 +1,14 @@
 import { Component, ElementRef, Inject, PLATFORM_ID } from '@angular/core';
 import { PostsService } from '../../services/posts.service';
 import { SharedScrollService } from '../../services/shared-scroll.service';
-import { trigger, state, style, transition, animate } from '@angular/animations';
+import { trigger, state, style, transition, animate, group } from '@angular/animations';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AngularFirestore } from '@angular/fire/compat/firestore';
+import { ToastrService } from 'ngx-toastr';
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
@@ -19,9 +22,9 @@ import { AuthService } from '../../services/auth.service';
       state('out', style({
         transform: 'translateX(-100%)',
         opacity: 0
-      })),
-      transition('in => out', animate('200ms ease-out')),
-      transition('out => in', animate('200ms ease-in'))
+      })), // function is used to specify how the animation should behave when transitioning from one state to another.
+      transition('in => out', animate('200ms ease-out')), // When transitioning from the 'in' state to the 'out' state.
+      transition('out => in', animate('200ms ease-in')) // When transitioning from the 'out' state to the 'in' state.
     ])
   ]
 })
@@ -32,11 +35,15 @@ export class HomeComponent{
   currentIndex = 0;
   displayedPosts: any[] = [];
   animationState = 'in'; 
+  newsLetterForm: any;
   constructor(
     private el: ElementRef,
     private postService: PostsService,
     private sharedScrollService: SharedScrollService,  
-    private authService:AuthService,  
+    private authService:AuthService,
+    private fb: FormBuilder,
+    private afs:AngularFirestore,
+    private toaster:ToastrService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
   activeTab: string = 'frontend';
@@ -44,6 +51,9 @@ export class HomeComponent{
     this.activeTab = tab;
   }
   ngOnInit() {
+    this.newsLetterForm = this.fb.group({
+      newsLetterEmail: ['', Validators.required],
+    });
     if (isPlatformBrowser(this.platformId)) {
       AOS.init();
     }
@@ -103,4 +113,18 @@ export class HomeComponent{
     const whatsappLink = this.sharedScrollService.generateWhatsAppLink(recipientNumber, message);
     window.location.href = whatsappLink;
   }
+
+  newsLetterEmailHandler() {
+    this.newsLetterForm.markAllAsTouched();
+    if (this.newsLetterForm.valid) {
+      const email = this.newsLetterForm.value.newsLetterEmail;  
+      this.afs.collection("newsLetterEmails").add({ email: email }).then(docRef => {
+        this.toaster.success("Email Insert Successfully");
+      }).catch(error => {
+        console.error('Error adding document: ', error);
+      });
+      this.newsLetterForm.reset()
+    }
+  }
+  
 }

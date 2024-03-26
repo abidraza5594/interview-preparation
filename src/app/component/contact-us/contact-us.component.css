@@ -1,15 +1,5 @@
 @import url(https://fonts.googleapis.com/css?family=Dancing+Script:400,700);
-* {
-  box-sizing: border-box;
-}
-h1, p {
-  margin: 0;
-  padding: 0;
-}
-h1 {
-  font-size: 2rem;
-  font-family: 'Dancing Script';
-}
+
 small {
   display: block;
   padding: 1rem 0;

@@ -1,24 +1,30 @@
 <div class="container" id="container" [ngClass]="{'active': isActive}">
+    <button *ngIf="!isActive" type="button" class="closeleft" (click)="onContainerClick()">
+        <span aria-hidden="true">&#x2716;</span>
+      </button>
+      <button *ngIf="isActive" type="button" class="closeright" (click)="onContainerClick()">
+        <span aria-hidden="true">&#x2716;</span>
+      </button>
     <div class="form-container sign-up">
         <form [formGroup]="signUpForm" (ngSubmit)="onSignUpFormSubmit()">
             <h1>Create Account</h1>
-            <div class="social-icons">
+            <div class="social-icons p-0 m-0">
                 <a href="#" class="icon" (click)="signInWithGoogle()"><i class="fab fa-google-plus-g"></i></a>
                 <!-- <a href="#" class="icon"><i class="fab fa-linkedin-in"></i></a> -->
             </div>
             <span>or use your email for registration</span>
             <input type="text" placeholder="Name" formControlName="name">
             <div *ngIf="signUpForm.get('name')?.invalid && signUpForm.get('name')?.touched">
-                <div *ngIf="signUpForm.get('name')?.hasError('required')">Name is required</div>
+                <div *ngIf="signUpForm.get('name')?.hasError('required')" style="font-size: 10px; color: red;">Name is required</div>
             </div>
             <input type="email" placeholder="Email" formControlName="email">
             <div *ngIf="signUpForm.get('email')?.invalid && signUpForm.get('email')?.touched">
-                <div *ngIf="signUpForm.get('email')?.hasError('required')">Email is required</div>
-                <div *ngIf="signUpForm.get('email')?.hasError('email')">Invalid email format</div>
+                <div *ngIf="signUpForm.get('email')?.hasError('required')" style="font-size: 10px; color: red;">Email is required</div>
+                <div *ngIf="signUpForm.get('email')?.hasError('email')" style="font-size: 10px; color: red;">Invalid email format</div>
             </div>
             <input type="password" placeholder="Password" formControlName="password">
             <div *ngIf="signUpForm.get('password')?.invalid && signUpForm.get('password')?.touched">
-                <div *ngIf="signUpForm.get('password')?.hasError('required')">Password is required</div>
+                <div *ngIf="signUpForm.get('password')?.hasError('required')" style="font-size: 10px; color: red;">Password is required</div>
             </div>
             <button type="submit" [disabled]="signUpForm.invalid">Sign Up</button>
         </form>
@@ -26,19 +32,19 @@
     <div class="form-container sign-in">
         <form [formGroup]="signInForm" (ngSubmit)="onSignInFormSubmit()">
             <h1>Sign In</h1>
-            <div class="social-icons">
+            <div class="social-icons p-0 m-0">
                 <a href="#" class="icon" (click)="signInWithGoogle()"><i class="fab fa-google-plus-g"></i></a>
                 <!-- <a href="#" class="icon"><i class="fab fa-linkedin-in"></i></a> -->
             </div> 
             <span>or use your email password</span>
             <input type="email" placeholder="Email" formControlName="email">
             <div *ngIf="signInForm.get('email')?.invalid && signInForm.get('email')?.touched">
-                <div *ngIf="signInForm.get('email')?.hasError('required')" class="text-danger">Email is required</div>
-                <div *ngIf="signInForm.get('email')?.hasError('email')" class="text-danger">Invalid email format</div>
+                <div *ngIf="signInForm.get('email')?.hasError('required')" class="text-danger" style="font-size: 10px; color: red;">Email is required</div>
+                <div *ngIf="signInForm.get('email')?.hasError('email')" class="text-danger" style="font-size: 10px; color: red;">Invalid email format</div>
             </div>
             <input type="password" placeholder="Password" formControlName="password">
             <div *ngIf="signInForm.get('password')?.invalid && signInForm.get('password')?.touched">
-                <div *ngIf="signInForm.get('password')?.hasError('required')" class="text-danger">Password is required</div>
+                <div *ngIf="signInForm.get('password')?.hasError('required')" class="text-danger" style="font-size: 10px; color: red;">Password is required</div>
             </div>
             <a href="#">Forget Your Password?</a>
             <button type="submit" [disabled]="signInForm.invalid">Sign In</button>

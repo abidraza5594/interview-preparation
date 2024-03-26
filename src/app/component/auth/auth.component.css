@@ -175,3 +175,26 @@
 .container.active .toggle-right{
     transform: translateX(200%);
 }
+
+.closeleft{
+    position: absolute;
+    top: -13px;
+    left: -29px;
+    z-index: 100;
+    color: black !important;
+    background: white !important;
+}
+.closeright{
+    position: absolute;
+    top: -13px;
+    right: -29px;
+    z-index: 100;
+    color: black !important;
+    background: white !important;
+}
+ .closeleft span{
+    font-size: 20px !important;
+ }
+ .closeright span{
+    font-size: 20px !important;
+ }

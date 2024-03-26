@@ -26,12 +26,14 @@ export class PostsDetailsComponent implements OnInit {
   commentCategoryId: any
   commentArray: Array<any> = []
   loginUser: any
+  filteredOptions: any[] | undefined;
+  questions: any
   constructor(
     private route: ActivatedRoute,
     private postService: PostsService,
     private zone: NgZone,
     private contentExtraction: ContentExtractionService,
-    private formBuilder: FormBuilder, // Inject FormBuilder.,
+    private formBuilder: FormBuilder,
     private commentService: CommentsService,
     private authService: AuthService,
     private toaster: ToastrService,
@@ -82,26 +84,25 @@ export class PostsDetailsComponent implements OnInit {
         (post: any) => {
           this.zone.run(() => {
             this.singlePostArray = post;
-            
+
             // Initialize the array before extracting questions
             this.arrayOfAllQuestion = [];
-            
+
             // Assuming your extractQuestions method returns an array of questions
             const extractedQuestions = this.contentExtraction.extractQuestions(post.content);
-            
+
             // Assign the extracted questions to arrayOfAllQuestion
             this.arrayOfAllQuestion = extractedQuestions.map((question, index) => ({
               question,
               id: `question_${index}`
             }));
-            console.log(this.arrayOfAllQuestion)
           });
         },
         error => {
           console.error('Error loading post:', error);
         }
       );
-      
+
     });
   }
   submitComment() {
@@ -157,28 +158,29 @@ export class PostsDetailsComponent implements OnInit {
     });
   }
 
-  // ...
-
-scrollToQuestionOnInit(question:any) {
-  const contentElement: HTMLElement = this.contentContainer.nativeElement;
-
-  // Find all <h3> elements
-  const h3Elements = contentElement.querySelectorAll('h3');
-
-  // Example question to scroll to
-  const questionToScroll = question;
-
-  // Iterate through the <h3> elements and find the one with matching text content
-  for (let i = 0; i < h3Elements.length; i++) {
-    const h3Element = h3Elements[i] as HTMLElement;
-    if (h3Element.textContent?.trim() === questionToScroll) {
-      // Scroll to the target element
-      h3Element.scrollIntoView({ behavior: 'smooth' });
-      break;
+  scrollToQuestionOnInit(question: any) {
+    console.log(question)
+    const contentElement: HTMLElement = this.contentContainer.nativeElement;
+    // Find all <h3> elements
+    const h3Elements = contentElement.querySelectorAll('h3');
+    // Example question to scroll to
+    const questionToScroll = question;
+    // Iterate through the <h3> elements and find the one with matching text content
+    for (let i = 0; i < h3Elements.length; i++) {
+      const h3Element = h3Elements[i] as HTMLElement;
+      if (h3Element.textContent?.trim() === questionToScroll) {
+        // Scroll to the target element
+        h3Element.scrollIntoView({ behavior: 'smooth' });
+        break;
+      }
     }
   }
-}
-// ...
-
-
+  searchQuestions() {
+    this.filteredOptions = this.arrayOfAllQuestion
+      .filter(q => q.question?.text.toLowerCase().includes(this.questions.toLowerCase()))
+      .map(q => q.question?.text);
+  }
+  scroltoQuestion() {
+    this.scrollToQuestionOnInit(this.questions)
+  }
 }

@@ -18,7 +18,7 @@ export class AuthComponent implements OnInit {
   formData: { name: string, email: string, password: string } = { name: '', email: '', password: '' };
   isActive: boolean = false;
 
-  constructor(private fb: FormBuilder, private authService: AuthService) {}
+  constructor(private fb: FormBuilder, private authService: AuthService,private router:Router) {}
 
   ngOnInit(): void {
     this.signUpForm = this.fb.group({
@@ -71,6 +71,10 @@ export class AuthComponent implements OnInit {
 
   signInWithGoogle() {
     this.authService.googleSignIn();
+  }
+
+  onContainerClick() {
+    this.router.navigate(["/"])
   }
   
 }
