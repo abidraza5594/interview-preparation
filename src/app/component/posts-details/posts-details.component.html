@@ -7,13 +7,13 @@
 <div class="scroll-container" (scroll)="onScroll($event)">
   <!-- Your content goes here -->
 </div>
-<div class="container mt-5 postDetailscontainer">
+<div class="container mt-5 postDetailscontainer post-details-with-navbar">
   <!-- Top banner ad -->
   <div class="mb-4">
     <app-google-ad></app-google-ad>
   </div>
 
-  <div class="row">
+  <div class="row mb-4" *ngIf="!loading && !error">
     <div class="col-lg-8">
       <!-- Post content-->
       <article>
@@ -242,25 +242,12 @@
         <app-google-ad [isSidebar]="true"></app-google-ad>
       </div>
 
-      <div class="d-flex search-form">
-        <input type="text" placeholder="Search Questions..." aria-label="Search" class="form-control me-2"
-          [(ngModel)]="questions" [matAutocomplete]="auto" name="questions"
-          (input)="searchQuestions()">
-        <mat-autocomplete #auto="matAutocomplete">
-          <mat-option *ngFor="let option of filteredOptions" [value]="option">
-            {{ option }}
-          </mat-option>
-        </mat-autocomplete>
-        <button class="btn btn-default btn-lg" type="submit" (click)="scroltoQuestion()">
-          <i class="fas fa-search"></i>
-        </button>
-      </div>      
-      <!-- Categories-->
-      <div class="card mb-4 mt-3">
+      <!-- Categories section -->
+      <div class="card mb-4">
         <div class="card-header">Categories</div>
         <div class="card-body">
           <div class="row">
-            <div class="col-sm-6">
+            <div class="col-12">
               <ul class="list-unstyled mb-0" *ngIf="category">
                 <li *ngFor="let cat of category">
                   <a
@@ -274,13 +261,28 @@
           </div>
         </div>
       </div>
-      <!-- all questions-->
-      <div class="card mb-4 stickypart">
+
+      <!-- Search form (Sticky #1) -->
+      <div class="search-form w-100">
+        <div class="d-flex">
+          <input type="text" placeholder="Search Questions..." aria-label="Search" class="form-control me-2"
+            [(ngModel)]="questions" [matAutocomplete]="auto" name="questions"
+            (input)="searchQuestions()">
+          <mat-autocomplete #auto="matAutocomplete">
+            <mat-option *ngFor="let option of filteredOptions" [value]="option">
+              {{ option }}
+            </mat-option>
+          </mat-autocomplete>
+          <button class="btn btn-default btn-lg" type="submit" (click)="scroltoQuestion()">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Questions list (Sticky #2) -->
+      <div class="card mb-4 stickypart w-100">
         <div class="card-header" *ngIf="singlePostArray">
-          <b
-            >Master these {{ singlePostArray.category.Category }} topics to ace
-            your interview.</b
-          >
+          <b>Master these {{ singlePostArray.category && singlePostArray.category.Category ? singlePostArray.category.Category : 'interview' }} topics to ace your interview</b>
         </div>
         <ul *ngIf="arrayOfAllQuestion && arrayOfAllQuestion.length > 0" class="list-group questionslists">
           <li
@@ -294,10 +296,13 @@
               >{{ q.question.text }}</a>
           </li>
         </ul>
+        <div *ngIf="!arrayOfAllQuestion || arrayOfAllQuestion.length === 0" class="card-body">
+          <p class="text-muted">No questions found in this article.</p>
+        </div>
       </div>
       
-      <!-- Practice Button -->
-      <div class="card mb-4 practiceSticky">
+      <!-- Practice Button (Sticky #3) -->
+      <div class="card mb-4 practiceSticky w-100">
         <div class="card-body text-center">
           <h5 class="card-title">Ready to practice?</h5>
           <p class="card-text">Test your knowledge with our interactive practice questions.</p>

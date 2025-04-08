@@ -284,18 +284,51 @@ export class NavbarComponent implements OnInit {
 
   private _filter(value: string): string[] {
     const filterValue = value.toLowerCase();
-    return this.allPost
-      .filter(post => post.data.title.toLowerCase().includes(filterValue))
-      .map(post => post.data.title);
+    // Return full Post objects instead of just titles for easier selection
+    const filteredPosts = this.allPost
+      .filter(post => post.data.title.toLowerCase().includes(filterValue));
+    
+    return filteredPosts.map(post => post.data.title);
+  }
+
+  onOptionSelected(event: any) {
+    const selectedTitle = event.option.value;
+    const selectedPost = this.allPost.find(
+      post => post.data.title === selectedTitle
+    );
+    
+    if (selectedPost) {
+      this.router.navigate(['/post', selectedPost.id]);
+      this.toggleSearchPopup(); // Close popup after search
+      this.searchControl.setValue(''); // Clear search field
+    }
   }
 
   onSubmit() {
     const searchValue = this.searchControl.value || '';
-    const selectedPost = this.allPost.find(
-      post => post.data.title.toLowerCase() === searchValue.toLowerCase()
-    );
-    if (selectedPost) {
-      this.router.navigate(['/post', selectedPost.id]);
+    if (searchValue.trim()) {
+      const selectedPost = this.allPost.find(
+        post => post.data.title.toLowerCase() === searchValue.toLowerCase()
+      );
+      
+      if (selectedPost) {
+        this.router.navigate(['/post', selectedPost.id]);
+        this.toggleSearchPopup(); // Close popup after search
+      } else {
+        // Handle case when no exact match is found
+        // Either show a message or search for partial matches
+        const partialMatches = this.allPost.filter(
+          post => post.data.title.toLowerCase().includes(searchValue.toLowerCase())
+        );
+        
+        if (partialMatches.length > 0) {
+          this.router.navigate(['/post', partialMatches[0].id]);
+          this.toggleSearchPopup(); // Close popup after search
+        }
+      }
+      
+      // Clear search field after submitting
+      this.searchControl.setValue('');
     }
   }
 

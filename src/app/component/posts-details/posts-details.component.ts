@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnInit, ViewChild, AfterViewChecked, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild, AfterViewChecked, AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgZone } from '@angular/core';
@@ -18,7 +18,8 @@ import firebase from 'firebase/compat/app';
 @Component({
   selector: 'app-posts-details',
   templateUrl: './posts-details.component.html',
-  styleUrls: ['./posts-details.component.css']
+  styleUrls: ['./posts-details.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterViewInit {
 
@@ -34,10 +35,14 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
   loginUser: any
   filteredOptions: any[] | undefined;
   questions: any
+  loading: boolean = false;
+  error: string | null = null;
   
   // New properties for like and reply functionality
   showReplyForm: number | null = null;
   replyText: string = '';
+  
+  isMobileView: boolean = false;
   
   constructor(
     private route: ActivatedRoute,
@@ -51,11 +56,14 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
     private toaster: ToastrService,
     private afAuth: AngularFireAuth,
     private afs: AngularFirestore,
-    private categoryService: CategoryService
+    private categoryService: CategoryService,
+    private changeDetectorRef: ChangeDetectorRef
   ) {
     this.commentForm = this.formBuilder.group({
       comment: ['', [Validators.required, Validators.minLength(5)]]
     });
+    // Check initial screen size
+    this.checkScreenSize();
   }
 
   // page scroll progress bar
@@ -69,6 +77,7 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
     const documentHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
     const scrollPercentage = (scrollPosition / documentHeight) * 100;
     this.progressIndicatorWidth = scrollPercentage + '%';
+    this.changeDetectorRef.markForCheck();
   }
   getScrollIndicatorWidth() {
     return this.progressIndicatorWidth;
@@ -122,45 +131,51 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
   // Load post details
   loadPostDetails(postId: string): void {
     console.log('Loading post with ID:', postId);
-    this.postService.loadOnePost(postId).subscribe((post: any) => {
-      if (!post) {
-        console.error('Post not found');
-        this.toaster.error('Post not found');
-        return;
-      }
-      
-      console.log('Post loaded successfully:', post);
-      this.singlePostArray = post;
-      
-      // Process content for code highlighting
-      if (this.singlePostArray && this.singlePostArray.content) {
-        this.processedContent = this.processContentForCodeHighlighting(this.singlePostArray.content);
-      }
-      
-      // Extract questions from content
-      if (post && post.content) {
-        try {
-          // Get questions with proper structure
-          const extractedQuestions = this.contentExtraction.extractQuestions(post.content);
-          this.arrayOfAllQuestion = extractedQuestions.map((q: any) => ({
-            question: q // This ensures each item has a 'question' property with 'text' inside
-          }));
-        } catch (error) {
-          console.error('Error extracting questions:', error);
+    this.loading = true;
+    this.error = null;
+    this.changeDetectorRef.markForCheck();
+    
+    this.postService.loadOnePost(postId).subscribe(
+      (post: any) => {
+        if (!post) {
+          console.error('Post not found');
+          this.toaster.error('Post not found');
+          this.error = 'Post not found';
+          this.loading = false;
+          this.changeDetectorRef.markForCheck();
+          return;
         }
+        
+        console.log('Post loaded successfully:', post);
+        this.singlePostArray = post;
+        
+        // Process content for code highlighting
+        if (this.singlePostArray && this.singlePostArray.content) {
+          this.processedContent = this.processContentForHighlightingAndQuestions(this.singlePostArray.content);
+        }
+        
+        // Load comments
+        this.loadCommentsForPost(postId);
+        
+        // Load related posts
+        if (post && post.category && post.category.Category) {
+          this.loadRelatedPosts(post.category.Category, postId);
+        }
+        
+        // Increment view count
+        this.incrementViewCount(postId);
+        
+        this.loading = false;
+        this.changeDetectorRef.markForCheck();
+      },
+      error => {
+        console.error('Error loading post:', error);
+        this.toaster.error('Error loading post');
+        this.error = 'Error loading post';
+        this.loading = false;
+        this.changeDetectorRef.markForCheck();
       }
-      
-      // Load comments
-      this.loadCommentsForPost(postId);
-      
-      // Load related posts
-      if (post && post.category && post.category.Category) {
-        this.loadRelatedPosts(post.category.Category, postId);
-      }
-      
-      // Increment view count
-      this.incrementViewCount(postId);
-    });
+    );
   }
   
   loadRelatedPosts(category: string, currentPostId: string | null) {
@@ -184,10 +199,12 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
             .slice(0, 3); // Limit to 3 related posts
           
           console.log(`Found ${this.relatedPosts.length} related posts for category: ${category}`);
+          this.changeDetectorRef.markForCheck();
         });
       },
       error => {
         console.error('Error loading related posts:', error);
+        this.changeDetectorRef.markForCheck();
       }
     );
   }
@@ -248,36 +265,61 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
     });
   }
 
-  scrollToQuestionOnInit(question: string) {
-    if (!question) {
-      console.error('Question text is undefined or null');
+  scrollToQuestionOnInit(questionText: string) {
+    if (!questionText || !this.contentContainer) {
+      console.error('Question text is undefined or content container not available');
       return;
     }
     
-    console.log('Scrolling to question:', question);
+    console.log('Scrolling to question:', questionText);
     const contentElement: HTMLElement = this.contentContainer.nativeElement;
     // Find all <h3> elements
     const h3Elements = contentElement.querySelectorAll('h3');
     console.log('Found h3 elements:', h3Elements.length);
     
     // Iterate through the <h3> elements and find the one with matching text content
+    let found = false;
     for (let i = 0; i < h3Elements.length; i++) {
       const h3Element = h3Elements[i] as HTMLElement;
       const h3Text = h3Element.textContent?.trim();
-      console.log(`Comparing: "${h3Text}" with "${question}"`);
       
-      if (h3Text === question) {
-        // Scroll to the target element
-        console.log('Found matching h3, scrolling to:', h3Text);
-        h3Element.scrollIntoView({ behavior: 'smooth' });
+      if (h3Text === questionText) {
+        // Get the navbar height to offset scrolling
+        const navbarHeight = this.isMobileView ? 50 : 65;
+        
+        // Calculate the element's position
+        const elementPosition = h3Element.getBoundingClientRect().top + window.pageYOffset;
+        
+        // Scroll to the target element with smooth behavior and offset for navbar
+        window.scrollTo({
+          top: elementPosition - navbarHeight - 20, // additional 20px for padding
+          behavior: 'smooth'
+        });
+        
+        // Highlight the element temporarily
+        const originalBackground = h3Element.style.backgroundColor;
+        h3Element.style.backgroundColor = '#ffffcc';
+        h3Element.style.transition = 'background-color 2s';
+        
+        setTimeout(() => {
+          h3Element.style.backgroundColor = originalBackground;
+        }, 2000);
+        
+        found = true;
         break;
       }
+    }
+    
+    if (!found) {
+      console.warn('Question not found in content:', questionText);
+      this.toaster.info('Question not found in content');
     }
   }
   searchQuestions() {
     this.filteredOptions = this.arrayOfAllQuestion
       .filter(q => q.question?.text.toLowerCase().includes(this.questions.toLowerCase()))
       .map(q => q.question?.text);
+    this.changeDetectorRef.markForCheck();
   }
   scroltoQuestion() {
     this.scrollToQuestionOnInit(this.questions)
@@ -308,6 +350,7 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
         });
       }
     });
+    this.changeDetectorRef.markForCheck();
   }
   
   // Toggle reply form visibility
@@ -479,11 +522,13 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
     // Use a longer timeout to ensure content is fully rendered
     setTimeout(() => {
       this.applyCodeHighlighting();
+      this.checkScreenSize(); // Ensure responsive layout is applied
     }, 1000);
     
     // Apply again after a longer delay to catch any late-rendered content
     setTimeout(() => {
       this.applyCodeHighlighting();
+      this.checkScreenSize(); // Check again for any dynamic changes
     }, 3000);
   }
 
@@ -591,6 +636,56 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
     });
   }
 
+  // Combined method to process content for highlighting and extract questions
+  private processContentForHighlightingAndQuestions(content: string): string {
+    try {
+      // Extract questions before we modify the HTML
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(content, 'text/html');
+      const h3Elements = doc.querySelectorAll('h3');
+      console.log('Found h3 elements:', h3Elements.length);
+      
+      // Process questions from h3 elements
+      this.arrayOfAllQuestion = Array.from(h3Elements).map((h3: HTMLHeadingElement, index: number) => {
+        const id = `question_${index}`;
+        const text = h3.textContent?.trim() || `Question ${index + 1}`;
+        
+        // Add ID to each h3 element for smooth scrolling
+        h3.id = id;
+        
+        return {
+          question: {
+            text: text,
+            id: id
+          }
+        };
+      });
+      
+      console.log('Extracted questions:', this.arrayOfAllQuestion);
+      
+      // Now process the content for syntax highlighting
+      const processedContent = this.processContentForCodeHighlighting(content);
+      
+      // Ensure the IDs are preserved in the processed content
+      setTimeout(() => {
+        if (this.contentContainer) {
+          const h3Elements = this.contentContainer.nativeElement.querySelectorAll('h3');
+          this.arrayOfAllQuestion.forEach((q, index) => {
+            if (h3Elements[index]) {
+              h3Elements[index].id = q.question.id;
+            }
+          });
+        }
+      }, 100);
+      
+      return processedContent;
+    } catch (error) {
+      console.error('Error processing content:', error);
+      this.arrayOfAllQuestion = [];
+      return content;
+    }
+  }
+
   // Process content to add syntax highlighting to code blocks
   processContentForCodeHighlighting(content: string): string {
     if (!content) return '';
@@ -669,26 +764,12 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
     return language;
   }
 
-  // Load comments for a post
+  // Load comments for post
   loadCommentsForPost(postId: string): void {
-    this.commentCategoryId = postId;
-    
-    // Load comments for this post
-    this.commentService.loadComment(postId).subscribe((comments: Array<any>) => {
-      // Sorting comments by dateTime in ascending order
-      const sortedComments = comments.sort((a, b) => {
-        const dateTimeA = new Date((a.data as { dateTime: string }).dateTime).getTime();
-        const dateTimeB = new Date((b.data as { dateTime: string }).dateTime).getTime();
-        return dateTimeB - dateTimeA;
-      });
-      this.commentArray = sortedComments;
-      
-      // Update like status if user is logged in
-      if (this.loginUser) {
-        this.updateLikeStatus();
-      }
-    }, error => {
-      console.error('Error loading comments:', error);
+    this.commentService.loadComment(postId).subscribe((val: Array<any>) => {
+      this.commentArray = val;
+      this.updateLikeStatus();
+      this.changeDetectorRef.markForCheck();
     });
   }
 
@@ -734,5 +815,56 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
     
     // Fallback to ID
     return category.id;
+  }
+
+  // Check screen size for responsive adjustments
+  @HostListener('window:resize', ['$event'])
+  onResize() {
+    this.checkScreenSize();
+  }
+
+  private checkScreenSize() {
+    this.isMobileView = window.innerWidth < 768;
+    this.changeDetectorRef.markForCheck();
+    
+    // Adjust styles for mobile view
+    if (this.isMobileView) {
+      // Remove sticky positioning for practice button on very small screens
+      if (window.innerWidth < 576) {
+        const practiceElement = document.querySelector('.practiceSticky') as HTMLElement;
+        if (practiceElement) {
+          practiceElement.style.position = 'relative';
+          practiceElement.style.top = 'auto';
+        }
+        
+        // Adjust the search form position
+        const searchForm = document.querySelector('.search-form') as HTMLElement;
+        if (searchForm) {
+          searchForm.style.top = '50px';
+        }
+        
+        // Adjust the questions list position
+        const questionsList = document.querySelector('.stickypart') as HTMLElement;
+        if (questionsList) {
+          questionsList.style.top = '100px';
+        }
+      }
+    } else {
+      // Adjust for desktop view
+      const searchForm = document.querySelector('.search-form') as HTMLElement;
+      if (searchForm) {
+        searchForm.style.top = '65px';
+      }
+      
+      const questionsList = document.querySelector('.stickypart') as HTMLElement;
+      if (questionsList) {
+        questionsList.style.top = '120px';
+      }
+      
+      const practiceElement = document.querySelector('.practiceSticky') as HTMLElement;
+      if (practiceElement) {
+        practiceElement.style.top = '580px';
+      }
+    }
   }
 }

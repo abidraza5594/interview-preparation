@@ -5,7 +5,7 @@
     width: 100%;
     height: 6px;
     background-color: #f0f0f0; /* Set background color for the progress container */
-    z-index: 99999; /* Set a high z-index to make sure it's above other elements */
+    z-index: 1060; /* Increased z-index to be above navbar but below any modals */
   }
   
   .progress-indicator {
@@ -13,31 +13,49 @@
     background-color: #007bff;
     border-radius: 3px; 
     transition: width 0.3s ease-in-out;
-    z-index: 99999;
+    z-index: 1060;
   }
   
  
 .postDetailscontainer{
     padding: 0;
-}
-.stickypart{
-    position: sticky;
-    top: 10px;
-    z-index: 100;
-    background-color: white;
+    margin-top: 65px; /* Add margin to account for fixed navbar */
 }
 
+/* Search form styling */
+.search-form {
+    position: sticky;
+    top: 65px; /* Increased to avoid overlap with navbar */
+    z-index: 1030;
+    background-color: white;
+    padding: 10px 0;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    margin-top: 10px;
+}
+
+/* Questions list sticky behavior */
+.stickypart{
+    position: sticky;
+    top: 120px; /* Adjusted based on the new search form position */
+    z-index: 1020;
+    background-color: white;
+    max-height: 450px;
+    overflow-y: auto;
+}
+
+/* Practice button sticky behavior */
 .practiceSticky{
   position: sticky;
-  top: 520px;
-  z-index: 100;
+  top: 580px; /* Adjusted based on the new position of questions list */
+  z-index: 1010;
   background-color: white;
 }
 
 /* Add this to your styles.css or in your component's styles */
 .questionslists {
     overflow-y: auto !important;
-    max-height: 450px !important; /* Adjust the max height as needed */
+    max-height: 400px !important; /* Adjusted height to fit better */
 } 
 
 .questionslists::-webkit-scrollbar {
@@ -52,6 +70,42 @@
 .questionslists::-webkit-scrollbar-track {
     background-color: #f1f1f1 !important;
     border-radius: 5px !important;
+}
+
+/* Question list item style */
+.questionslists li {
+    padding: 8px 15px;
+    transition: all 0.2s ease;
+}
+
+.questionslists li:hover {
+    background-color: #f8f9fa;
+}
+
+.questionslists li a {
+    color: #333;
+    display: block;
+    font-size: 0.95rem;
+}
+
+.questionslists li a:hover {
+    color: #007bff;
+}
+
+/* Card header style for h3 visibility */
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    padding: 12px 15px;
+}
+
+/* Force section elements to be displayed properly */
+.card-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
 }
 
 /* Comments Section Styles */
@@ -201,6 +255,10 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .postDetailscontainer {
+    margin-top: 55px; /* Smaller margin for mobile */
+  }
+  
   .card.bg-light .card-body {
     padding: 1rem;
   }
@@ -216,6 +274,77 @@
   .comment-replies {
     margin-left: 1rem;
   }
+  
+  /* Adjust sticky positions for small devices */
+  .search-form {
+    top: 35px;
+  }
+  
+  .stickypart {
+    top: 85px;
+    max-height: 300px;
+  }
+  
+  .practiceSticky {
+    top: 395px;
+    margin-bottom: 20px;
+    display: block !important;
+    visibility: visible !important;
+  }
+}
+
+/* Mobile responsive fixes */
+@media (max-width: 576px) {
+  /* Content container spacing for fixed navbar */
+  .postDetailscontainer {
+    margin-top: 50px;
+    padding-top: 5px;
+  }
+  
+  /* Ensure practice button is visible on small devices */
+  .practiceSticky {
+    position: relative;
+    top: auto;
+    margin-top: 15px;
+    margin-bottom: 30px;
+  }
+  
+  /* Adjust search form for better fit */
+  .search-form {
+    top: 50px;
+    padding: 8px 0;
+    position: sticky;
+  }
+  
+  /* Make the question list more compact */
+  .stickypart {
+    max-height: 250px;
+    top: 100px;
+  }
+  
+  /* Improve column layout for better readability */
+  .col-lg-4.order-md-first {
+    padding: 0 10px;
+  }
+  
+  .questionslists li {
+    padding: 6px 10px;
+  }
+  
+  .questionslists li a {
+    font-size: 0.9rem;
+  }
+}
+
+/* Ensure the marquee and other fixed elements don't cause overlap issues */
+.progress-container {
+  z-index: 1050;
+}
+
+/* Improve card visibility */
+.card {
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  border: 1px solid #eaeaea;
 }
 
 /* Code block styling */
@@ -348,4 +477,56 @@ body.dark-mode .hljs-class {
 
 body.dark-mode .hljs-variable {
   color: #9cdcfe;
+}
+
+/* Fix for navbar that appears on scroll */
+.navbar-fixed-top {
+  z-index: 1050 !important;
+}
+
+.navbar {
+  z-index: 1050 !important;
+}
+
+/* Special class for content with navbar to prevent overlap */
+.post-details-with-navbar {
+  --mini-navbar-height: 30px;
+  --main-navbar-height: 60px;
+  margin-top: calc(var(--mini-navbar-height) + var(--main-navbar-height) + 20px);
+  padding-top: 10px;
+}
+
+/* Search form positioning adjusted for navbar */
+.post-details-with-navbar .search-form {
+  top: calc(var(--mini-navbar-height) + var(--main-navbar-height) + 10px);
+}
+
+/* Questions list positioning adjusted for navbar */
+.post-details-with-navbar .stickypart {
+  top: calc(var(--mini-navbar-height) + var(--main-navbar-height) + 70px);
+}
+
+/* Practice button positioning adjusted for navbar */
+.post-details-with-navbar .practiceSticky {
+  top: calc(var(--mini-navbar-height) + var(--main-navbar-height) + 530px);
+}
+
+@media (max-width: 768px) {
+  .post-details-with-navbar {
+    --mini-navbar-height: 30px;
+    --main-navbar-height: 50px;
+    margin-top: calc(var(--mini-navbar-height) + var(--main-navbar-height) + 10px);
+  }
+  
+  .post-details-with-navbar .search-form {
+    top: calc(var(--mini-navbar-height) + var(--main-navbar-height));
+  }
+  
+  .post-details-with-navbar .stickypart {
+    top: calc(var(--mini-navbar-height) + var(--main-navbar-height) + 60px);
+  }
+  
+  .post-details-with-navbar .practiceSticky {
+    top: calc(var(--mini-navbar-height) + var(--main-navbar-height) + 370px);
+  }
 }
