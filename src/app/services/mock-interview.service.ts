@@ -1050,7 +1050,8 @@ Return only valid JSON in this format:
       
       // Return a generic response for API failures
       if (prompt.includes('greeting') || prompt.includes('meeting a candidate')) {
-        return "Hello! I'm your AI interviewer. Are you ready to begin the interview?";
+        // Use userName in greeting if available
+        return `Hello ${this.userName || 'there'}! I'm your AI interviewer. Are you ready to begin the interview?`;
       } else if (prompt.includes('evaluate') || prompt.includes('feedback')) {
         return "Thank you for your answer. That's a good point, and I appreciate your explanation.";
       } else if (prompt.includes('questions') || prompt.includes('generate')) {
@@ -1582,14 +1583,17 @@ IMPORTANT: The response MUST be valid, parseable JSON with this exact structure.
         // If we were in initial state, start the interview first
         if (currentState === 'initial') {
           this.interviewInProgress.next(true);
-          this.userName = 'User'; // Default name
+          // Keep the provided userName or use default
+          if (!this.userName || this.userName === 'User' || this.userName === 'Guest') {
+            this.userName = 'User'; // Default name if none is set
+          }
         }
 
         // Set greeting as complete
         if (currentState === 'initial') {
           this.interviewState.next('greeting');
-          // Add greeting to chat history
-          const greeting = `Hello! I'm your AI interviewer. Welcome to the mock interview.`;
+          // Add personalized greeting to chat history with the user's name
+          const greeting = `Hello ${this.userName}! I'm your AI interviewer. Welcome to the mock interview.`;
           this.chatHistory.push({ role: 'assistant', content: greeting });
         }
 

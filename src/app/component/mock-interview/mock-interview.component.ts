@@ -47,6 +47,7 @@ export class MockInterviewComponent implements OnInit, OnDestroy {
   questions: InterviewQuestion[] = [];
   feedback: InterviewFeedback | null = null;
   userName = '';
+  isLoggedIn = false; // Add this flag for checking login status
   isDarkMode = false;
   
   // Voice selection options
@@ -83,8 +84,10 @@ export class MockInterviewComponent implements OnInit, OnDestroy {
       this.afAuth.authState.subscribe(user => {
         if (user) {
           this.userName = user.displayName || 'User';
+          this.isLoggedIn = true; // Set login flag to true
         } else {
           this.userName = 'Guest';
+          this.isLoggedIn = false; // Set login flag to false
         }
         this.cdr.markForCheck();
       })
@@ -251,7 +254,7 @@ export class MockInterviewComponent implements OnInit, OnDestroy {
       // Start with proceed confirmation state
       this.interviewState = 'proceed_confirmation';
       
-      // Start the interview process
+      // Start the interview process and pass the userName
       this.mockInterviewService.startInterview(this.userName, 'proceed_confirmation');
       
       // Force change detection

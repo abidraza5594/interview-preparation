@@ -40,7 +40,7 @@
     </div>
   </div>
   
-  <!-- User Response Area - Single input area -->
+  <!-- User Response Area - Complete revamp with standard textarea -->
   <div class="response-area">
     <!-- Interim speech display -->
     <div *ngIf="interimSpeech" class="interim-speech">
@@ -48,30 +48,30 @@
       <span>{{ interimSpeech }}</span>
     </div>
     
-    <!-- Text input for manual response -->
-    <div class="manual-input-container">
-      <div class="input-group">
-        <input 
-          type="text" 
-          class="form-control response-input" 
-          placeholder="Type your response here..." 
+    <!-- Custom answer input area -->
+    <div class="answer-container">
+      <div class="answer-box">
+        <textarea 
+          class="answer-textarea" 
+          placeholder="Type your answer here..." 
           [(ngModel)]="manualResponse"
-          (keyup.enter)="submitManualResponse(manualResponse)"
-          autofocus
-        >
-        <button class="btn btn-primary" (click)="submitManualResponse(manualResponse)">
-          <i class="fas fa-paper-plane"></i> Submit
+          rows="6"
+        ></textarea>
+      </div>
+      <div class="submit-area">
+        <button class="submit-button" (click)="submitManualResponse(manualResponse)">
+          <i class="fas fa-paper-plane"></i> Submit Answer
         </button>
       </div>
     </div>
     
     <!-- Controls -->
     <div class="controls">
-      <button class="btn btn-outline-secondary" (click)="restartSpeechRecognition()">
+      <button class="control-button mic-button" (click)="restartSpeechRecognition()">
         <i class="fas fa-microphone"></i> Restart Mic
       </button>
       
-      <button class="btn btn-outline-danger" (click)="skipQuestion()">
+      <button class="control-button skip-button" (click)="skipQuestion()">
         <i class="fas fa-forward"></i> Skip Question
       </button>
     </div>

@@ -44,7 +44,7 @@
     <!-- Proceed confirmation step -->
     <div class="setup-section proceed-section" *ngIf="interviewState === 'proceed_confirmation'">
       <div class="question">
-        <h3>Welcome to your Mock Interview!</h3>
+        <h3>Welcome to your Mock Interview, {{ userName }}!</h3>
         <p>Are you ready to proceed with the interview?</p>
       </div>
       
@@ -156,9 +156,17 @@
     <h2>Virtual Mock Interview</h2>
     <p>Practice your technical interview skills with our AI interviewer</p>
     
-    <div class="form-group">
+    <div class="form-group" *ngIf="!isLoggedIn">
       <label for="userName">Your Name</label>
       <input type="text" id="userName" [(ngModel)]="userName" class="form-control" placeholder="Enter your name">
+    </div>
+    
+    <div class="form-group" *ngIf="isLoggedIn">
+      <label>Your Name</label>
+      <div class="user-name-display">
+        <span class="user-name">{{ userName }}</span>
+        <span class="badge bg-success">Logged In</span>
+      </div>
     </div>
     
     <div class="form-group">
