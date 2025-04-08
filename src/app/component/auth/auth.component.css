@@ -50,6 +50,10 @@
     background-color: transparent;
     border-color: #fff;
 }
+.container button.btn-secondary {
+    background-color: #6c757d;
+    color: #fff;
+}
 .container form{
     background-color: #fff;
     display: flex;
@@ -198,3 +202,15 @@
  .closeright span{
     font-size: 20px !important;
  }
+
+.d-flex {
+    display: flex;
+}
+
+.gap-2 {
+    gap: 0.5rem;
+}
+
+.mt-3 {
+    margin-top: 1rem;
+}

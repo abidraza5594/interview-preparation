@@ -1,0 +1,283 @@
+// Tablet Styles
+@include tablet {
+  // Typography
+  html {
+    font-size: 15px;
+  }
+
+  h1 { font-size: 1.8em; }
+  h2 { font-size: 1.4em; }
+  h3 { font-size: 1.1em; }
+
+  // Layout
+  .container {
+    max-width: 90%;
+  }
+
+  // Grid
+  .grid {
+    &.grid-3,
+    &.grid-4 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  // Navigation
+  .nav-menu {
+    gap: $spacing-sm;
+  }
+
+  // Forms
+  .form-group {
+    margin-bottom: $spacing-sm;
+  }
+
+  // Buttons
+  .btn {
+    padding: $spacing-xs $spacing-sm;
+    font-size: 0.9rem;
+  }
+
+  // Cards
+  .card {
+    padding: $spacing-sm;
+  }
+
+  // Footer
+  .footer-content {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+// Mobile Styles
+@include mobile {
+  // Typography
+  html {
+    font-size: 14px;
+  }
+
+  h1 { font-size: 1.6em; }
+  h2 { font-size: 1.3em; }
+  h3 { font-size: 1em; }
+
+  // Layout
+  .container {
+    max-width: 100%;
+    padding: 0 $spacing-sm;
+  }
+
+  // Grid
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  // Navigation
+  .nav-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: white;
+    padding: $spacing-md;
+    box-shadow: $box-shadow;
+    flex-direction: column;
+    align-items: flex-start;
+
+    &.active {
+      display: flex;
+    }
+  }
+
+  .mobile-menu-toggle {
+    display: block;
+  }
+
+  // Forms
+  .form-group {
+    margin-bottom: $spacing-xs;
+  }
+
+  .form-control {
+    padding: $spacing-xs;
+    font-size: 0.9rem;
+  }
+
+  // Buttons
+  .btn {
+    width: 100%;
+    padding: $spacing-sm;
+    font-size: 0.9rem;
+  }
+
+  // Cards
+  .card {
+    padding: $spacing-xs;
+  }
+
+  // Footer
+  .footer-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  // Hero Section
+  .hero {
+    padding: $spacing-lg 0;
+
+    .hero-title {
+      font-size: 1.8em;
+    }
+
+    .hero-subtitle {
+      font-size: 1.2em;
+    }
+
+    .hero-buttons {
+      flex-direction: column;
+      gap: $spacing-sm;
+    }
+  }
+
+  // Section
+  .section {
+    padding: $spacing-lg 0;
+
+    .section-header {
+      margin-bottom: $spacing-lg;
+    }
+
+    .section-title {
+      font-size: 1.4em;
+    }
+
+    .section-subtitle {
+      font-size: 0.9em;
+    }
+  }
+
+  // Tables
+  .table-responsive {
+    margin: 0 -$spacing-sm;
+    padding: 0 $spacing-sm;
+  }
+
+  // Modals
+  .modal-content {
+    margin: $spacing-sm;
+    max-width: calc(100% - #{$spacing-sm * 2});
+  }
+
+  // Dropdowns
+  .dropdown-menu {
+    position: static;
+    width: 100%;
+    box-shadow: none;
+    border: none;
+    border-top: 1px solid $border-color;
+  }
+
+  // Tabs
+  .tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab {
+    display: inline-block;
+    padding: $spacing-sm $spacing-md;
+  }
+
+  // Accordion
+  .accordion-header {
+    padding: $spacing-sm;
+  }
+
+  .accordion-content {
+    padding: $spacing-sm;
+  }
+}
+
+// Print Styles
+@media print {
+  // Hide unnecessary elements
+  .header,
+  .footer,
+  .nav-menu,
+  .mobile-menu-toggle,
+  .btn,
+  .modal,
+  .dropdown-menu,
+  .tabs,
+  .accordion-header {
+    display: none !important;
+  }
+
+  // Reset colors and backgrounds
+  * {
+    background: transparent !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  // Links
+  a, a:visited {
+    text-decoration: underline;
+  }
+
+  a[href]:after {
+    content: " (" attr(href) ")";
+  }
+
+  // Images
+  img {
+    max-width: 100% !important;
+  }
+
+  // Page margins
+  @page {
+    margin: 2cm;
+  }
+
+  // Typography
+  body {
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+
+  h1, h2, h3 {
+    page-break-after: avoid;
+    page-break-inside: avoid;
+  }
+
+  p, h2, h3 {
+    orphans: 3;
+    widows: 3;
+  }
+
+  // Tables
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  th, td {
+    border: 1px solid #000;
+    padding: 0.5em;
+  }
+
+  // Lists
+  ul, ol {
+    margin-left: 1.5em;
+  }
+
+  // Container
+  .container {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+} 

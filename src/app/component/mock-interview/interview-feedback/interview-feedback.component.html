@@ -1,0 +1,79 @@
+<div class="feedback-container">
+  <!-- Loading Screen -->
+  <div *ngIf="currentState === 'generating_feedback'" class="feedback-loading">
+    <div class="loading-message">
+      <div class="loading-icon">
+        <div class="spinner"></div>
+      </div>
+      <h3>Analyzing your interview responses...</h3>
+      <p>Please wait while I review your answers</p>
+      <div class="progress-bar">
+        <div class="progress" [style.width.%]="loadingProgress"></div>
+      </div>
+      <p class="wait-time">{{ waitingDuration }}s</p>
+    </div>
+  </div>
+
+  <!-- Feedback Results -->
+  <div *ngIf="currentState === 'feedback' && feedback" class="feedback-results">
+    <div class="feedback-header">
+      <h2>Your Interview Analysis</h2>
+      
+      <div class="overall-rating">
+        <div class="rating-score" [class]="getRatingClass()">
+          {{ feedback.overallRating }}/10
+        </div>
+        <div class="rating-bar-container">
+          <div class="rating-bar" [style.width.%]="feedback.overallRating * 10" [class]="getRatingClass()"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="feedback-sections">
+      <!-- Strengths Section -->
+      <div class="feedback-section strengths">
+        <h3><i class="fas fa-star"></i> Your Strengths</h3>
+        <ul>
+          <li *ngFor="let strength of feedback.strengths">{{ strength }}</li>
+        </ul>
+      </div>
+      
+      <!-- Areas for Improvement -->
+      <div class="feedback-section improvements">
+        <h3><i class="fas fa-tools"></i> Areas for Improvement</h3>
+        <ul>
+          <li *ngFor="let weakness of feedback.weaknesses">{{ weakness }}</li>
+        </ul>
+      </div>
+      
+      <!-- Topics to Study -->
+      <div class="feedback-section study-topics">
+        <h3><i class="fas fa-book"></i> Study Topics</h3>
+        <ul>
+          <li *ngFor="let topic of feedback.suggestedTopics">{{ topic }}</li>
+        </ul>
+      </div>
+      
+      <!-- Detailed Feedback -->
+      <div class="feedback-section detailed">
+        <h3><i class="fas fa-comments"></i> Detailed Feedback</h3>
+        <div class="detailed-content">
+          <p>{{ feedback.detailedFeedback }}</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="feedback-actions">
+      <button class="action-button primary" (click)="onTryAgain()">
+        <i class="fas fa-redo"></i> Try Again
+      </button>
+      <button class="action-button secondary" (click)="onNewInterview()">
+        <i class="fas fa-plus"></i> New Interview
+      </button>
+      <button class="action-button download" (click)="onDownloadFeedback()">
+        <i class="fas fa-download"></i> Download Report
+      </button>
+    </div>
+  </div>
+</div>

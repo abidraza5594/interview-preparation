@@ -1,0 +1,37 @@
+<p>interview-greeting works!</p>
+
+<!-- AI Greeting Message -->
+<div class="ai-message-container">
+  <div *ngIf="showTypingIndicator" class="typing-indicator">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+  
+  <div *ngIf="greetingMessage" class="ai-message">
+    <div class="ai-avatar">
+      <i class="fas fa-robot"></i>
+    </div>
+    <div class="message-content">
+      {{ greetingMessage }}
+    </div>
+  </div>
+</div>
+
+<!-- User's Speech (if using voice) -->
+<div *ngIf="interimSpeech" class="user-speech-container">
+  <div class="user-speech">
+    <i class="fas fa-microphone-alt pulse"></i>
+    <span>{{ interimSpeech }}</span>
+  </div>
+</div>
+
+<!-- Response Buttons -->
+<div class="response-buttons">
+  <button class="btn btn-primary" (click)="onPositiveResponse()">
+    <i class="fas fa-check"></i> Yes, I'm ready
+  </button>
+  <button class="btn btn-outline-secondary" (click)="onNegativeResponse()">
+    <i class="fas fa-times"></i> No, not yet
+  </button>
+</div>

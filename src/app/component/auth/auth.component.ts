@@ -15,8 +15,10 @@ import { Router } from '@angular/router';
 export class AuthComponent implements OnInit {
   signUpForm!: FormGroup;
   signInForm!: FormGroup;  
+  resetPasswordForm!: FormGroup;
   formData: { name: string, email: string, password: string } = { name: '', email: '', password: '' };
   isActive: boolean = false;
+  showResetPasswordForm: boolean = false;
 
   constructor(private fb: FormBuilder, private authService: AuthService,private router:Router) {}
 
@@ -30,6 +32,10 @@ export class AuthComponent implements OnInit {
     this.signInForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required]
+    });
+
+    this.resetPasswordForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]]
     });
   }
 
@@ -76,5 +82,23 @@ export class AuthComponent implements OnInit {
   onContainerClick() {
     this.router.navigate(["/"])
   }
-  
+
+  // Toggle reset password form
+  toggleResetPasswordForm() {
+    this.showResetPasswordForm = !this.showResetPasswordForm;
+  }
+
+  // Reset password
+  async onResetPasswordSubmit() {
+    if (this.resetPasswordForm.valid) {
+      const email = this.resetPasswordForm.get('email')?.value;
+      try {
+        await this.authService.resetPassword(email);
+        this.resetPasswordForm.reset();
+        this.showResetPasswordForm = false;
+      } catch (error) {
+        console.error('Password reset failed', error);
+      }
+    }
+  }
 }

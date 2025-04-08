@@ -1,0 +1,322 @@
+<div class="user-management-container">
+  <div class="container py-4">
+    <div class="row mb-4">
+      <div class="col-12">
+        <h1 class="user-management-title">User Management</h1>
+        <p class="user-management-subtitle">Manage users and their permissions</p>
+      </div>
+    </div>
+
+    <!-- Access Denied Message -->
+    <div class="row" *ngIf="!isAdmin">
+      <div class="col-12">
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          You do not have permission to access this page. Please contact an administrator.
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content (only visible to admins) -->
+    <div *ngIf="isAdmin">
+      <div class="row mb-4">
+        <div class="col-md-8">
+          <!-- Search Bar -->
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input 
+              type="text" 
+              class="form-control" 
+              placeholder="Search users..." 
+              [(ngModel)]="searchQuery"
+              (input)="applyFilter()">
+          </div>
+        </div>
+        <div class="col-md-4 d-flex justify-content-md-end mt-3 mt-md-0">
+          <!-- Add User Button -->
+          <button class="btn btn-primary" (click)="cancelEdit()" *ngIf="isEditing">
+            <i class="fas fa-plus me-2"></i> Add New User
+          </button>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- User Form -->
+        <div class="col-md-4 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">{{ isEditing ? 'Edit User' : 'Add New User' }}</h5>
+            </div>
+            <div class="card-body">
+              <form [formGroup]="userForm" (ngSubmit)="saveUser()">
+                <div class="mb-3">
+                  <label for="displayName" class="form-label">Display Name</label>
+                  <input 
+                    type="text" 
+                    id="displayName" 
+                    class="form-control" 
+                    formControlName="displayName"
+                    placeholder="Enter display name">
+                  <div class="text-danger" *ngIf="userForm.get('displayName')?.invalid && userForm.get('displayName')?.touched">
+                    Display name is required
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="email" class="form-label">Email</label>
+                  <input 
+                    type="email" 
+                    id="email" 
+                    class="form-control" 
+                    formControlName="email"
+                    placeholder="Enter email">
+                  <div class="text-danger" *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched">
+                    Please enter a valid email
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="role" class="form-label">Role</label>
+                  <select id="role" class="form-select" formControlName="role">
+                    <option value="user">User</option>
+                    <option value="editor">Editor</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                
+                <div class="mb-3 form-check">
+                  <input type="checkbox" class="form-check-input" id="isActive" formControlName="isActive">
+                  <label class="form-check-label" for="isActive">Active</label>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                  <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid">
+                    {{ isEditing ? 'Update User' : 'Add User' }}
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" *ngIf="isEditing" (click)="cancelEdit()">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+          
+          <!-- Content Management Section -->
+          <div class="card mt-4">
+            <div class="card-header">
+              <h5 class="mb-0">Content Management</h5>
+            </div>
+            <div class="card-body">
+              <div class="d-grid gap-2">
+                <button class="btn btn-success" (click)="openBlogPostModal()">
+                  <i class="fas fa-blog me-2"></i> Add New Blog Post
+                </button>
+                <button class="btn btn-info" (click)="openPracticeQuestionModal()">
+                  <i class="fas fa-code me-2"></i> Add Practice Question
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- User List -->
+        <div class="col-md-8">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">User List</h5>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let user of filteredUsers$ | async">
+                      <td>{{ user.displayName || 'N/A' }}</td>
+                      <td>{{ user.email }}</td>
+                      <td>
+                        <span class="badge" [ngClass]="{
+                          'bg-primary': user.role === 'user',
+                          'bg-info': user.role === 'editor',
+                          'bg-warning': user.role === 'admin'
+                        }">{{ user.role }}</span>
+                      </td>
+                      <td>
+                        <span class="badge" [ngClass]="user.isActive ? 'bg-success' : 'bg-danger'">
+                          {{ user.isActive ? 'Active' : 'Inactive' }}
+                        </span>
+                      </td>
+                      <td>
+                        <div class="btn-group">
+                          <button class="btn btn-sm btn-outline-primary" (click)="editUser(user)">
+                            <i class="fas fa-edit"></i>
+                          </button>
+                          <button class="btn btn-sm" [ngClass]="user.isActive ? 'btn-outline-danger' : 'btn-outline-success'" 
+                            (click)="toggleUserStatus(user)">
+                            <i class="fas" [ngClass]="user.isActive ? 'fa-ban' : 'fa-check'"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr *ngIf="(filteredUsers$ | async)?.length === 0">
+                      <td colspan="5" class="text-center py-3">
+                        No users found matching your search criteria.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Blog Post Modal -->
+<div class="modal fade" id="blogPostModal" tabindex="-1" aria-labelledby="blogPostModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="blogPostModalLabel">Add New Blog Post</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="blogPostForm" (ngSubmit)="saveBlogPost()">
+          <div class="mb-3">
+            <label for="postTitle" class="form-label">Title</label>
+            <input type="text" class="form-control" id="postTitle" formControlName="title" placeholder="Enter post title">
+            <div class="text-danger" *ngIf="blogPostForm.get('title')?.invalid && blogPostForm.get('title')?.touched">
+              Title is required
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="postCategory" class="form-label">Category</label>
+            <select class="form-select" id="postCategory" formControlName="category">
+              <option value="">Select a category</option>
+              <option value="Frontend">Frontend</option>
+              <option value="Backend">Backend</option>
+              <option value="JavaScript">JavaScript</option>
+              <option value="TypeScript">TypeScript</option>
+              <option value="Angular">Angular</option>
+              <option value="React">React</option>
+              <option value="Python">Python</option>
+              <option value="Django">Django</option>
+              <option value="RxJS">RxJS</option>
+            </select>
+            <div class="text-danger" *ngIf="blogPostForm.get('category')?.invalid && blogPostForm.get('category')?.touched">
+              Category is required
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="postContent" class="form-label">Content</label>
+            <textarea class="form-control" id="postContent" formControlName="content" rows="10" placeholder="Write your post content here..."></textarea>
+            <div class="text-danger" *ngIf="blogPostForm.get('content')?.invalid && blogPostForm.get('content')?.touched">
+              Content is required
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="postImage" class="form-label">Featured Image</label>
+            <input type="file" class="form-control" id="postImage" (change)="onFileSelected($event)">
+          </div>
+          
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="postFeatured" formControlName="featured">
+            <label class="form-check-label" for="postFeatured">Featured Post</label>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" (click)="saveBlogPost()" [disabled]="blogPostForm.invalid">Save Post</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Practice Question Modal -->
+<div class="modal fade" id="practiceQuestionModal" tabindex="-1" aria-labelledby="practiceQuestionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="practiceQuestionModalLabel">Add Practice Question</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="practiceQuestionForm" (ngSubmit)="savePracticeQuestion()">
+          <div class="mb-3">
+            <label for="questionTitle" class="form-label">Title</label>
+            <input type="text" class="form-control" id="questionTitle" formControlName="title" placeholder="Enter question title">
+            <div class="text-danger" *ngIf="practiceQuestionForm.get('title')?.invalid && practiceQuestionForm.get('title')?.touched">
+              Title is required
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="questionCategory" class="form-label">Category</label>
+            <select class="form-select" id="questionCategory" formControlName="category">
+              <option value="">Select a category</option>
+              <option value="Frontend">Frontend</option>
+              <option value="Backend">Backend</option>
+              <option value="JavaScript">JavaScript</option>
+              <option value="TypeScript">TypeScript</option>
+              <option value="Angular">Angular</option>
+              <option value="React">React</option>
+              <option value="Python">Python</option>
+              <option value="Django">Django</option>
+              <option value="RxJS">RxJS</option>
+            </select>
+            <div class="text-danger" *ngIf="practiceQuestionForm.get('category')?.invalid && practiceQuestionForm.get('category')?.touched">
+              Category is required
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="questionDifficulty" class="form-label">Difficulty</label>
+            <select class="form-select" id="questionDifficulty" formControlName="difficulty">
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+          </div>
+          
+          <div class="mb-3">
+            <label for="questionDescription" class="form-label">Question Description</label>
+            <textarea class="form-control" id="questionDescription" formControlName="description" rows="5" placeholder="Describe the question..."></textarea>
+            <div class="text-danger" *ngIf="practiceQuestionForm.get('description')?.invalid && practiceQuestionForm.get('description')?.touched">
+              Description is required
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="questionSolution" class="form-label">Solution</label>
+            <textarea class="form-control" id="questionSolution" formControlName="solution" rows="10" placeholder="Provide the solution code..."></textarea>
+            <div class="text-danger" *ngIf="practiceQuestionForm.get('solution')?.invalid && practiceQuestionForm.get('solution')?.touched">
+              Solution is required
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="questionHints" class="form-label">Hints (optional)</label>
+            <textarea class="form-control" id="questionHints" formControlName="hints" rows="3" placeholder="Provide hints for solving the question..."></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" (click)="savePracticeQuestion()" [disabled]="practiceQuestionForm.invalid">Save Question</button>
+      </div>
+    </div>
+  </div>
+</div> 

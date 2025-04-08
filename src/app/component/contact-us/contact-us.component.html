@@ -1,25 +1,25 @@
 <!-- contact-us.component.html -->
-<small class="text-center">Enter a message (optional) and click the button "Send"</small>
-<div class="wrapper centered">
+<small class="text-center" [ngClass]="{'text-light': isDarkMode}">Enter a message (optional) and click the button "Send"</small>
+<div class="wrapper centered" [ngClass]="{'dark-theme': isDarkMode}">
   <form [formGroup]="contactForm" (ngSubmit)="submitForm()">
     <article class="letter">
-      <div class="side">
-        <h1>Contact us</h1>
+      <div class="side" [ngClass]="{'dark-side': isDarkMode}">
+        <h1 [ngClass]="{'text-light': isDarkMode}">Contact us</h1>
         <p>
-          <textarea formControlName="message" placeholder="Your message"></textarea>
-          <div *ngIf="shouldShowError('message')">
+          <textarea formControlName="message" placeholder="Your message" [ngClass]="{'dark-input': isDarkMode}"></textarea>
+          <div *ngIf="shouldShowError('message')" class="error-message">
             Message is required.
           </div>
       </div>
-      <div class="side">
+      <div class="side" [ngClass]="{'dark-side': isDarkMode}">
         <p>
-          <input type="text" formControlName="name" placeholder="Your name">
-          <div *ngIf="shouldShowError('name')">
+          <input type="text" formControlName="name" placeholder="Your name" [ngClass]="{'dark-input': isDarkMode}">
+          <div *ngIf="shouldShowError('name')" class="error-message">
             Name is required.
           </div>
         <p>
-          <input type="email" formControlName="email" placeholder="Your email">
-          <div *ngIf="shouldShowError('email')">
+          <input type="email" formControlName="email" placeholder="Your email" [ngClass]="{'dark-input': isDarkMode}">
+          <div *ngIf="shouldShowError('email')" class="error-message">
             Email is required and must be a valid email address.
           </div>
         <p>
@@ -31,4 +31,4 @@
   <div class="envelope front"></div>
   <div class="envelope back"></div>
 </div>
-<p class="result-message centered" *ngIf="messageSent">Thank you for your message</p>
+<p class="result-message centered" [ngClass]="{'text-light': isDarkMode}" *ngIf="messageSent">Thank you for your message</p>

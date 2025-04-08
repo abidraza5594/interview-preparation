@@ -5,7 +5,7 @@
     width: 100%;
     height: 6px;
     background-color: #f0f0f0; /* Set background color for the progress container */
-    z-index: 1000; /* Set a high z-index to make sure it's above other elements */
+    z-index: 99999; /* Set a high z-index to make sure it's above other elements */
   }
   
   .progress-indicator {
@@ -13,6 +13,7 @@
     background-color: #007bff;
     border-radius: 3px; 
     transition: width 0.3s ease-in-out;
+    z-index: 99999;
   }
   
  
@@ -24,6 +25,13 @@
     top: 10px;
     z-index: 100;
     background-color: white;
+}
+
+.practiceSticky{
+  position: sticky;
+  top: 520px;
+  z-index: 100;
+  background-color: white;
 }
 
 /* Add this to your styles.css or in your component's styles */
@@ -44,4 +52,300 @@
 .questionslists::-webkit-scrollbar-track {
     background-color: #f1f1f1 !important;
     border-radius: 5px !important;
+}
+
+/* Comments Section Styles */
+.card.bg-light {
+  background-color: #f8f9fa !important;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.card.bg-light .card-body {
+  padding: 1.5rem;
+}
+
+.comment-form textarea {
+  border: 1px solid #e9ecef;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.comment-form textarea:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.comment-form .btn-primary {
+  padding: 0.5rem 1.5rem;
+  border-radius: 2rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.comment-form .btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.comment-form .btn-primary:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.comment-section {
+  margin-top: 1.5rem;
+}
+
+.comment {
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease-in-out;
+}
+
+.comment:hover {
+  transform: translateY(-2px);
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.comment-author {
+  display: flex;
+  align-items: center;
+}
+
+.comment-author img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.comment-author-name {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.95rem;
+}
+
+.comment-date {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.comment-content {
+  margin-top: 0.5rem;
+  color: #495057;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.comment-action {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6c757d;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  font-size: 0.85rem;
+}
+
+.comment-action:hover {
+  color: #007bff;
+}
+
+.comment-action i {
+  font-size: 0.9rem;
+}
+
+.comment-replies {
+  margin-left: 2rem;
+  margin-top: 0.5rem;
+}
+
+.reply-comment {
+  background-color: #f8f9fa;
+  padding: 0.75rem;
+}
+
+.reply-form {
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.reply-form input {
+  border-radius: 1.5rem;
+  padding: 0.5rem 1rem;
+}
+
+.reply-form button {
+  border-radius: 1.5rem;
+  padding: 0.5rem 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card.bg-light .card-body {
+    padding: 1rem;
+  }
+  
+  .comment-form textarea {
+    min-height: 80px;
+  }
+  
+  .comment {
+    padding: 0.75rem;
+  }
+  
+  .comment-replies {
+    margin-left: 1rem;
+  }
+}
+
+/* Code block styling */
+pre {
+  background-color: #1e1e1e;
+  border-radius: 5px;
+  padding: 16px;
+  margin: 20px 0;
+  overflow-x: auto;
+  position: relative;
+}
+
+pre code {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #d4d4d4;
+  display: block;
+  white-space: pre;
+  tab-size: 2;
+}
+
+/* Quill specific styling */
+pre.ql-syntax {
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  overflow-x: auto;
+  white-space: pre;
+  margin-bottom: 5px;
+  margin-top: 5px;
+  padding: 16px;
+  border-radius: 5px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Code block with our custom class */
+pre.code-block {
+  background-color: #1e1e1e;
+  border-radius: 5px;
+  padding: 16px;
+  margin: 20px 0;
+}
+
+/* Inline code styling */
+:not(pre) > code {
+  background-color: #f0f0f0;
+  border-radius: 3px;
+  padding: 2px 5px;
+  color: #e83e8c;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+/* Highlight.js theme overrides */
+.hljs {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* Dark mode support for code blocks */
+body.dark-mode pre {
+  background-color: #2d2d2d;
+  border-color: #444;
+  color: #e0e0e0;
+}
+
+body.dark-mode code {
+  background-color: #2d2d2d;
+  color: #ff79c6;
+}
+
+body.dark-mode pre code {
+  color: #e0e0e0;
+}
+
+/* Syntax highlighting colors */
+.hljs-keyword {
+  color: #569cd6;
+}
+
+.hljs-string {
+  color: #ce9178;
+}
+
+.hljs-comment {
+  color: #6a9955;
+}
+
+.hljs-function {
+  color: #dcdcaa;
+}
+
+.hljs-number {
+  color: #b5cea8;
+}
+
+.hljs-class {
+  color: #4ec9b0;
+}
+
+.hljs-variable {
+  color: #9cdcfe;
+}
+
+/* Dark mode syntax highlighting */
+body.dark-mode .hljs-keyword {
+  color: #569cd6;
+}
+
+body.dark-mode .hljs-string {
+  color: #ce9178;
+}
+
+body.dark-mode .hljs-comment {
+  color: #6a9955;
+}
+
+body.dark-mode .hljs-function {
+  color: #dcdcaa;
+}
+
+body.dark-mode .hljs-number {
+  color: #b5cea8;
+}
+
+body.dark-mode .hljs-class {
+  color: #4ec9b0;
+}
+
+body.dark-mode .hljs-variable {
+  color: #9cdcfe;
 }

@@ -1,0 +1,75 @@
+<div class="speech-control-container">
+  <!-- Speech Status Indicator -->
+  <div class="speech-status">
+    <div class="status-indicator" [class.active]="isListening">
+      <i class="fas" [class.fa-microphone-alt]="isListening" [class.fa-microphone-slash]="!isListening"></i>
+    </div>
+    <div class="status-label">
+      {{ isListening ? 'Microphone Active' : 'Microphone Inactive' }}
+    </div>
+  </div>
+  
+  <!-- Noise Sensitivity Controls -->
+  <div class="noise-sensitivity-controls">
+    <span class="settings-label">Background Noise Filter:</span>
+    <div class="btn-group" role="group">
+      <button 
+        class="btn btn-outline-secondary btn-sm" 
+        [class.active]="noiseSensitivity === 'low'"
+        (click)="setNoiseSensitivity('low')">
+        Low
+      </button>
+      <button 
+        class="btn btn-outline-secondary btn-sm" 
+        [class.active]="noiseSensitivity === 'medium'"
+        (click)="setNoiseSensitivity('medium')">
+        Medium
+      </button>
+      <button 
+        class="btn btn-outline-secondary btn-sm" 
+        [class.active]="noiseSensitivity === 'high'"
+        (click)="setNoiseSensitivity('high')">
+        High
+      </button>
+    </div>
+    <div class="sensitivity-info">
+      <small *ngIf="noiseSensitivity === 'low'">
+        <i class="fas fa-info-circle"></i> Low: Better speech detection, may pick up background noise
+      </small>
+      <small *ngIf="noiseSensitivity === 'medium'">
+        <i class="fas fa-info-circle"></i> Medium: Balanced speech detection with moderate background noise filtering
+      </small>
+      <small *ngIf="noiseSensitivity === 'high'">
+        <i class="fas fa-info-circle"></i> High: Strong noise filtering, speak clearly and loudly
+      </small>
+    </div>
+  </div>
+  
+  <!-- Restart Speech Recognition -->
+  <button class="btn btn-outline-primary restart-btn" (click)="restartSpeechRecognition()">
+    <i class="fas fa-redo"></i> Restart Microphone
+  </button>
+  
+  <!-- Toggle Manual Input -->
+  <button class="btn btn-outline-secondary toggle-manual-btn" (click)="toggleManualInput()">
+    <i class="fas" [class.fa-keyboard]="!manualInputEnabled" [class.fa-microphone]="manualInputEnabled"></i>
+    {{ manualInputEnabled ? 'Switch to Voice' : 'Use Keyboard' }}
+  </button>
+  
+  <!-- Manual Input Area -->
+  <div [class.manual-input-area-active]="manualInputEnabled" class="manual-input-area">
+    <input type="text" class="form-control" 
+           [(ngModel)]="manualInput" 
+           placeholder="Type your response here..."
+           (keyup.enter)="submitManualInput()"
+           [disabled]="!manualInputEnabled">
+    <button class="btn btn-primary" (click)="submitManualInput()" [disabled]="!manualInputEnabled">
+      <i class="fas fa-paper-plane"></i> Send
+    </button>
+  </div>
+  
+  <!-- Speech Recognition Status -->
+  <div *ngIf="interimSpeech" class="interim-speech">
+    <span>{{ interimSpeech }}</span>
+  </div>
+</div>

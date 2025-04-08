@@ -1,0 +1,301 @@
+// Header
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: $z-index-fixed;
+  background-color: white;
+  box-shadow: $box-shadow;
+  padding: $spacing-sm 0;
+
+  .header-container {
+    @include container;
+    @include flex(row, space-between, center);
+  }
+
+  .logo {
+    font-size: $heading-2;
+    font-weight: bold;
+    color: $primary-color;
+    text-decoration: none;
+  }
+
+  .nav-menu {
+    @include flex(row, flex-end, center);
+    gap: $spacing-md;
+
+    @include mobile {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background-color: white;
+      padding: $spacing-md;
+      box-shadow: $box-shadow;
+      flex-direction: column;
+      align-items: flex-start;
+
+      &.active {
+        display: flex;
+      }
+    }
+  }
+
+  .mobile-menu-toggle {
+    display: none;
+    font-size: $heading-3;
+    cursor: pointer;
+
+    @include mobile {
+      display: block;
+    }
+  }
+}
+
+// Main Content
+.main-content {
+  margin-top: 60px; // Adjust based on header height
+  min-height: calc(100vh - 60px - 200px); // Adjust based on header and footer height
+  padding: $spacing-lg 0;
+}
+
+// Footer
+.footer {
+  background-color: $dark-mode;
+  color: white;
+  padding: $spacing-lg 0;
+  margin-top: auto;
+
+  .footer-container {
+    @include container;
+  }
+
+  .footer-content {
+    @include grid(4, $spacing-lg);
+
+    @include tablet {
+      @include grid(2, $spacing-md);
+    }
+
+    @include mobile {
+      @include grid(1, $spacing-md);
+    }
+  }
+
+  .footer-section {
+    h3 {
+      color: white;
+      margin-bottom: $spacing-md;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+
+      li {
+        margin-bottom: $spacing-sm;
+
+        a {
+          color: rgba(white, 0.8);
+          text-decoration: none;
+          transition: $transition-base;
+
+          &:hover {
+            color: white;
+          }
+        }
+      }
+    }
+  }
+
+  .footer-bottom {
+    margin-top: $spacing-lg;
+    padding-top: $spacing-md;
+    border-top: 1px solid rgba(white, 0.1);
+    text-align: center;
+  }
+}
+
+// Grid Layout
+.grid {
+  display: grid;
+  gap: $spacing-md;
+
+  &.grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+
+    @include mobile {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &.grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+
+    @include tablet {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include mobile {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &.grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+
+    @include tablet {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include mobile {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// Sidebar
+.sidebar {
+  @include card;
+  margin-bottom: $spacing-lg;
+
+  .widget {
+    margin-bottom: $spacing-lg;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .widget-title {
+      @include heading($heading-3);
+      margin-bottom: $spacing-md;
+      padding-bottom: $spacing-sm;
+      border-bottom: 1px solid $border-color;
+    }
+  }
+}
+
+// Hero Section
+.hero {
+  position: relative;
+  padding: $spacing-xl 0;
+  background-color: $primary-color;
+  color: white;
+  text-align: center;
+  margin-bottom: $spacing-xl;
+
+  .hero-content {
+    @include container;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-title {
+    @include heading($heading-1);
+    color: white;
+    margin-bottom: $spacing-md;
+  }
+
+  .hero-subtitle {
+    font-size: $heading-2;
+    margin-bottom: $spacing-lg;
+    opacity: 0.9;
+  }
+
+  .hero-buttons {
+    @include flex(row, center, center);
+    gap: $spacing-md;
+
+    @include mobile {
+      flex-direction: column;
+    }
+  }
+}
+
+// Section
+.section {
+  padding: $spacing-xl 0;
+
+  .section-header {
+    text-align: center;
+    margin-bottom: $spacing-xl;
+  }
+
+  .section-title {
+    @include heading($heading-2);
+    margin-bottom: $spacing-md;
+  }
+
+  .section-subtitle {
+    color: rgba($text-color, 0.7);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+}
+
+// Container
+.container {
+  @include container;
+}
+
+.container-fluid {
+  width: 100%;
+  padding: 0 $spacing-md;
+}
+
+// Row
+.row {
+  @include flex(row, flex-start, stretch);
+  flex-wrap: wrap;
+  margin: 0 -$spacing-sm;
+
+  &.row-center {
+    justify-content: center;
+  }
+
+  &.row-end {
+    justify-content: flex-end;
+  }
+
+  &.row-between {
+    justify-content: space-between;
+  }
+
+  &.row-around {
+    justify-content: space-around;
+  }
+}
+
+// Column
+.col {
+  padding: 0 $spacing-sm;
+  flex: 1;
+}
+
+@for $i from 1 through 12 {
+  .col-#{$i} {
+    flex: 0 0 percentage($i / 12);
+    max-width: percentage($i / 12);
+  }
+}
+
+// Responsive Columns
+@include tablet {
+  @for $i from 1 through 12 {
+    .col-tablet-#{$i} {
+      flex: 0 0 percentage($i / 12);
+      max-width: percentage($i / 12);
+    }
+  }
+}
+
+@include mobile {
+  @for $i from 1 through 12 {
+    .col-mobile-#{$i} {
+      flex: 0 0 percentage($i / 12);
+      max-width: percentage($i / 12);
+    }
+  }
+} 

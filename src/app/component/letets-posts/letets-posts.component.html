@@ -5,14 +5,14 @@
 <div class="padding-30 rounded bordered">
     <div class="row">
         <div class="col-md-12 col-sm-6">
-            <div class="post post-list clearfix" *ngFor="let letestPost of letestArray; let i = index" [attr.data-aos]="i % 2 === 0 ? 'fade-down-right' : 'fade-down-left'">
+            <div class="post post-list clearfix" *ngFor="let letestPost of displayedPosts; let i = index" [attr.data-aos]="i % 2 === 0 ? 'fade-down-right' : 'fade-down-left'">
                 <div class="thumb rounded">
                     <span class="post-format-sm">
                         <i class="icon-picture"></i>
                     </span>
                     <a href="#">
                         <div class="inner" (click)="handleLinkClick(letestPost)">
-                            <img src="{{ letestPost.data.postImgPath }}" alt="">
+                            <img style="width: 20rem;height: 20rem;object-fit: cover;" src="{{ letestPost.data.postImgPath }}" alt="">
                         </div>
                     </a>
                 </div> 
@@ -34,8 +34,14 @@
                             {{ letestPost.data.title }}
                         </a>
                     </h5>
-                    <p class="excerpt mb-0">
+                    <p class="excerpt mb-0" *ngIf="letestPost.data.excerpt">
                         {{ getFirst20Words(letestPost.data.excerpt) }}...
+                    </p>
+                    <p class="excerpt mb-0" *ngIf="!letestPost.data.excerpt && letestPost.data.content">
+                        {{ getFirst20Words(letestPost.data.content) }}...
+                    </p>
+                    <p class="excerpt mb-0" *ngIf="!letestPost.data.excerpt && !letestPost.data.content">
+                        Click to read this post...
                     </p>
                     <div class="post-bottom clearfix d-flex align-items-center">
                         <div class="social-share me-auto">
@@ -64,8 +70,8 @@
                 </div>
             </div>
         </div>
-        <div class="text-center">
-            <button class="btn btn-simple">Load More</button>
+        <div class="text-center mt-4" *ngIf="hasMorePosts">
+            <button class="btn btn-simple" (click)="loadMore()">Load More</button>
         </div>
     </div>
 </div>

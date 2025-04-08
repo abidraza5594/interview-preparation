@@ -1,0 +1,79 @@
+<div class="questions-container">
+  <!-- Progress Bar -->
+  <div class="progress-container">
+    <div class="progress">
+      <div class="progress-bar" 
+          [style.width.%]="getProgressPercentage()"
+          role="progressbar" 
+          [attr.aria-valuenow]="getProgressPercentage()" 
+          aria-valuemin="0" 
+          aria-valuemax="100">
+      </div>
+    </div>
+    <div class="progress-text">
+      Question {{ currentQuestionIndex + 1 }} of {{ questions.length }}
+    </div>
+  </div>
+  
+  <!-- Current Question -->
+  <div class="question-card">
+    <div class="question-header">
+      <span class="question-badge">Q{{ currentQuestionIndex + 1 }}</span>
+    </div>
+    
+    <div class="question-body">
+      <p [class.pulsing]="isAISpeaking">{{ getCurrentQuestion() }}</p>
+      <button *ngIf="isAISpeaking" class="btn btn-sm btn-light stop-btn" (click)="stopAISpeaking()">
+        <i class="fas fa-volume-mute"></i> Stop AI
+      </button>
+    </div>
+  </div>
+  
+  <!-- Response info panel -->
+  <div class="response-info-panel">
+    <div class="info-icon">
+      <i class="fas fa-lightbulb"></i>
+    </div>
+    <div class="info-text">
+      <strong>Pro tip:</strong> Provide detailed and specific answers that demonstrate your technical knowledge. 
+      Aim for 2-3 paragraphs with examples to showcase your expertise.
+    </div>
+  </div>
+  
+  <!-- User Response Area - Single input area -->
+  <div class="response-area">
+    <!-- Interim speech display -->
+    <div *ngIf="interimSpeech" class="interim-speech">
+      <i class="fas fa-microphone-alt pulse"></i>
+      <span>{{ interimSpeech }}</span>
+    </div>
+    
+    <!-- Text input for manual response -->
+    <div class="manual-input-container">
+      <div class="input-group">
+        <input 
+          type="text" 
+          class="form-control response-input" 
+          placeholder="Type your response here..." 
+          [(ngModel)]="manualResponse"
+          (keyup.enter)="submitManualResponse(manualResponse)"
+          autofocus
+        >
+        <button class="btn btn-primary" (click)="submitManualResponse(manualResponse)">
+          <i class="fas fa-paper-plane"></i> Submit
+        </button>
+      </div>
+    </div>
+    
+    <!-- Controls -->
+    <div class="controls">
+      <button class="btn btn-outline-secondary" (click)="restartSpeechRecognition()">
+        <i class="fas fa-microphone"></i> Restart Mic
+      </button>
+      
+      <button class="btn btn-outline-danger" (click)="skipQuestion()">
+        <i class="fas fa-forward"></i> Skip Question
+      </button>
+    </div>
+  </div>
+</div>

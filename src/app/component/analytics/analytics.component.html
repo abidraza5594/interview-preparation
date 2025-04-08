@@ -1,0 +1,465 @@
+<div class="analytics-container">
+  <h1 class="analytics-title">Dashboard Analytics</h1>
+  <p class="analytics-subtitle">Track user engagement and content metrics</p>
+
+  <!-- Access denied message for non-admins -->
+  <div *ngIf="!isAdmin" class="alert alert-danger">
+    <i class="fas fa-exclamation-circle me-2"></i>
+    Access denied. You need administrator privileges to view analytics.
+  </div>
+
+  <!-- Main content (only visible to admins) -->
+  <div *ngIf="isAdmin">
+    <!-- Time range selector -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">Time Range</h5>
+      </div>
+      <div class="card-body">
+        <div class="btn-group" role="group">
+          <button 
+            (click)="updateTimeRange('day')"
+            class="btn"
+            [class.btn-primary]="timeRange === 'day'"
+            [class.btn-outline-primary]="timeRange !== 'day'">
+            Day
+          </button>
+          <button 
+            (click)="updateTimeRange('week')"
+            class="btn"
+            [class.btn-primary]="timeRange === 'week'"
+            [class.btn-outline-primary]="timeRange !== 'week'">
+            Week
+          </button>
+          <button 
+            (click)="updateTimeRange('month')"
+            class="btn"
+            [class.btn-primary]="timeRange === 'month'"
+            [class.btn-outline-primary]="timeRange !== 'month'">
+            Month
+          </button>
+          <button 
+            (click)="updateTimeRange('year')"
+            class="btn"
+            [class.btn-primary]="timeRange === 'year'"
+            [class.btn-outline-primary]="timeRange !== 'year'">
+            Year
+          </button>
+          <button 
+            (click)="updateTimeRange('all')"
+            class="btn"
+            [class.btn-primary]="timeRange === 'all'"
+            [class.btn-outline-primary]="timeRange !== 'all'">
+            All
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div *ngIf="loading" class="text-center my-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-2">Loading analytics data...</p>
+    </div>
+
+    <!-- Analytics content -->
+    <div *ngIf="!loading && (analyticsData$ | async) as data">
+      <!-- Summary cards -->
+      <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+          <div class="card summary-card">
+            <div class="card-body">
+              <h5 class="card-title">Total Users</h5>
+              <p class="card-text display-4">{{ data.totalUsers }}</p>
+              <p class="card-text text-muted">
+                <i class="fas fa-user-plus me-1"></i>
+                {{ data.newUsers }} new in this period
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="card summary-card">
+            <div class="card-body">
+              <h5 class="card-title">Total Posts</h5>
+              <p class="card-text display-4">{{ data.totalPosts }}</p>
+              <p class="card-text text-muted">
+                <i class="fas fa-file-alt me-1"></i>
+                {{ data.newPosts }} new in this period
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="card summary-card">
+            <div class="card-body">
+              <h5 class="card-title">Active Users</h5>
+              <p class="card-text display-4">{{ data.activeUsers }}</p>
+              <p class="card-text text-muted">
+                <i class="fas fa-percentage me-1"></i>
+                {{ (data.activeUsers / data.totalUsers * 100) | number:'1.0-0' }}% of total
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="card summary-card">
+            <div class="card-body">
+              <h5 class="card-title">Avg. Posts/User</h5>
+              <p class="card-text display-4">{{ data.avgPostsPerUser | number:'1.1-1' }}</p>
+              <p class="card-text text-muted">
+                <i class="fas fa-chart-line me-1"></i>
+                Based on active users
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category distribution -->
+      <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Posts by Category</h5>
+            </div>
+            <div class="card-body">
+              <div *ngIf="data.categoryData.length === 0" class="text-center py-4">
+                <p class="text-muted">No category data available for the selected time range.</p>
+              </div>
+              <div *ngFor="let category of data.categoryData" class="mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                  <span>{{ category.name }}</span>
+                  <span>{{ category.count }} posts</span>
+                </div>
+                <div class="progress">
+                  <div 
+                    class="progress-bar" 
+                    [style.width.%]="(category.count / data.totalPosts) * 100"
+                    [ngClass]="{
+                      'bg-primary': category.name === 'JavaScript',
+                      'bg-success': category.name === 'React',
+                      'bg-info': category.name === 'Angular',
+                      'bg-warning': category.name === 'Node.js',
+                      'bg-danger': category.name === 'CSS',
+                      'bg-secondary': !['JavaScript', 'React', 'Angular', 'Node.js', 'CSS'].includes(category.name)
+                    }">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">User Activity</h5>
+            </div>
+            <div class="card-body">
+              <div *ngIf="data.userActivity.length === 0" class="text-center py-4">
+                <p class="text-muted">No user activity data available for the selected time range.</p>
+              </div>
+              <table class="table" *ngIf="data.userActivity.length > 0">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>New Users</th>
+                    <th>New Posts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let activity of data.userActivity">
+                    <td>{{ formatDate(activity.date) }}</td>
+                    <td>{{ activity.newUsers }}</td>
+                    <td>{{ activity.newPosts }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top contributors -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Top Contributors</h5>
+        </div>
+        <div class="card-body">
+          <div *ngIf="data.topContributors.length === 0" class="text-center py-4">
+            <p class="text-muted">No contributor data available for the selected time range.</p>
+          </div>
+          <div class="table-responsive" *ngIf="data.topContributors.length > 0">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Posts</th>
+                  <th>Last Active</th>
+                  <th>Joined</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let user of data.topContributors">
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <img 
+                        *ngIf="user.photoURL" 
+                        [src]="user.photoURL" 
+                        class="rounded-circle me-2" 
+                        width="32" 
+                        height="32"
+                        alt="User avatar">
+                      <div *ngIf="!user.photoURL" class="avatar-placeholder me-2">
+                        {{ user.displayName?.charAt(0) || user.email.charAt(0) || '?' }}
+                      </div>
+                      <div>
+                        <div>{{ user.displayName || 'Anonymous' }}</div>
+                        <small class="text-muted">{{ user.email }}</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{{ user.postCount }}</td>
+                  <td>{{ user.lastLogin ? (user.lastLogin | date:'medium') : 'Never' }}</td>
+                  <td>{{ user.createdAt | date:'mediumDate' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Post-specific analytics -->
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Post Performance</h5>
+          <div class="d-flex align-items-center">
+            <button class="btn btn-outline-success me-3" (click)="exportToCSV()" 
+                    [disabled]="filteredPosts.length === 0">
+              <i class="fas fa-file-export me-1"></i> Export CSV
+            </button>
+            <div class="input-group" style="max-width: 300px;">
+              <span class="input-group-text"><i class="fas fa-search"></i></span>
+              <input type="text" class="form-control" placeholder="Search posts..." 
+                    (input)="onSearch($event)" [value]="searchTerm">
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div *ngIf="filteredPosts.length === 0" class="text-center py-4">
+            <p class="text-muted" *ngIf="posts.length === 0">No posts available for analysis.</p>
+            <p class="text-muted" *ngIf="posts.length > 0">No posts match your search criteria.</p>
+          </div>
+          <div class="table-responsive" *ngIf="filteredPosts.length > 0">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th (click)="updateSort('title')" class="cursor-pointer">
+                    Title <i class="fas" [ngClass]="getSortIcon('title')"></i>
+                  </th>
+                  <th (click)="updateSort('views')" class="cursor-pointer">
+                    Views <i class="fas" [ngClass]="getSortIcon('views')"></i>
+                  </th>
+                  <th (click)="updateSort('likes')" class="cursor-pointer">
+                    Likes <i class="fas" [ngClass]="getSortIcon('likes')"></i>
+                  </th>
+                  <th (click)="updateSort('comments')" class="cursor-pointer">
+                    Comments <i class="fas" [ngClass]="getSortIcon('comments')"></i>
+                  </th>
+                  <th (click)="updateSort('createdAt')" class="cursor-pointer">
+                    Created <i class="fas" [ngClass]="getSortIcon('createdAt')"></i>
+                  </th>
+                  <th>Category</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let post of filteredPosts">
+                  <td>{{ post.title }}</td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <span class="me-2">{{ post.views }}</span>
+                      <div class="progress flex-grow-1" style="height: 6px;">
+                        <div class="progress-bar bg-info" 
+                             [style.width.%]="(post.views / (getMaxValue('views') || 1)) * 100">
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <span class="me-2">{{ post.likes }}</span>
+                      <div class="progress flex-grow-1" style="height: 6px;">
+                        <div class="progress-bar bg-success" 
+                             [style.width.%]="(post.likes / (getMaxValue('likes') || 1)) * 100">
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <span class="me-2">{{ post.comments }}</span>
+                      <div class="progress flex-grow-1" style="height: 6px;">
+                        <div class="progress-bar bg-warning" 
+                             [style.width.%]="(post.comments / (getMaxValue('comments') || 1)) * 100">
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{{ getDateFromTimestamp(post.createdAt) | date:'medium' }}</td>
+                  <td><span class="badge bg-secondary">{{ post.category }}</span></td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn btn-sm btn-outline-primary" title="View post">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-info" title="View detailed analytics"
+                              (click)="viewPostDetails(post)">
+                        <i class="fas fa-chart-line"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 
+
+<!-- Detailed Post Analytics Modal -->
+<div class="modal fade show" tabindex="-1" role="dialog" 
+     [ngClass]="{'d-block': showDetailedView, 'd-none': !showDetailedView}"
+     [ngStyle]="{'background-color': showDetailedView ? 'rgba(0,0,0,0.5)' : 'transparent'}">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" *ngIf="selectedPost">
+          Post Analytics: {{ selectedPost.title }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closeDetailedView()"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Loading indicator -->
+        <div *ngIf="loading" class="text-center my-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-2">Loading post analytics...</p>
+        </div>
+        
+        <!-- Post details -->
+        <div *ngIf="!loading && selectedPost">
+          <!-- Summary cards -->
+          <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+              <div class="card summary-card">
+                <div class="card-body text-center">
+                  <h5 class="card-title">Total Views</h5>
+                  <p class="card-text display-4">{{ selectedPost.views }}</p>
+                  <p class="card-text text-muted">
+                    <i class="fas fa-eye me-1"></i>
+                    Lifetime views
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4 mb-3">
+              <div class="card summary-card">
+                <div class="card-body text-center">
+                  <h5 class="card-title">Total Likes</h5>
+                  <p class="card-text display-4">{{ selectedPost.likes }}</p>
+                  <p class="card-text text-muted">
+                    <i class="fas fa-thumbs-up me-1"></i>
+                    Engagement rate: {{ (selectedPost.likes / (selectedPost.views || 1) * 100) | number:'1.1-1' }}%
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4 mb-3">
+              <div class="card summary-card">
+                <div class="card-body text-center">
+                  <h5 class="card-title">Total Comments</h5>
+                  <p class="card-text display-4">{{ selectedPost.comments }}</p>
+                  <p class="card-text text-muted">
+                    <i class="fas fa-comment me-1"></i>
+                    Comment rate: {{ (selectedPost.comments / (selectedPost.views || 1) * 100) | number:'1.1-1' }}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Views over time -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h5 class="mb-0">Views Over Time</h5>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Views</th>
+                      <th>Trend</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let day of postViewsHistory; let i = index">
+                      <td>{{ day.date | date:'mediumDate' }}</td>
+                      <td>{{ day.views }}</td>
+                      <td>
+                        <div class="progress" style="height: 6px; width: 100px;">
+                          <div class="progress-bar bg-info" 
+                               [style.width.%]="(day.views / (getMaxDailyViews() || 1)) * 100">
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Recent comments -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h5 class="mb-0">Recent Comments</h5>
+            </div>
+            <div class="card-body">
+              <div *ngIf="postComments.length === 0" class="text-center py-4">
+                <p class="text-muted">No comments on this post yet.</p>
+              </div>
+              <div *ngFor="let comment of postComments" class="mb-3 p-3 border-bottom">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="d-flex align-items-center">
+                    <div class="avatar-placeholder me-2" *ngIf="!comment.photoURL">
+                      {{ comment.displayName?.charAt(0) || 'A' }}
+                    </div>
+                    <img *ngIf="comment.photoURL" [src]="comment.photoURL" 
+                         class="rounded-circle me-2" width="32" height="32" alt="User avatar">
+                    <div>
+                      <div class="fw-bold">{{ comment.displayName || 'Anonymous' }}</div>
+                      <small class="text-muted">{{ getDateFromTimestamp(comment.createdAt) | date:'medium' }}</small>
+                    </div>
+                  </div>
+                </div>
+                <p class="mb-0">{{ comment.content }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDetailedView()">Close</button>
+      </div>
+    </div>
+  </div>
+</div> 

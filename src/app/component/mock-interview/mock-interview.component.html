@@ -1,0 +1,224 @@
+<div class="mock-interview-container">
+  <div class="interview-header">
+    <h1>AI Mock Interview</h1>
+    <!-- Debug state -->
+    <div class="debug-state" *ngIf="interviewInProgress">
+      Current state: {{ interviewState }}
+    </div>
+    <div class="interview-actions" *ngIf="!interviewInProgress">
+      <button class="btn btn-primary start-btn" (click)="startInterview()">
+        <i class="fas fa-play"></i> Start Mock Interview
+      </button>
+    </div>
+    <div class="interview-actions" *ngIf="interviewInProgress">
+      <button class="btn btn-danger end-btn" (click)="endInterview()">
+        <i class="fas fa-times"></i> End Interview
+      </button>
+    </div>
+  </div>
+  
+  <!-- Initial State - Interview not started -->
+  <div *ngIf="!interviewInProgress" class="initial-state">
+    <div class="info-card">
+      <h3>Get Ready for Your Technical Interview</h3>
+      <p>This AI-powered mock interview will help you practice for real technical interviews.</p>
+      <ul>
+        <li><strong>Choose your topic</strong> - JavaScript, React, Angular, etc.</li>
+        <li><strong>Answer questions</strong> - Respond verbally or type your answers</li>
+        <li><strong>Get feedback</strong> - Receive analysis of your performance</li>
+      </ul>
+      <p>Click "Start Mock Interview" when you're ready to begin!</p>
+    </div>
+  </div>
+  
+  <!-- Interview in Progress -->
+  <div *ngIf="interviewInProgress" class="interview-in-progress">
+    <!-- Speech Control Component -->
+    <app-speech-control *ngIf="interviewState !== 'initial'"></app-speech-control>
+    
+    <!-- Show debug info during development -->
+    <div class="debug-info">
+      <p>Current state: {{ interviewState }}</p>
+    </div>
+    
+    <!-- Proceed confirmation step -->
+    <div class="setup-section proceed-section" *ngIf="interviewState === 'proceed_confirmation'">
+      <div class="question">
+        <h3>Welcome to your Mock Interview!</h3>
+        <p>Are you ready to proceed with the interview?</p>
+      </div>
+      
+      <div class="proceed-buttons">
+        <button class="btn btn-primary proceed-btn" (click)="proceedToTechStack()">
+          <i class="fas fa-check"></i> Yes, I'm ready to start
+        </button>
+        <button class="btn btn-secondary cancel-btn" (click)="endInterview()">
+          <i class="fas fa-times"></i> No, cancel interview
+        </button>
+      </div>
+    </div>
+    
+    <!-- Tech Stack Selection (Step 1) -->
+    <app-interview-setup 
+      *ngIf="interviewState === 'interview_setup' || interviewState === 'experience_level' || interviewState === 'question_count' || interviewState === 'loading_questions'"
+      (setupComplete)="onSetupComplete()">
+    </app-interview-setup>
+    
+    <!-- Questions Section -->
+    <app-interview-questions 
+      *ngIf="interviewState === 'questions' || interviewState === 'answering'"
+      (questionsComplete)="onQuestionsComplete()">
+    </app-interview-questions>
+    
+    <!-- Feedback Section -->
+    <app-interview-feedback 
+      *ngIf="interviewState === 'generating_feedback' || interviewState === 'feedback'"
+      (retakeInterview)="retakeInterview()"
+      (endInterview)="endInterview()">
+    </app-interview-feedback>
+  </div>
+</div>
+
+<!-- Modified Speech recognition status indicator -->
+<div *ngIf="interviewInProgress && interviewState !== 'feedback'" class="speech-status-container">
+  <div class="speech-status" [ngClass]="{'active': speechRecognitionWorking, 'inactive': !speechRecognitionWorking}">
+    <span *ngIf="speechRecognitionWorking && !interimUserResponse" class="status-text">
+      <i class="fas fa-microphone-alt"></i> I'm listening, please speak...
+    </span>
+    <span *ngIf="!speechRecognitionWorking" class="status-text warning">
+      <i class="fas fa-exclamation-triangle"></i> Microphone not working, please use text input below
+    </span>
+  </div>
+</div>
+
+<!-- Modified interim user response (real-time) display -->
+<div *ngIf="interviewInProgress && interimUserResponse" class="interim-speech-container">
+  <div class="interim-speech-bubble">
+    <div class="interim-heading">
+      <i class="fas fa-microphone-alt pulse"></i> I heard you say:
+    </div>
+    <div class="interim-text">{{ interimUserResponse }}</div>
+    <div class="speech-indicator">
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Feedback display -->
+<div class="feedback-container" *ngIf="interviewState === 'feedback' && feedback">
+  <h2>Interview Feedback</h2>
+  
+  <div class="rating">
+    <h3>Overall Rating: {{ feedback.overallRating }}/10</h3>
+    <div class="rating-bars">
+      <div class="rating-bar" [style.width.%]="feedback.overallRating * 10"></div>
+    </div>
+  </div>
+  
+  <div class="feedback-section">
+    <h3>Strengths</h3>
+    <ul>
+      <li *ngFor="let strength of feedback.strengths">{{ strength }}</li>
+    </ul>
+  </div>
+  
+  <div class="feedback-section">
+    <h3>Areas for Improvement</h3>
+    <ul>
+      <li *ngFor="let weakness of feedback.weaknesses">{{ weakness }}</li>
+    </ul>
+  </div>
+  
+  <div class="feedback-section">
+    <h3>Suggested Topics to Study</h3>
+    <ul>
+      <li *ngFor="let topic of feedback.suggestedTopics">{{ topic }}</li>
+    </ul>
+  </div>
+  
+  <div class="feedback-section">
+    <h3>Detailed Feedback</h3>
+    <p>{{ feedback.detailedFeedback }}</p>
+  </div>
+  
+  <div class="feedback-actions">
+    <button class="btn btn-primary" (click)="startInterview()">Start New Interview</button>
+    <button class="btn btn-secondary" (click)="retakeInterview()">Repeat Same Interview</button>
+    <button class="btn btn-info">Save Interview Results</button>
+  </div>
+</div>
+
+<!-- Interview start form -->
+<div class="start-interview-container" *ngIf="!interviewInProgress">
+  <div class="form-container">
+    <h2>Virtual Mock Interview</h2>
+    <p>Practice your technical interview skills with our AI interviewer</p>
+    
+    <div class="form-group">
+      <label for="userName">Your Name</label>
+      <input type="text" id="userName" [(ngModel)]="userName" class="form-control" placeholder="Enter your name">
+    </div>
+    
+    <div class="form-group">
+      <label>Interviewer Voice</label>
+      <select [(ngModel)]="selectedVoice" class="form-control">
+        <option value="default">Default Voice</option>
+        <option *ngFor="let voice of availableVoices" [value]="voice.voiceURI">
+          {{ voice.name }} ({{ voice.lang }})
+        </option>
+      </select>
+      
+      <div class="preview-controls">
+        <button class="btn btn-sm btn-outline-primary" (click)="previewSelectedVoice()">
+          Preview Voice
+        </button>
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label>Interviewer Personality</label>
+      <div class="character-options">
+        <div class="character-option" 
+             [ngClass]="{'selected': selectedCharacter === 'robot'}"
+             (click)="selectCharacter('robot')">
+          <div class="avatar robot">
+            <div class="head"></div>
+            <div class="body"></div>
+          </div>
+          <span>Robot</span>
+        </div>
+        
+        <div class="character-option" 
+             [ngClass]="{'selected': selectedCharacter === 'human'}"
+             (click)="selectCharacter('human')">
+          <div class="avatar human">
+            <div class="head"></div>
+            <div class="body"></div>
+          </div>
+          <span>Human</span>
+        </div>
+        
+        <div class="character-option" 
+             [ngClass]="{'selected': selectedCharacter === 'alien'}"
+             (click)="selectCharacter('alien')">
+          <div class="avatar alien">
+            <div class="head"></div>
+            <div class="body"></div>
+          </div>
+          <span>Alien</span>
+        </div>
+      </div>
+    </div>
+    
+    <button class="btn btn-primary start-btn" (click)="startInterview()" [disabled]="!userName">
+      Start Interview
+    </button>
+  </div>
+</div>
+
+<!-- Interview controls -->
+<div class="interview-controls" *ngIf="interviewInProgress">
+  <button class="btn btn-danger" (click)="endInterview()">End Interview</button>
+</div> 

@@ -1,0 +1,313 @@
+<div class="container mt-5">
+  <div class="row">
+    <div class="col-lg-10 mx-auto">
+      <!-- Loading Spinner -->
+      <div *ngIf="loading" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading practice question...</p>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="error" class="alert alert-danger">
+        <h4 class="alert-heading">Error!</h4>
+        <p>{{ error }}</p>
+        <hr>
+        <button class="btn btn-outline-danger" (click)="goBack()">Go Back</button>
+      </div>
+
+      <!-- Practice Question Details -->
+      <div *ngIf="practiceQuestion && !loading && !error" class="card shadow">
+        <!-- Question Header -->
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+          <h2 class="mb-0">{{ practiceQuestion.title }}</h2>
+          <div>
+            <span class="badge bg-light text-dark me-2">{{ practiceQuestion.difficulty | titlecase }}</span>
+            <span class="badge bg-info text-white">{{ practiceQuestion.categoryName || practiceQuestion.category }}</span>
+          </div>
+        </div>
+
+        <!-- Question Body -->
+        <div class="card-body">
+          <!-- Question Description -->
+          <div class="mb-4">
+            <h4 class="mb-3">Question</h4>
+            <div class="bg-light p-3 rounded question-content code-content-wrapper" 
+                 [innerHTML]="sanitizedDescription"
+                 appProcessHtmlCode
+                 [content]="practiceQuestion.description"></div>
+          </div>
+
+          <!-- Google Ad - Top Position -->
+          <app-google-ad [isSidebar]="false"></app-google-ad>
+
+          <!-- Tags -->
+          <div class="mb-4">
+            <span *ngFor="let tag of practiceQuestion.tags" class="badge bg-secondary me-2 mb-2">{{ tag }}</span>
+          </div>
+
+          <!-- Multiple Choice Question -->
+          <div *ngIf="practiceQuestion.questionType === 'multiple-choice'" class="mb-4">
+            <h4 class="mb-3">Choose the correct answer:</h4>
+            <form [formGroup]="answerForm" (ngSubmit)="submitAnswer()">
+              <div class="list-group mb-3">
+                <button 
+                  type="button"
+                  *ngFor="let option of practiceQuestion.options; let i = index" 
+                  class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                  [class.active]="selectedOption === i"
+                  [class.list-group-item-success]="isAnswered && option.isCorrect"
+                  [class.list-group-item-danger]="isAnswered && selectedOption === i && !option.isCorrect"
+                  [disabled]="isAnswered"
+                  (click)="selectOption(i)"
+                >
+                  <span>{{ option.text }}</span>
+                  <span *ngIf="isAnswered && option.isCorrect" class="badge bg-success">
+                    Correct
+                    <i *ngIf="showSparks" class="fas fa-star sparks-animation me-1"></i>
+                    <i *ngIf="showSparks" class="fas fa-star sparks-animation me-1" style="animation-delay: 0.2s"></i>
+                    <i *ngIf="showSparks" class="fas fa-star sparks-animation" style="animation-delay: 0.4s"></i>
+                  </span>
+                </button>
+              </div>
+              
+              <!-- Success Message for Correct Answer -->
+              <div *ngIf="isAnswered && isCorrect" class="alert alert-success mt-3 celebration-container">
+                <h4 class="alert-heading">
+                  <i class="fas fa-check-circle me-2"></i>Congratulations!
+                </h4>
+                <p>You got the correct answer! 🎉</p>
+              </div>
+              
+              <!-- Error Message for Incorrect Answer -->
+              <div *ngIf="isAnswered && !isCorrect" class="alert alert-danger mt-3">
+                <h4 class="alert-heading">
+                  <i class="fas fa-times-circle me-2"></i>Oops!
+                </h4>
+                <p>That's not correct. Try again!</p>
+              </div>
+              
+              <div class="d-flex justify-content-between mt-3">
+                <button type="button" class="btn btn-outline-secondary" (click)="goBack()">Back</button>
+                <div>
+                  <button 
+                    *ngIf="!isAnswered" 
+                    type="submit" 
+                    class="btn btn-primary" 
+                    [disabled]="selectedOption === null || isSubmitting"
+                  >
+                    <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Submit Answer
+                  </button>
+                  <button 
+                    *ngIf="isAnswered" 
+                    type="button" 
+                    class="btn btn-outline-primary me-2" 
+                    (click)="resetAnswer()"
+                  >
+                    Try Again
+                  </button>
+                  <button 
+                    *ngIf="isAnswered" 
+                    type="button" 
+                    class="btn btn-info text-white" 
+                    (click)="toggleSolution()"
+                  >
+                    {{ showSolution ? 'Hide' : 'Show' }} Solution
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Google Ad - Middle Position -->
+          <app-google-ad adSlot="2345678901" adFormat="rectangle" display="block" [fullWidthResponsive]="true"></app-google-ad>
+
+          <!-- Coding Question -->
+          <div *ngIf="practiceQuestion.questionType === 'coding'" class="mb-4">
+            <h4 class="mb-3">Write your solution:</h4>
+            <form [formGroup]="codeForm" (ngSubmit)="runCode()">
+              <div class="mb-3">
+                <div class="code-editor-container">
+                  <div class="code-editor-header bg-light p-2 border-top border-start border-end rounded-top d-flex justify-content-between">
+                    <span class="badge bg-secondary">{{ practiceQuestion.codeTemplate?.includes('function') ? 'JavaScript' : 'TypeScript' }}</span>
+                    <div>
+                      <button type="button" class="btn btn-sm btn-light" title="Reset Code" (click)="resetCode()">
+                        <i class="fas fa-undo"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <textarea 
+                    #codeEditor
+                    formControlName="code" 
+                    class="form-control code-editor border-top-0 rounded-0 rounded-bottom font-monospace" 
+                    rows="15"
+                    [disabled]="isRunning"
+                    spellcheck="false"
+                    appHighlightCode
+                    [language]="practiceQuestion.codeTemplate?.includes('function') ? 'javascript' : 'typescript'"
+                  ></textarea>
+                </div>
+              </div>
+              
+              <!-- Test Cases -->
+              <div *ngIf="testResults.length > 0" class="mb-4">
+                <h5>Test Results:</h5>
+                <div class="list-group">
+                  <div *ngFor="let result of testResults" class="list-group-item" [class.list-group-item-success]="result.passed" [class.list-group-item-danger]="!result.passed">
+                    <div class="d-flex justify-content-between">
+                      <div>
+                        <strong>Input:</strong> <code>{{ result.input }}</code>
+                      </div>
+                      <span class="badge" [class.bg-success]="result.passed" [class.bg-danger]="!result.passed">
+                        {{ result.passed ? 'Passed' : 'Failed' }}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>Expected Output:</strong> <code>{{ result.expectedOutput }}</code>
+                    </div>
+                    <div *ngIf="!result.passed">
+                      <strong>Your Output:</strong> <code>{{ result.actualOutput }}</code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" (click)="goBack()">Back</button>
+                <div>
+                  <button 
+                    *ngIf="!isAnswered || !isCorrect" 
+                    type="submit" 
+                    class="btn btn-primary" 
+                    [disabled]="codeForm.invalid || isRunning"
+                  >
+                    <span *ngIf="isRunning" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    {{ isRunning ? 'Running...' : 'Run Code' }}
+                  </button>
+                  <button 
+                    *ngIf="isAnswered" 
+                    type="button" 
+                    class="btn btn-outline-primary me-2" 
+                    (click)="resetAnswer()"
+                  >
+                    Try Again
+                  </button>
+                  <button 
+                    *ngIf="isAnswered" 
+                    type="button" 
+                    class="btn btn-info text-white" 
+                    (click)="toggleSolution()"
+                  >
+                    {{ showSolution ? 'Hide' : 'Show' }} Solution
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Google Ad - Bottom Position -->
+          <app-google-ad adSlot="3456789012" adFormat="horizontal" display="block" [fullWidthResponsive]="true"></app-google-ad>
+
+          <!-- Solution (shown only after answering) -->
+          <div *ngIf="showSolution" class="mt-4">
+            <div class="card">
+              <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Solution</h5>
+              </div>
+              <div class="card-body solution-content code-content-wrapper">
+                <div [innerHTML]="sanitizedSolution"
+                     appProcessHtmlCode
+                     [content]="practiceQuestion.solution"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hints -->
+          <div *ngIf="practiceQuestion.hints && practiceQuestion.hints.length > 0" class="mt-5">
+            <h4 class="mb-3">
+              <i class="fas fa-lightbulb text-warning me-2"></i>Hints
+              <small class="text-muted ms-2">(Click to expand)</small>
+            </h4>
+            <div class="accordion" id="hintsAccordion">
+              <div *ngFor="let hint of practiceQuestion.hints; let i = index" class="accordion-item">
+                <h2 class="accordion-header" [id]="'hint-heading-' + i">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" [attr.data-bs-target]="'#hint-collapse-' + i" aria-expanded="false" [attr.aria-controls]="'hint-collapse-' + i">
+                    <i class="fas fa-question-circle me-2"></i>Hint {{ i + 1 }}
+                  </button>
+                </h2>
+                <div [id]="'hint-collapse-' + i" class="accordion-collapse collapse" [attr.aria-labelledby]="'hint-heading-' + i" data-bs-parent="#hintsAccordion">
+                  <div class="accordion-body">
+                    <div class="hint-content">{{ hint.text }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Question Metadata -->
+          <div class="mt-4 text-muted">
+            <small>
+              <span class="me-3"><i class="fas fa-eye"></i> {{ practiceQuestion.views || 0 }} views</span>
+              <div class="d-inline-block me-3">
+                <button 
+                  class="btn btn-sm" 
+                  [class.btn-primary]="isLiked"
+                  [class.btn-outline-primary]="!isLiked"
+                  (click)="toggleLike(true)" 
+                  [disabled]="isLiking"
+                >
+                  <i class="fas fa-thumbs-up"></i>
+                </button>
+                <span class="mx-1">{{ practiceQuestion.likes || 0 }}</span>
+                <button 
+                  class="btn btn-sm" 
+                  [class.btn-danger]="isDisliked"
+                  [class.btn-outline-danger]="!isDisliked"
+                  (click)="toggleLike(false)" 
+                  [disabled]="isLiking"
+                >
+                  <i class="fas fa-thumbs-down"></i>
+                </button>
+              </div>
+              <span><i class="fas fa-chart-bar"></i> Success Rate: {{ formatSuccessRate(practiceQuestion.successRate) }}%</span>
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sparks Animation CSS -->
+<style>
+  .sparks-animation {
+    animation: sparks 0.5s ease-in-out infinite alternate;
+    color: gold;
+    margin-left: 5px;
+  }
+  
+  @keyframes sparks {
+    0% {
+      transform: scale(1) rotate(0deg);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(1.5) rotate(15deg);
+      opacity: 1;
+    }
+  }
+</style>
+
+<!-- Confetti Animation for Correct Answers -->
+<div *ngIf="showSparks && isCorrect" class="confetti-container">
+  <div *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]" 
+       class="confetti"
+       [style.left.%]="i * 5"
+       [style.animation-delay.ms]="i * 80"
+       [style.width.px]="10 + (i % 10)"
+       [style.height.px]="10 + (i % 10)"
+       [style.background-color]="getRandomColor(i)">
+  </div>
+</div>

@@ -1,0 +1,109 @@
+<div class="container mt-5">
+  <div class="row">
+    <div class="col-lg-10 mx-auto">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h2 class="mb-0">Coding Champions Leaderboard</h2>
+        </div>
+        <div class="card-body">
+          <!-- Stats Section -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="card bg-light">
+                <div class="card-body text-center">
+                  <h5 class="card-title">Total Users</h5>
+                  <h2 class="display-4">{{ stats.totalUsers }}</h2>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card bg-light">
+                <div class="card-body text-center">
+                  <h5 class="card-title">Questions Completed</h5>
+                  <h2 class="display-4">{{ stats.totalQuestionsCompleted }}</h2>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Current User Stats -->
+          <div class="card mb-4 border-primary" *ngIf="currentUserEntry">
+            <div class="card-header bg-primary text-white">
+              <h5 class="mb-0">Your Stats</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-3 text-center">
+                  <img [src]="currentUserEntry.photoURL || 'assets/images/default-avatar.png'" 
+                       class="rounded-circle mb-2" 
+                       alt="Profile Picture" 
+                       style="width: 80px; height: 80px; object-fit: cover;">
+                  <h5>{{ currentUserEntry.displayName }}</h5>
+                </div>
+                <div class="col-md-3 text-center">
+                  <h6 class="text-muted">Rank</h6>
+                  <h3>#{{ currentUserRank }}</h3>
+                </div>
+                <div class="col-md-3 text-center">
+                  <h6 class="text-muted">Questions Completed</h6>
+                  <h3>{{ currentUserEntry.questionsCompleted }}</h3>
+                </div>
+                <div class="col-md-3 text-center">
+                  <h6 class="text-muted">Score</h6>
+                  <h3>{{ currentUserEntry.score }}</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Leaderboard Table -->
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead class="table-dark">
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">User</th>
+                  <th scope="col">Questions Completed</th>
+                  <th scope="col">Score</th>
+                  <th scope="col">Last Active</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="isLoading">
+                  <td colspan="5" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading leaderboard data...</p>
+                  </td>
+                </tr>
+                <ng-container *ngIf="!isLoading">
+                  <tr *ngFor="let user of topUsers$ | async; let i = index" [ngClass]="getRankClass(i)">
+                    <th scope="row">{{ i + 1 }}</th>
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <img [src]="user.photoURL || 'assets/images/default-avatar.png'" 
+                             class="rounded-circle me-2" 
+                             alt="Profile Picture" 
+                             style="width: 40px; height: 40px; object-fit: cover;">
+                        <span>{{ user.displayName }}</span>
+                      </div>
+                    </td>
+                    <td>{{ user.questionsCompleted }}</td>
+                    <td>{{ user.score }}</td>
+                    <td>{{ formatDate(user.lastActive) }}</td>
+                  </tr>
+                  <tr *ngIf="(topUsers$ | async)?.length === 0">
+                    <td colspan="5" class="text-center py-4">
+                      <p>No users on the leaderboard yet. Be the first to solve some practice questions!</p>
+                    </td>
+                  </tr>
+                </ng-container>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

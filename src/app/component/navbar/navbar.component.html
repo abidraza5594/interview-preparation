@@ -1,66 +1,152 @@
-<header class="header-default">
+<!-- Top Mini Navbar -->
+<div class="mini-header">
+    <div class="container-xl">
+        <div class="mini-header-content">
+            <div class="mini-header-left">
+                <div class="theme-match-marquee">
+                    <marquee behavior="scroll" direction="left" scrollamount="3">
+                        <span class="marquee-item" *ngFor="let quote of codingQuotes; let i = index">
+                            <i class="fas fa-code me-1"></i> {{ quote }}
+                            <span class="marquee-separator" *ngIf="i < codingQuotes.length - 1">•</span>
+                        </span>
+                    </marquee>
+                </div>
+            </div>
+            <div class="mini-header-right">
+                <ul class="social-icons list-unstyled list-inline mb-0">
+                    <li class="list-inline-item">
+                        <a href="https://www.facebook.com/abidansari.ansari.127" title="Facebook"><i
+                                class="fab fa-facebook-f"></i></a>
+                    </li>
+                    <li class="list-inline-item" (click)="sendWhatsAppMessage()">
+                        <a href="#" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="https://www.linkedin.com/in/abid-ansari-523699248/" title="LinkedIn"><i
+                                class="fab fa-linkedin-in"></i></a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="#" (click)="sendEmail()" title="Email"><i class="far fa-envelope"></i></a>
+                    </li>
+                    <li class="list-inline-item">
+                        <button class="theme-toggle icon-button-mini" (click)="toggleDarkMode()"
+                            title="Toggle dark/light mode">
+                            <i class="fas" [ngClass]="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Navbar -->
+<header class="header-default" [ngClass]="{'header-hidden': isNavbarHidden}">
     <nav class="navbar navbar-expand-lg">
         <div class="container-xl">
             <!-- logo  -->
             <app-logo></app-logo>
+
+            <!-- mobile menu toggle -->
+            <button class="burger-menu icon-button d-lg-none" (click)="toggleCanvasMenu()">
+                <span class="burger-icon"></span>
+            </button>
+
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav mr-auto">
-                    <li class="nav-item dropdown active">
-                        <a routerLink="/" class="nav-link dropdown-toggle">
-                            Home <i class="fas fa-caret-down"></i>
+                    <li class="nav-item dropdown" [class.show]="isDropdownOpen">
+                        <a routerLink="/" class="nav-link dropdown-toggle" (click)="toggleDropdown()">
+                            Home
                         </a>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu" [class.show]="isDropdownOpen">
                             <li class="nav-item">
-                                <a href="https://abidansari-portfolio.netlify.app/" class="nav-link" target="_blank">Portfolio</a>
+                                <a href="https://abidansari-portfolio.netlify.app/" class="dropdown-item"
+                                    target="_blank">
+                                    <i class="fas fa-user-circle me-2"></i>Portfolio
+                                </a>
                             </li>
-                            <li *ngFor="let category of categoryArray">
-                                <a href="#" class="dropdown-item" (click)="handleLinkClick(category)">{{
-                                    category.catname }}</a>
+                            <li *ngIf="serverUrl?.length" class="nav-item">
+                                <a [href]="serverUrl" class="dropdown-item" target="_blank">
+                                    <i class="fas fa-robot me-2"></i>Use AI in Interview
+                                </a>
+                            </li>
+                            <li *ngFor="let category of uniqueCategories">
+                                <a href="#" class="dropdown-item" (click)="handleLinkClick(category)">
+                                    <i class="fas fa-folder me-2"></i>{{ category.catname }}
+                                </a>
                             </li>
                         </ul>
                     </li>
-                    <li class="nav-item">
-                        <a href="#" class="nav-link" (click)="scrollToLetest()">Latest</a>
-                    </li>
-                    <li><a href="#" class="nav-link" (click)="scrollToFeature()">Featured</a></li>
-                    <!-- <li class="nav-item">
-                        <a href="#" class="nav-link" (click)="scrollToTrending()">Trending</a>
-                    </li> -->
-                    <li class="nav-item">
-                        <a routerLink="/about-us" class="nav-link">About Us</a>
+                    <li class="nav-item" *ngIf="isShowLogOut">
+                        <a routerLink="/dashboard" class="nav-link">
+                            <i class="fas fa-tachometer-alt me-1 d-none d-sm-inline"></i>Dashboard
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a routerLink="/contact-us" class="nav-link">Contact</a>
+                        <a routerLink="/practice" class="nav-link">
+                            <i class="fas fa-code me-1 d-none d-sm-inline"></i>Practice
+                        </a>
+                    </li>
+                    <li class="nav-item" *ngIf="isShowLogOut && isAdmin">
+                        <a routerLink="/analytics" class="nav-link">
+                            <i class="fas fa-chart-line me-1 d-none d-sm-inline"></i>Analytics
+                        </a>
+                    </li>
+                    <li class="nav-item" *ngIf="isShowLogOut && isAdmin">
+                        <a routerLink="/user-management" class="nav-link">
+                            <i class="fas fa-users me-1 d-none d-sm-inline"></i>Users
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a routerLink="/mock-interview" class="nav-link">
+                            <i class="fas fa-comments me-1 d-none d-sm-inline"></i>Mock Interview
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a routerLink="/about-us" class="nav-link">
+                            <i class="fas fa-info-circle me-1 d-none d-sm-inline"></i>About
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a routerLink="/contact-us" class="nav-link">
+                            <i class="fas fa-envelope me-1 d-none d-sm-inline"></i>Contact
+                        </a>
                     </li>
                     <li class="nav-item" *ngIf="!isShowLogOut">
-                        <a routerLink="/auth" class="nav-link">Login</a>
+                        <a routerLink="/auth" class="nav-link">
+                            <i class="fas fa-sign-in-alt me-1 d-none d-sm-inline"></i>Login
+                        </a>
                     </li>
-                    <li class="nav-item" *ngIf="isShowLogOut">
-                        <a routerLink="/auth" class="nav-link" (click)="logOut()">LogOut</a>
+                    <li class="nav-item dropdown" *ngIf="isShowLogOut" [class.show]="isProfileDropdownOpen">
+                        <a href="#" class="nav-link dropdown-toggle" (click)="toggleProfileDropdown($event)">
+                            <i class="fas fa-user-circle me-1"></i> Profile
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" [class.show]="isProfileDropdownOpen">
+                            <li><a class="dropdown-item" routerLink="/profile"><i class="fas fa-id-card me-2"></i>My
+                                    Profile</a></li>
+                            <li><a class="dropdown-item" routerLink="/create-post"><i
+                                        class="fas fa-pen-square me-2"></i>Create Post</a></li>
+                            <li><a class="dropdown-item" routerLink="/create-practice"><i
+                                        class="fas fa-plus-circle me-2"></i>Create Practice</a></li>
+                            <li><a class="dropdown-item" routerLink="/settings"><i
+                                        class="fas fa-cog me-2"></i>Settings</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" routerLink="/auth" (click)="logOut()"><i
+                                        class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
                     </li>
                 </ul>
             </div>
+
             <!-- right side of header  -->
             <div class="header-right">
-                <ul class="social-icons list-unstyled list-inline mb-0">
-                    <li class="list-inline-item">
-                        <a href="https://www.facebook.com/abidansari.ansari.127"><i class="fab fa-facebook-f"></i></a>
-                    </li>
-                    <li class="list-inline-item" (click)="sendWhatsAppMessage()">
-                        <a href=""><i class="fab fa-whatsapp"></i></a>
-                    </li>
-                    <li class="list-inline-item">
-                        <a href="https://www.linkedin.com/in/abid-ansari-523699248/"><i class="fab fa-linkedin"></i></a>
-                    </li>
-                    <li class="list-inline-item">
-                        <a href="#" (click)="sendEmail()"><i class="far fa-envelope"></i></a>
-                    </li>
-                </ul>
                 <div class="header-buttons">
-                    <button class="search icon-button" (click)="toggleSearchPopup()">
+                    <button class="search icon-button" (click)="toggleSearchPopup()" title="Search">
                         <i class="fas fa-search"></i>
                     </button>
-                    <button class="burger-menu icon-button" (click)="toggleCanvasMenu()">
+                    <button class="burger-menu icon-button d-none d-lg-flex" (click)="toggleCanvasMenu()" title="Menu">
                         <span class="burger-icon"></span>
                     </button>
                 </div>
@@ -68,48 +154,79 @@
         </div>
     </nav>
 </header>
+
 <!-- canvas menu  -->
 <div class="canvas-menu d-flex align-items-end flex-column" [ngClass]="{'open': isCanvasMenuOpen}">
     <button class="btn-close" aria-label="Close" type="button" (click)="toggleCanvasMenu()"></button>
-
-    <app-logo></app-logo>
+    <div class="canvas-menu-header">
+        <app-logo></app-logo>
+        <button class="menu-close-btn" (click)="toggleCanvasMenu()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
     <nav>
         <ul class="vertical-menu">
             <li class="active">
-                <a routerLink="/">Home</a>
+                <a routerLink="/"><i class="fas fa-home me-2"></i>Home</a>
                 <ul class="submenu">
-                    <li><a href="#">Fashion</a></li>
-                    <li><a href="#">Movies</a></li>
-                    <li><a href="#">Electronic</a></li>
-                    <li><a href="#">Cricket</a></li>
-                    <li><a href="#">Technology</a></li>
+                    <li><a href="https://abidansari-portfolio.netlify.app/" target="_blank"><i
+                                class="fas fa-user-circle me-2"></i>Portfolio</a></li>
+                    <li *ngIf="serverUrl?.length"><a [href]="serverUrl" target="_blank"><i
+                                class="fas fa-robot me-2"></i>Use AI in Interview</a></li>
+                    <li *ngFor="let category of uniqueCategories">
+                        <a href="#" (click)="handleLinkClick(category)"><i class="fas fa-folder me-2"></i>{{
+                            category.catname }}</a>
+                    </li>
                 </ul>
             </li>
-            <li><a href="#" (click)="scrollToLetest()">Latest</a></li>
-            <li><a href="#" (click)="scrollToFeature()">Featured</a></li>
-            <li><a routerLink="/about-us">About Us</a></li>
-            <li><a routerLink="/contact-us">Contact</a></li>
-            <li><a href="https://abidansari-portfolio.netlify.app/" target="_blank">Portfolio</a></li>
+            <li *ngIf="isShowLogOut"><a routerLink="/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a>
+            </li>
+            <li><a routerLink="/practice"><i class="fas fa-code me-2"></i>Practice</a></li>
+            <li *ngIf="isShowLogOut && isAdmin"><a routerLink="/analytics"><i
+                        class="fas fa-chart-line me-2"></i>Analytics</a></li>
+            <li *ngIf="isShowLogOut && isAdmin"><a routerLink="/user-management"><i
+                        class="fas fa-users me-2"></i>Users</a></li>
+            <li><a routerLink="/mock-interview"><i class="fas fa-comments me-2"></i>Mock Interview</a></li>
+            <li><a routerLink="/about-us"><i class="fas fa-info-circle me-2"></i>About Us</a></li>
+            <li><a routerLink="/contact-us"><i class="fas fa-envelope me-2"></i>Contact</a></li>
+            <li *ngIf="!isShowLogOut"><a routerLink="/auth"><i class="fas fa-sign-in-alt me-2"></i>Login</a></li>
+            <li *ngIf="isShowLogOut">
+                <a href="#"><i class="fas fa-user-circle me-2"></i>Profile</a>
+                <ul class="submenu">
+                    <li><a routerLink="/profile"><i class="fas fa-id-card me-2"></i>My Profile</a></li>
+                    <li><a routerLink="/create-post"><i class="fas fa-pen-square me-2"></i>Create Post</a></li>
+                    <li><a routerLink="/create-practice"><i class="fas fa-plus-circle me-2"></i>Create Practice</a></li>
+                    <li><a routerLink="/settings"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                    <li><a routerLink="/auth" (click)="logOut()"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="#" (click)="toggleDarkMode(); $event.preventDefault()">
+                    <i class="fas me-2" [ngClass]="isDarkMode ? 'fa-sun' : 'fa-moon'"></i>
+                    {{ isDarkMode ? 'Light Mode' : 'Dark Mode' }}
+                </a>
+            </li>
         </ul>
     </nav>
     <ul class="social-icons list-unstyled list-inline mb-0 mt-auto w-100">
         <li class="list-inline-item">
-            <a href="#"><i class="fab fa-facebook-f"></i></a>
-        </li>
-        <li class="list-inline-item">
-            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="https://www.facebook.com/abidansari.ansari.127"><i class="fab fa-facebook-f"></i></a>
         </li>
         <li class="list-inline-item" (click)="sendWhatsAppMessage()">
-            <a href=""><i class="fab fa-whatsapp"></i></a>
+            <a href="#"><i class="fab fa-whatsapp"></i></a>
         </li>
         <li class="list-inline-item">
-            <a href="#"><i class="fab fa-pinterest"></i></a>
+            <a href="https://www.linkedin.com/in/abid-ansari-523699248/"><i class="fab fa-linkedin-in"></i></a>
         </li>
         <li class="list-inline-item">
-            <a href="#"><i class="fab fa-youtube"></i></a>
+            <a href="#" (click)="sendEmail()"><i class="far fa-envelope"></i></a>
         </li>
     </ul>
 </div>
+
+<!-- Overlay for click outside to close menu -->
+<div class="menu-overlay" [ngClass]="{'active': isCanvasMenuOpen}" (click)="toggleCanvasMenu()"></div>
+
 <!-- search pop up  -->
 <div class="search-popup" [ngClass]="{'visible': isSearchPopupOpen}">
     <button class="btn-close" aria-label="Close" type="button" (click)="toggleSearchPopup()"></button>
@@ -134,3 +251,6 @@
         </form>
     </div>
 </div>
+
+<!-- Add a spacer for the fixed navbar -->
+<div class="main-content-wrapper"></div>

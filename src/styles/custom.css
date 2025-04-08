@@ -1,0 +1,127 @@
+/* Frontend and Backend tab image styles */
+.post-list-sm .thumb {
+  flex: 0 0 63px !important;
+  margin-right: 15px;
+}
+
+.post-list-sm .thumb .inner {
+  height: 63px !important;
+  width: 63px !important;
+  border-radius: 50% !important;
+  overflow: hidden;
+}
+
+.post-list-sm .thumb img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+}
+
+/* Circle specific styles */
+.post-list-sm.circle .thumb {
+  border-radius: 50% !important;
+}
+
+.post-list-sm.circle .thumb .inner {
+  border-radius: 50% !important;
+}
+
+.post-list-sm.circle .thumb img {
+  border-radius: 50% !important;
+}
+
+/* Fix image sizes for both frontend and backend tabs */
+app-populars-posts .post-list-sm .thumb,
+app-recents-posts .post-list-sm .thumb {
+  flex: 0 0 63px !important;
+}
+
+app-populars-posts .post-list-sm .thumb .inner,
+app-recents-posts .post-list-sm .thumb .inner {
+  height: 63px !important;
+  width: 63px !important;
+}
+
+/* Fix for image height and width to maintain aspect ratio */
+.post-list-sm img {
+  aspect-ratio: 1/1;
+  object-fit: cover !important;
+}
+
+/* 1. Mini navbar marquee styling to match logo theme */
+.mini-header-left .theme-match-marquee .marquee-item {
+  color: #2ecc71 !important; /* Match with primary color */
+  font-weight: 500;
+}
+
+body.dark-mode .mini-header-left .theme-match-marquee .marquee-item {
+  color: #64dd96 !important; /* Lighter shade for dark mode */
+}
+
+.mini-header-left .theme-match-marquee .marquee-separator {
+  color: #6e72fc !important; /* Secondary gradient color */
+}
+
+body.dark-mode .mini-header-left .theme-match-marquee .marquee-separator {
+  color: #8f93ff !important; /* Lighter shade for dark mode */
+}
+
+.mini-header-left .theme-match-marquee i.fas.fa-code {
+  color: #6e72fc !important; /* Match with gradient */
+}
+
+/* 2. Featured post image size reduction in home page */
+.featured-post-lg .thumb {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(32, 54, 86, 0.3);
+  max-height: 350px !important;
+}
+
+.featured-post-lg .thumb::after {
+  content: "";
+  background: #203656;
+  display: block;
+  height: 100%;
+  left: 0;
+  opacity: 0.6;
+  top: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.featured-post-lg .thumb .inner {
+  background-size: cover;
+  background-position: center center;
+  height: 350px !important; /* Reduced from 533px */
+  transition: all 0.3s ease-in-out;
+  transform: scale(1);
+}
+
+/* 3. Featured small images in right sidebar */
+.post.post-list-sm.square .thumb {
+  max-width: 90px !important;
+  margin-right: 15px;
+}
+
+.post.post-list-sm.square .thumb .inner {
+  height: 90px !important;
+  width: 90px !important;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Make sure the images maintain aspect ratio */
+.post.post-list-sm.square .thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 4. Loading placeholder to match new size */
+.loading-placeholder .thumb {
+  background-color: #ddd;
+  height: 350px !important; 
+  margin-top: 10px;
+} 

@@ -1,0 +1,118 @@
+<div class="container mt-5">
+  <div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+      <!-- Page header -->
+      <header class="mb-4">
+        <h1 class="fw-bolder mb-1" *ngIf="categoryName">
+          {{ categoryName }} Posts
+        </h1>
+        <p class="lead">
+          Browsing all posts in the {{ categoryName }} category
+        </p>
+      </header>
+
+      <!-- Loading spinner -->
+      <div *ngIf="loading" class="text-center py-5">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading posts...</p>
+      </div>
+
+      <!-- Error message -->
+      <div *ngIf="error" class="alert alert-danger">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        Could not load posts. Please try again later.
+      </div>
+
+      <!-- No posts message -->
+      <div *ngIf="!loading && !error && posts.length === 0" class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        No posts found in this category.
+      </div>
+
+      <!-- Posts list -->
+      <div *ngIf="!loading && !error && posts.length > 0">
+        <div class="card mb-4" *ngFor="let post of paginatedPosts">
+          <div class="row g-0">
+            <!-- Post image -->
+            <div class="col-md-4">
+              <img 
+                [src]="post.data.postImgPath || post.data.featuredImage || 'assets/images/placeholder.jpg'" 
+                alt="{{ post.data.title }}" 
+                class="img-fluid rounded-start post-thumbnail"
+                style="height: 100%; object-fit: cover;"
+              >
+            </div>
+            
+            <!-- Post details -->
+            <div class="col-md-8">
+              <div class="card-body">
+                <h5 class="card-title">
+                  <a [routerLink]="['/', createPermalink(post.data.title || '') + '-' + post.id]" class="text-decoration-none">
+                    {{ post.data.title || 'Untitled Post' }}
+                  </a>
+                </h5>
+                
+                <p class="card-text" *ngIf="post.data.excerpt">
+                  {{ post.data.excerpt }}
+                </p>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="post-meta">
+                    <small class="text-muted">
+                      <i class="fas fa-calendar-alt me-1"></i>
+                      {{ post.data.createdAt?.toDate() | date:'mediumDate' }}
+                    </small>
+                    <small class="text-muted ms-3" *ngIf="post.data.views">
+                      <i class="fas fa-eye me-1"></i>
+                      {{ post.data.views }} views
+                    </small>
+                  </div>
+                  
+                  <a [routerLink]="['/', createPermalink(post.data.title || '') + '-' + post.id]" class="btn btn-sm btn-outline-primary">
+                    Read More
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Pagination -->
+        <mat-paginator
+          [length]="totalPosts"
+          [pageSize]="postsPerPage"
+          [pageSizeOptions]="[5, 10, 25, 50]"
+          (page)="onPageChange($event)"
+          aria-label="Select page">
+        </mat-paginator>
+      </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <!-- Ad -->
+      <div class="mb-4">
+        <app-google-ad [isSidebar]="true"></app-google-ad>
+      </div>
+      
+      <!-- About this category -->
+      <div class="card mb-4">
+        <div class="card-header">About {{ categoryName }}</div>
+        <div class="card-body">
+          <p *ngIf="totalPosts > 0">
+            Explore all posts related to {{ categoryName }}. This category contains {{ totalPosts }} {{ totalPosts === 1 ? 'post' : 'posts' }}.
+          </p>
+          <p *ngIf="totalPosts === 0">
+            No posts found in the {{ categoryName }} category.
+          </p>
+          <a routerLink="/" class="btn btn-sm btn-outline-primary">
+            Back to Home
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

@@ -1,0 +1,114 @@
+// Responsive Mixins
+@mixin mobile {
+  @media (max-width: $mobile-breakpoint) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (min-width: $mobile-breakpoint + 1) and (max-width: $tablet-breakpoint) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: $tablet-breakpoint + 1) {
+    @content;
+  }
+}
+
+// Flexbox Mixins
+@mixin flex($direction: row, $justify: flex-start, $align: stretch) {
+  display: flex;
+  flex-direction: $direction;
+  justify-content: $justify;
+  align-items: $align;
+}
+
+// Grid Mixins
+@mixin grid($columns: 1, $gap: 0) {
+  display: grid;
+  grid-template-columns: repeat($columns, 1fr);
+  gap: $gap;
+}
+
+// Typography Mixins
+@mixin heading($size: $heading-1) {
+  font-family: $heading-font-family;
+  font-size: $size;
+  line-height: 1.2;
+  margin-bottom: $spacing-md;
+}
+
+@mixin body-text($size: $base-font-size) {
+  font-family: $base-font-family;
+  font-size: $size;
+  line-height: 1.6;
+}
+
+// Button Mixins
+@mixin button($bg-color: $primary-color, $text-color: white) {
+  background-color: $bg-color;
+  color: $text-color;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $border-radius;
+  border: none;
+  cursor: pointer;
+  transition: $transition-base;
+  
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+// Card Mixins
+@mixin card {
+  background: white;
+  border-radius: $border-radius;
+  box-shadow: $box-shadow;
+  padding: $spacing-md;
+}
+
+// Container Mixins
+@mixin container($max-width: $desktop-breakpoint) {
+  width: 100%;
+  max-width: $max-width;
+  margin: 0 auto;
+  padding: 0 $spacing-md;
+}
+
+// Animation Mixins
+@mixin fade-in($duration: 0.3s) {
+  animation: fadeIn $duration ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Utility Mixins
+@mixin text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin clearfix {
+  &::after {
+    content: '';
+    display: table;
+    clear: both;
+  }
+}
+
+@mixin hover-lift($distance: -5px) {
+  transition: transform $transition-base;
+  &:hover {
+    transform: translateY($distance);
+  }
+} 

@@ -1,0 +1,136 @@
+<div class="interview-setup">
+  <!-- Step progress indicators -->
+  <div class="step-progress">
+    <div class="step-item" [class.active]="currentState === 'interview_setup'">
+      <div class="step-number">1</div>
+      <div class="step-name">Tech Stack</div>
+    </div>
+    <div class="step-divider"></div>
+    <div class="step-item" [class.active]="currentState === 'experience_level'">
+      <div class="step-number">2</div>
+      <div class="step-name">Experience</div>
+    </div>
+    <div class="step-divider"></div>
+    <div class="step-item" [class.active]="currentState === 'question_count'">
+      <div class="step-number">3</div>
+      <div class="step-name">Questions</div>
+    </div>
+  </div>
+
+  <!-- Tech stack selection -->
+  <div class="setup-section" *ngIf="currentState === 'interview_setup'">
+    <div class="question">
+      <h3>Which tech stack would you like to be interviewed on?</h3>
+      <p class="hint">Select a technology from the list or type your own</p>
+      <p class="warning" *ngIf="!selectedTech">
+        <i class="fas fa-exclamation-triangle"></i> You must select a tech stack to proceed
+      </p>
+    </div>
+    
+    <div class="selection-type-toggle">
+      <button class="toggle-button" [class.active]="!showManualInput" (click)="showManualInput = false">
+        <i class="fas fa-list"></i> Select from list
+      </button>
+      <button class="toggle-button" [class.active]="showManualInput" (click)="toggleManualInput()">
+        <i class="fas fa-keyboard"></i> Type your own
+      </button>
+    </div>
+
+    <div class="tech-grid" *ngIf="!showManualInput">
+      <button *ngFor="let tech of techOptions; trackBy: trackByTech" 
+        class="tech-button"
+        [class.selected]="selectedTech === tech.name"
+        (click)="selectTech(tech.name)">
+        {{ tech.name }}
+      </button>
+    </div>
+    
+    <div class="manual-input-container" *ngIf="showManualInput">
+      <div class="input-group">
+        <input type="text" 
+          class="tech-input" 
+          placeholder="Enter tech stack (e.g. Svelte, Kotlin, AWS)" 
+          [(ngModel)]="manualTechInput"
+          (keyup.enter)="submitManualTech()">
+        <button class="submit-button" (click)="submitManualTech()">
+          <i class="fas fa-check"></i>
+        </button>
+      </div>
+    </div>
+    
+    <div class="speech-status" *ngIf="interimSpeech">
+      <p>I heard: "{{ interimSpeech }}"</p>
+    </div>
+  </div>
+  
+  <!-- Experience level selection -->
+  <div class="setup-section" *ngIf="currentState === 'experience_level'">
+    <div class="question">
+      <h3>What's your experience level with {{ selectedTech }}?</h3>
+      <p class="hint">Select your experience level</p>
+    </div>
+    
+    <div class="experience-grid">
+      <button 
+        class="experience-button beginner"
+        [class.selected]="selectedExperienceLevel === 'beginner'"
+        (click)="selectExperienceLevel('beginner')">
+        <div class="icon"><i class="fas fa-seedling"></i></div>
+        <div class="label">Beginner</div>
+        <div class="description">New to {{ selectedTech }}</div>
+      </button>
+      
+      <button 
+        class="experience-button intermediate"
+        [class.selected]="selectedExperienceLevel === 'intermediate'"
+        (click)="selectExperienceLevel('intermediate')">
+        <div class="icon"><i class="fas fa-user-graduate"></i></div>
+        <div class="label">Intermediate</div>
+        <div class="description">Familiar with {{ selectedTech }}</div>
+      </button>
+      
+      <button 
+        class="experience-button expert"
+        [class.selected]="selectedExperienceLevel === 'expert'"
+        (click)="selectExperienceLevel('expert')">
+        <div class="icon"><i class="fas fa-star"></i></div>
+        <div class="label">Expert</div>
+        <div class="description">Advanced {{ selectedTech }} skills</div>
+      </button>
+    </div>
+    
+    <div class="speech-status" *ngIf="interimSpeech">
+      <p>I heard: "{{ interimSpeech }}"</p>
+    </div>
+  </div>
+  
+  <!-- Question count selection -->
+  <div class="setup-section" *ngIf="currentState === 'question_count'">
+    <div class="question">
+      <h3>How many questions would you like to attempt?</h3>
+      <p class="hint">Select the number of questions for your interview</p>
+    </div>
+    
+    <div class="count-grid">
+      <button *ngFor="let count of questionCountOptions; trackBy: trackByCount"
+        class="count-button"
+        [class.selected]="selectedQuestionCount === count"
+        (click)="selectQuestionCount(count)">
+        {{ count }}
+      </button>
+    </div>
+    
+    <div class="speech-status" *ngIf="interimSpeech">
+      <p>I heard: "{{ interimSpeech }}"</p>
+    </div>
+  </div>
+  
+  <!-- Loading state -->
+  <div class="setup-section loading" *ngIf="currentState === 'loading_questions'">
+    <div class="loading-animation">
+      <div class="spinner"></div>
+    </div>
+    <h3>Preparing your interview on {{ selectedTech }}...</h3>
+    <p>Getting {{ selectedQuestionCount }} questions ready</p>
+  </div>
+</div>

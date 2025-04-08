@@ -1,0 +1,199 @@
+:host {
+  display: block;
+  padding-bottom: 3rem;
+}
+
+.card {
+  border: none;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  
+  .card-header {
+    background: linear-gradient(135deg, #4a6bff 0%, #2541b8 100%);
+    border-bottom: none;
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .card-body {
+    padding: 2rem;
+  }
+}
+
+/* Improve Quill editor styles for better height handling */
+::ng-deep .ql-container {
+  height: auto !important;
+  min-height: 150px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+::ng-deep .ql-toolbar {
+  background-color: #f8f9fa;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+}
+
+::ng-deep .ql-container {
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+::ng-deep .ql-editor {
+  min-height: 200px;
+  max-height: none !important;
+}
+
+/* Make sure the toolbar buttons are visible */
+::ng-deep .ql-formats {
+  margin-right: 8px !important;
+}
+
+::ng-deep .ql-snow .ql-picker.ql-expanded .ql-picker-options {
+  z-index: 100;
+}
+
+/* Code template textarea enhancements */
+textarea[formControlName="codeTemplate"] {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 200px;
+  height: auto;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+  tab-size: 2;
+  -moz-tab-size: 2;
+  resize: vertical;
+}
+
+/* Fix section spacing to prevent overlap */
+.mb-3, .mb-4 {
+  margin-bottom: 1.5rem !important;
+}
+
+/* Add clear section breaks */
+.coding-section {
+  border-top: 1px solid #e9ecef;
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+/* Rest of your existing styles */
+.form-label {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  border-color: #dee2e6;
+  
+  &:focus {
+    box-shadow: 0 0 0 0.25rem rgba(74, 107, 255, 0.25);
+    border-color: #4a6bff;
+  }
+  
+  &.is-invalid {
+    border-color: #dc3545;
+    
+    &:focus {
+      box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+    }
+  }
+}
+
+.form-control-lg {
+  font-size: 1.1rem;
+}
+
+.input-group {
+  .input-group-text {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+  }
+  
+  .btn-outline-danger {
+    border-color: #dee2e6;
+    color: #dc3545;
+    
+    &:hover {
+      background-color: #dc3545;
+      border-color: #dc3545;
+      color: white;
+    }
+  }
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  
+  &.btn-primary {
+    background: linear-gradient(135deg, #4a6bff 0%, #2541b8 100%);
+    border: none;
+    
+    &:hover, &:focus {
+      background: linear-gradient(135deg, #3a5bef 0%, #1531a8 100%);
+      box-shadow: 0 4px 10px rgba(37, 65, 184, 0.3);
+    }
+    
+    &:disabled {
+      background: #a0aec0;
+      opacity: 0.7;
+    }
+  }
+  
+  &.btn-outline-secondary {
+    border-color: #dee2e6;
+    color: #495057;
+    
+    &:hover {
+      background-color: #f8f9fa;
+      color: #212529;
+      border-color: #ced4da;
+    }
+  }
+}
+
+// Form validation styles
+.invalid-feedback {
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  
+  &.d-block {
+    display: block;
+  }
+}
+
+// Switch toggle
+.form-check-input {
+  &:checked {
+    background-color: #4a6bff;
+    border-color: #4a6bff;
+  }
+  
+  &:focus {
+    box-shadow: 0 0 0 0.25rem rgba(74, 107, 255, 0.25);
+    border-color: #4a6bff;
+  }
+}
+
+// Small helper text
+.text-muted {
+  font-size: 0.85rem;
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .card-body {
+    padding: 1.5rem;
+  }
+  
+  .btn-lg {
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+  }
+} 

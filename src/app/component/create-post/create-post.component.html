@@ -1,0 +1,254 @@
+<div class="container mt-5">
+  <div class="row">
+    <div class="col-lg-10 mx-auto">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h2 class="mb-0">Create New Post</h2>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="postForm" (ngSubmit)="onSubmit()">
+            <!-- Title -->
+            <div class="mb-4">
+              <label for="title" class="form-label fw-bold">Title</label>
+              <input 
+                type="text" 
+                id="title" 
+                formControlName="title" 
+                class="form-control form-control-lg" 
+                placeholder="Enter post title"
+                [ngClass]="{'is-invalid': postForm.get('title')?.invalid && postForm.get('title')?.touched}"
+              >
+              <div class="invalid-feedback" *ngIf="postForm.get('title')?.errors?.['required'] && postForm.get('title')?.touched">
+                Title is required
+              </div>
+              <div class="invalid-feedback" *ngIf="postForm.get('title')?.errors?.['minlength'] && postForm.get('title')?.touched">
+                Title must be at least 5 characters
+              </div>
+            </div>
+
+            <!-- Category -->
+            <div class="mb-4">
+              <label for="category" class="form-label fw-bold">Category</label>
+              <select 
+                id="category" 
+                formControlName="category" 
+                class="form-select"
+                [ngClass]="{'is-invalid': postForm.get('category')?.invalid && postForm.get('category')?.touched}"
+              >
+                <option value="" disabled selected>Select a category</option>
+                <option *ngFor="let category of categories" [value]="category.id">
+                  {{ category.name || (category.data && category.data.category && category.data.category.Category) || 'Unnamed Category' }}
+                </option>
+              </select>
+              <div class="invalid-feedback" *ngIf="postForm.get('category')?.errors?.['required'] && postForm.get('category')?.touched">
+                Please select a category
+              </div>
+            </div>
+
+            <!-- Featured Image -->
+            <div class="mb-4">
+              <label for="featuredImage" class="form-label fw-bold">Featured Image</label>
+              <div class="input-group">
+                <input 
+                  type="file" 
+                  id="featuredImage" 
+                  class="form-control" 
+                  accept="image/*"
+                  (change)="uploadImage($event)"
+                >
+              </div>
+              
+              <!-- Image preview -->
+              <div *ngIf="imagePreview" class="mt-3">
+                <img [src]="imagePreview" class="img-thumbnail" style="max-height: 200px;">
+              </div>
+              
+              <!-- Upload progress -->
+              <div *ngIf="uploadPercent | async as percent" class="mt-2">
+                <div class="progress">
+                  <div 
+                    class="progress-bar bg-success" 
+                    role="progressbar" 
+                    [style.width.%]="percent" 
+                    [attr.aria-valuenow]="percent" 
+                    aria-valuemin="0" 
+                    aria-valuemax="100">
+                    {{ percent | number:'1.0-0' }}%
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Excerpt -->
+            <div class="mb-4">
+              <label for="excerpt" class="form-label fw-bold">Excerpt</label>
+              <textarea 
+                id="excerpt" 
+                formControlName="excerpt" 
+                class="form-control" 
+                rows="3" 
+                placeholder="Brief summary of your post (max 200 characters)"
+                [ngClass]="{'is-invalid': postForm.get('excerpt')?.invalid && postForm.get('excerpt')?.touched}"
+              ></textarea>
+              <div class="invalid-feedback" *ngIf="postForm.get('excerpt')?.errors?.['required'] && postForm.get('excerpt')?.touched">
+                Excerpt is required
+              </div>
+              <div class="invalid-feedback" *ngIf="postForm.get('excerpt')?.errors?.['maxlength'] && postForm.get('excerpt')?.touched">
+                Excerpt must be less than 200 characters
+              </div>
+              <small class="text-muted">
+                {{ (postForm.get('excerpt')?.value?.length || 0) }}/200 characters
+              </small>
+            </div>
+
+            <!-- Content (Rich Text Editor) -->
+            <div class="mb-4">
+              <label for="content" class="form-label fw-bold">Content</label>
+              <quill-editor
+                id="content"
+                formControlName="content"
+                [modules]="quillModules"
+                style="height: 300px; display: block;"
+                theme="snow"
+                [ngClass]="{'is-invalid': postForm.get('content')?.invalid && postForm.get('content')?.touched}"
+              ></quill-editor>
+              <div class="invalid-feedback d-block" *ngIf="postForm.get('content')?.errors?.['required'] && postForm.get('content')?.touched">
+                Content is required
+              </div>
+              <div class="invalid-feedback d-block" *ngIf="postForm.get('content')?.errors?.['minlength'] && postForm.get('content')?.touched">
+                Content must be at least 50 characters
+              </div>
+            </div>
+
+            <!-- Tags -->
+            <div class="mb-4">
+              <label for="tags" class="form-label fw-bold">Tags</label>
+              <input 
+                type="text" 
+                id="tags" 
+                formControlName="tags" 
+                class="form-control" 
+                placeholder="Enter tags separated by commas (e.g. javascript, angular, web development)"
+              >
+              <small class="text-muted">Separate tags with commas</small>
+            </div>
+
+            <!-- Post Placement Options -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">Post Placement</label>
+              
+              <!-- Featured Post Option -->
+              <div class="form-check mb-2">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  id="isFeatured" 
+                  formControlName="isFeatured"
+                >
+                <label class="form-check-label" for="isFeatured">
+                  Featured Post (appears in featured section)
+                </label>
+              </div>
+              
+              <!-- Post Type Selection -->
+              <div class="mt-3">
+                <label class="form-label">Post Type:</label>
+                <div class="form-check">
+                  <input 
+                    class="form-check-input" 
+                    type="radio" 
+                    id="postTypeRegular" 
+                    formControlName="postType" 
+                    value="post"
+                  >
+                  <label class="form-check-label" for="postTypeRegular">
+                    Regular Post
+                  </label>
+                </div>
+                
+                <div class="form-check">
+                  <input 
+                    class="form-check-input" 
+                    type="radio" 
+                    id="postTypeFrontend" 
+                    formControlName="postType" 
+                    value="frontend"
+                  >
+                  <label class="form-check-label" for="postTypeFrontend">
+                    Frontend Post (appears in frontend tab)
+                  </label>
+                </div>
+                
+                <div class="form-check">
+                  <input 
+                    class="form-check-input" 
+                    type="radio" 
+                    id="postTypeBackend" 
+                    formControlName="postType" 
+                    value="backend"
+                  >
+                  <label class="form-check-label" for="postTypeBackend">
+                    Backend Post (appears in backend tab)
+                  </label>
+                </div>
+                
+                <div class="form-check">
+                  <input 
+                    class="form-check-input" 
+                    type="radio" 
+                    id="postTypeAnimated" 
+                    formControlName="postType" 
+                    value="animated"
+                  >
+                  <label class="form-check-label" for="postTypeAnimated">
+                    Animated Post (appears in main animated section)
+                  </label>
+                </div>
+              </div>
+              
+              <small class="text-muted d-block mt-2">
+                Note: Each section shows a maximum of 3 posts. If you add a new post to a section that already has 3 posts, 
+                the oldest post will be moved to the regular posts section.
+              </small>
+            </div>
+
+            <!-- Publish Status -->
+            <div class="mb-4">
+              <div class="form-check form-switch">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  id="isPublished" 
+                  formControlName="isPublished"
+                >
+                <label class="form-check-label" for="isPublished">
+                  Publish immediately
+                </label>
+              </div>
+              <small class="text-muted">Uncheck to save as draft</small>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="d-flex justify-content-between mt-4">
+              <button 
+                type="button" 
+                class="btn btn-outline-secondary btn-lg" 
+                (click)="cancel()"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                class="btn btn-primary btn-lg" 
+                [disabled]="isSubmitting"
+              >
+                <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                {{ isSubmitting ? 'Saving...' : 'Publish Post' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

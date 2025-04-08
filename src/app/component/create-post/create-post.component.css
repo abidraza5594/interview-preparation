@@ -1,0 +1,196 @@
+/* Card styling */
+.card {
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.card-header {
+  background-color: #2ecc71 !important;
+  padding: 1.5rem;
+}
+
+.card-body {
+  padding: 2rem;
+}
+
+/* Form controls */
+.form-control, .form-select {
+  border-radius: 5px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ced4da;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #2ecc71;
+  box-shadow: 0 0 0 0.25rem rgba(46, 204, 113, 0.25);
+}
+
+.form-control-lg {
+  font-size: 1.25rem;
+}
+
+/* Labels */
+.form-label {
+  margin-bottom: 0.5rem;
+  color: #495057;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: #2ecc71;
+  border-color: #2ecc71;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+  background-color: #27ae60;
+  border-color: #27ae60;
+}
+
+.btn-outline-secondary {
+  color: #6c757d;
+  border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+  color: #fff;
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+/* Quill editor */
+::ng-deep .ql-toolbar {
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  background-color: #f8f9fa;
+  border: 1px solid #ced4da;
+}
+
+::ng-deep .ql-container {
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  border: 1px solid #ced4da;
+  border-top: none;
+}
+
+::ng-deep .ql-editor {
+  min-height: 300px;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+::ng-deep .ql-editor.ql-blank::before {
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Image preview */
+.img-thumbnail {
+  border-radius: 5px;
+  border: 1px solid #ced4da;
+}
+
+/* Progress bar */
+.progress {
+  height: 10px;
+  border-radius: 5px;
+  background-color: #e9ecef;
+}
+
+.progress-bar {
+  background-color: #2ecc71;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-body {
+    padding: 1.5rem;
+  }
+  
+  .btn-lg {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .card {
+    background-color: #2d2d2d;
+  }
+  
+  .card-body {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+  }
+  
+  .form-control, .form-select {
+    background-color: #3d3d3d;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+  
+  .form-control:focus, .form-select:focus {
+    background-color: #3d3d3d;
+    color: #e0e0e0;
+  }
+  
+  .form-label {
+    color: #b0b0b0;
+  }
+  
+  .text-muted {
+    color: #909090 !important;
+  }
+  
+  ::ng-deep .ql-toolbar {
+    background-color: #3d3d3d;
+    border-color: #444;
+  }
+  
+  ::ng-deep .ql-container {
+    background-color: #3d3d3d;
+    border-color: #444;
+  }
+  
+  ::ng-deep .ql-editor {
+    color: #e0e0e0;
+  }
+  
+  ::ng-deep .ql-editor.ql-blank::before {
+    color: #909090;
+  }
+}
+
+/* Add these styles for Quill editor */
+::ng-deep .ql-container {
+  height: auto;
+  min-height: 150px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+::ng-deep .ql-toolbar {
+  background-color: #f8f9fa;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+}
+
+::ng-deep .ql-container {
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+::ng-deep .ql-editor {
+  min-height: 200px;
+}
+
+/* Make sure the toolbar buttons are visible */
+::ng-deep .ql-formats {
+  margin-right: 8px !important;
+}
+
+::ng-deep .ql-snow .ql-picker.ql-expanded .ql-picker-options {
+  z-index: 100;
+}

@@ -1,0 +1,30 @@
+.post-thumbnail {
+  max-height: 200px;
+  width: 100%;
+  object-fit: cover;
+}
+
+.card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card-title {
+  font-weight: 600;
+}
+
+.card-title a {
+  color: #343a40;
+}
+
+.card-title a:hover {
+  color: #007bff;
+}
+
+.post-meta {
+  font-size: 0.875rem;
+} 

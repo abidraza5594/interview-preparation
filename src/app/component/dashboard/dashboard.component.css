@@ -1,0 +1,145 @@
+.dashboard-container {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+}
+
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.dashboard-title {
+  color: #343a40;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-subtitle {
+  color: #6c757d;
+  font-size: 1.1rem;
+}
+
+.dashboard-content {
+  margin-top: 1rem;
+}
+
+.card {
+  border: none;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+  background-color: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 1rem 1.25rem;
+}
+
+.card-header h5 {
+  margin: 0;
+  font-weight: 600;
+  color: #343a40;
+}
+
+.progress-stat {
+  padding: 1rem 0;
+}
+
+.progress-stat .display-4 {
+  font-weight: 700;
+  color: #343a40;
+  margin-bottom: 0.25rem;
+  font-size: 2.5rem;
+}
+
+.progress {
+  height: 0.75rem;
+  border-radius: 1rem;
+  background-color: #e9ecef;
+}
+
+.progress-bar {
+  border-radius: 1rem;
+}
+
+.list-group-item {
+  border-left: none;
+  border-right: none;
+  padding: 1rem 1.25rem;
+  transition: background-color 0.2s ease;
+}
+
+.list-group-item:first-child {
+  border-top: none;
+}
+
+.list-group-item:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+
+.list-group-item h6 {
+  font-weight: 600;
+  color: #343a40;
+  margin-bottom: 0.25rem;
+}
+
+.badge {
+  font-weight: 500;
+  padding: 0.35em 0.65em;
+  font-size: 0.75em;
+}
+
+.avatar-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #6c757d;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .dashboard-container {
+    padding: 1.5rem 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-title {
+    font-size: 1.75rem;
+  }
+  
+  .dashboard-subtitle {
+    font-size: 1rem;
+  }
+  
+  .progress-stat .display-4 {
+    font-size: 2rem;
+  }
+  
+  .card-header h5 {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .dashboard-container {
+    padding: 1rem 0.5rem;
+  }
+  
+  .dashboard-title {
+    font-size: 1.5rem;
+  }
+} 

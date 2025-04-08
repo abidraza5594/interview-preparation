@@ -1,0 +1,174 @@
+<div class="settings-container">
+  <div class="container py-5">
+    <!-- Loading indicator -->
+    <div *ngIf="isLoading" class="text-center my-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-2">Loading your settings...</p>
+    </div>
+
+    <div *ngIf="!isLoading && user" class="row">
+      <div class="col-lg-3 mb-4">
+        <!-- Settings navigation -->
+        <div class="card settings-nav">
+          <div class="card-body p-0">
+            <div class="list-group list-group-flush">
+              <a href="#preferences" class="list-group-item list-group-item-action">
+                <i class="fas fa-sliders-h me-2"></i> Preferences
+              </a>
+              <a href="#security" class="list-group-item list-group-item-action">
+                <i class="fas fa-lock me-2"></i> Security
+              </a>
+              <a href="#account" class="list-group-item list-group-item-action">
+                <i class="fas fa-user-cog me-2"></i> Account
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-9">
+        <!-- Preferences section -->
+        <div id="preferences" class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">Preferences</h5>
+          </div>
+          <div class="card-body">
+            <form [formGroup]="preferencesForm" (ngSubmit)="savePreferences()">
+              <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="emailNotifications" formControlName="emailNotifications">
+                <label class="form-check-label" for="emailNotifications">Receive email notifications</label>
+                <div class="form-text">Get notified about new features, updates, and activity.</div>
+              </div>
+              
+              <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="darkMode" formControlName="darkMode">
+                <label class="form-check-label" for="darkMode">Dark mode</label>
+                <div class="form-text">Use dark theme for reduced eye strain in low light.</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="language" class="form-label">Language</label>
+                <select id="language" class="form-select" formControlName="language">
+                  <option value="english">English</option>
+                  <option value="spanish">Spanish</option>
+                  <option value="french">French</option>
+                  <option value="german">German</option>
+                  <option value="chinese">Chinese</option>
+                  <option value="japanese">Japanese</option>
+                </select>
+                <div class="form-text">Select your preferred language for the interface.</div>
+              </div>
+              
+              <button type="submit" class="btn btn-primary">Save Preferences</button>
+            </form>
+          </div>
+        </div>
+        
+        <!-- Security section -->
+        <div id="security" class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">Security</h5>
+          </div>
+          <div class="card-body">
+            <h6 class="mb-3">Change Password</h6>
+            <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+              <div class="mb-3">
+                <label for="currentPassword" class="form-label">Current Password</label>
+                <div class="input-group">
+                  <input 
+                    [type]="showCurrentPassword ? 'text' : 'password'" 
+                    class="form-control" 
+                    id="currentPassword" 
+                    formControlName="currentPassword">
+                  <button 
+                    class="btn btn-outline-secondary" 
+                    type="button" 
+                    (click)="togglePasswordVisibility('current')">
+                    <i class="fas" [ngClass]="showCurrentPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+                  </button>
+                </div>
+                <div class="text-danger small" *ngIf="passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched">
+                  Current password is required
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="newPassword" class="form-label">New Password</label>
+                <div class="input-group">
+                  <input 
+                    [type]="showNewPassword ? 'text' : 'password'" 
+                    class="form-control" 
+                    id="newPassword" 
+                    formControlName="newPassword">
+                  <button 
+                    class="btn btn-outline-secondary" 
+                    type="button" 
+                    (click)="togglePasswordVisibility('new')">
+                    <i class="fas" [ngClass]="showNewPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+                  </button>
+                </div>
+                <div class="text-danger small" *ngIf="passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched">
+                  Password must be at least 6 characters
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                <div class="input-group">
+                  <input 
+                    [type]="showConfirmPassword ? 'text' : 'password'" 
+                    class="form-control" 
+                    id="confirmPassword" 
+                    formControlName="confirmPassword">
+                  <button 
+                    class="btn btn-outline-secondary" 
+                    type="button" 
+                    (click)="togglePasswordVisibility('confirm')">
+                    <i class="fas" [ngClass]="showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+                  </button>
+                </div>
+                <div class="text-danger small" *ngIf="passwordForm.hasError('notMatching') && passwordForm.get('confirmPassword')?.touched">
+                  Passwords do not match
+                </div>
+              </div>
+              
+              <button type="submit" class="btn btn-primary" [disabled]="passwordForm.invalid">Change Password</button>
+            </form>
+          </div>
+        </div>
+        
+        <!-- Account section -->
+        <div id="account" class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">Account</h5>
+          </div>
+          <div class="card-body">
+            <div class="mb-4">
+              <h6>Account Information</h6>
+              <p class="mb-1"><strong>Email:</strong> {{ user.email }}</p>
+              <p class="mb-1"><strong>Account created:</strong> {{ user.metadata?.creationTime | date }}</p>
+              <p class="mb-0"><strong>Last sign in:</strong> {{ user.metadata?.lastSignInTime | date }}</p>
+            </div>
+            
+            <div class="border-top pt-4">
+              <h6 class="text-danger">Danger Zone</h6>
+              <p>Once you delete your account, there is no going back. Please be certain.</p>
+              <button type="button" class="btn btn-danger" (click)="deleteAccount()">Delete Account</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Not logged in message -->
+    <div *ngIf="!isLoading && !user" class="text-center my-5">
+      <div class="alert alert-warning">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        You need to be logged in to access settings.
+      </div>
+      <a routerLink="/auth" class="btn btn-primary mt-3">Login</a>
+    </div>
+  </div>
+</div>

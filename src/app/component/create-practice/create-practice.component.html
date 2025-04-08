@@ -1,0 +1,351 @@
+<div class="container mt-5">
+  <div class="row">
+    <div class="col-lg-10 mx-auto">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h2 class="mb-0">Create Practice Question</h2>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="practiceForm" (ngSubmit)="onSubmit()">
+            <!-- Title -->
+            <div class="mb-4">
+              <label for="title" class="form-label fw-bold">Question Title</label>
+              <input type="text" id="title" formControlName="title" class="form-control form-control-lg"
+                placeholder="Enter question title"
+                [ngClass]="{'is-invalid': practiceForm.get('title')?.invalid && practiceForm.get('title')?.touched}">
+              <div class="invalid-feedback"
+                *ngIf="practiceForm.get('title')?.errors?.['required'] && practiceForm.get('title')?.touched">
+                Title is required
+              </div>
+              <div class="invalid-feedback"
+                *ngIf="practiceForm.get('title')?.errors?.['minlength'] && practiceForm.get('title')?.touched">
+                Title must be at least 5 characters
+              </div>
+            </div>
+
+            <!-- Category and Difficulty -->
+            <div class="row mb-4">
+              <div class="col-md-4">
+                <label for="category" class="form-label fw-bold">Category</label>
+                <select id="category" formControlName="category" class="form-select"
+                  [ngClass]="{'is-invalid': practiceForm.get('category')?.invalid && practiceForm.get('category')?.touched}">
+                  <option value="" disabled selected>Select a category</option>
+                  <option *ngFor="let category of categories" [value]="category.id">
+                    {{ category.data?.category?.Category || category.name }}
+                  </option>
+                </select>
+                <div class="invalid-feedback"
+                  *ngIf="practiceForm.get('category')?.errors?.['required'] && practiceForm.get('category')?.touched">
+                  Please select a category
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label for="difficulty" class="form-label fw-bold">Difficulty</label>
+                <select id="difficulty" formControlName="difficulty" class="form-select">
+                  <option *ngFor="let level of difficultyLevels" [value]="level">
+                    {{ level | titlecase }}
+                  </option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Question Type</label>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" formControlName="questionType" name="questionType"
+                    value="multiple-choice" (change)="updateFormValidators('multiple-choice')">
+                  <label class="form-check-label">Multiple Choice</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" formControlName="questionType" name="questionType"
+                    value="coding" (change)="updateFormValidators('coding')">
+                  <label class="form-check-label">Coding</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Description (Rich Text Editor) -->
+            <div class="mb-4">
+              <label for="description" class="form-label fw-bold">Question Description</label>
+              <quill-editor id="description" formControlName="description" [modules]="quillModules"
+                style="min-height: 250px; display: block;" theme="snow"
+                [ngClass]="{'is-invalid': practiceForm.get('description')?.invalid && practiceForm.get('description')?.touched}"></quill-editor>
+              <div class="text-danger mt-1"
+                *ngIf="practiceForm.get('description')?.errors?.['required'] && practiceForm.get('description')?.touched">
+                Description is required
+              </div>
+              <div class="text-danger mt-1"
+                *ngIf="practiceForm.get('description')?.errors?.['minlength'] && practiceForm.get('description')?.touched">
+                Description must be at least 20 characters
+              </div>
+              <small class="text-muted mt-1">Use code-block for syntax highlighted code examples</small>
+            </div>
+
+            <!-- Multiple Choice Options -->
+            <div *ngIf="practiceForm.get('questionType')?.value === 'multiple-choice'" class="mb-3">
+              <label class="form-label">Options</label>
+              <div formArrayName="options">
+                <div *ngFor="let option of optionsArray.controls; let i=index" [formGroupName]="i" class="mb-2">
+                  <div class="input-group">
+                    <input type="text" class="form-control" formControlName="text" placeholder="Option text">
+                    <div class="input-group-text">
+                      <input type="radio" class="form-check-input mt-0" [checked]="option.get('isCorrect')?.value"
+                        (change)="onOptionCorrectChange(i)" name="correctOption">
+                    </div>
+                    <button type="button" class="btn btn-outline-danger" (click)="removeOption(i)">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                  <div *ngIf="option.invalid && (option.dirty || option.touched)" class="text-danger small">
+                    <div *ngIf="option.get('text')?.errors?.['required']">Option text is required</div>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm" (click)="addOption()">
+                  <i class="fas fa-plus"></i> Add Option
+                </button>
+              </div>
+              <div *ngIf="optionsArray.invalid && optionsArray.touched" class="text-danger small mt-2">
+                <div *ngIf="optionsArray.errors?.['minOptions']">At least 2 options are required</div>
+                <div *ngIf="optionsArray.errors?.['noCorrectOption']">Please mark at least one option as correct</div>
+              </div>
+              <small *ngIf="hasNoCorrectOption()" class="text-danger d-block mt-2">Please mark at least one option as
+                correct</small>
+            </div>
+
+            <!-- Coding Question Fields -->
+            <div *ngIf="practiceForm.get('questionType')?.value === 'coding'" class="coding-section">
+              <div class="mb-4">
+                <label class="form-label fw-bold">Code Template</label>
+                <textarea class="form-control" formControlName="codeTemplate" rows="12"
+                  placeholder="Write the initial code template here..."
+                  [ngClass]="{'is-invalid': practiceForm.get('codeTemplate')?.invalid && practiceForm.get('codeTemplate')?.touched}"></textarea>
+                <div *ngIf="practiceForm.get('codeTemplate')?.invalid && practiceForm.get('codeTemplate')?.touched"
+                  class="text-danger small mt-1">
+                  Code template is required
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label fw-bold">Test Cases</label>
+                <div formArrayName="testCases" class="test-cases-container">
+                  <div *ngFor="let testCase of testCasesArray.controls; let i=index" [formGroupName]="i"
+                    class="test-case-item mb-3 p-3 border rounded">
+                    <div class="mb-3">
+                      <label class="form-label">Input</label>
+                      <input type="text" class="form-control" formControlName="input" placeholder="Test input">
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Expected Output</label>
+                      <input type="text" class="form-control" formControlName="expectedOutput"
+                        placeholder="Expected output">
+                    </div>
+                    <div class="form-check mb-3">
+                      <input type="checkbox" class="form-check-input" formControlName="isHidden" id="hideTestCase{{i}}">
+                      <label class="form-check-label" for="hideTestCase{{i}}">Hide this test case</label>
+                    </div>
+                    <button type="button" class="btn btn-outline-danger btn-sm" (click)="removeTestCase(i)">
+                      <i class="fas fa-trash"></i> Remove Test Case
+                    </button>
+                  </div>
+
+                  <button type="button" class="btn btn-outline-primary mt-2" (click)="addTestCase()">
+                    <i class="fas fa-plus"></i> Add Test Case
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Time and Memory Limits -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <label for="timeLimit" class="form-label fw-bold">Time Limit (seconds)</label>
+                <input type="number" id="timeLimit" formControlName="timeLimit" class="form-control" min="1"
+                  [ngClass]="{'is-invalid': practiceForm.get('timeLimit')?.invalid && practiceForm.get('timeLimit')?.touched}">
+                <div class="invalid-feedback"
+                  *ngIf="practiceForm.get('timeLimit')?.errors?.['required'] && practiceForm.get('timeLimit')?.touched">
+                  Time limit is required
+                </div>
+                <div class="invalid-feedback"
+                  *ngIf="practiceForm.get('timeLimit')?.errors?.['min'] && practiceForm.get('timeLimit')?.touched">
+                  Time limit must be at least 1 second
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label for="memoryLimit" class="form-label fw-bold">Memory Limit (MB)</label>
+                <input type="number" id="memoryLimit" formControlName="memoryLimit" class="form-control" min="16"
+                  [ngClass]="{'is-invalid': practiceForm.get('memoryLimit')?.invalid && practiceForm.get('memoryLimit')?.touched}">
+                <div class="invalid-feedback"
+                  *ngIf="practiceForm.get('memoryLimit')?.errors?.['required'] && practiceForm.get('memoryLimit')?.touched">
+                  Memory limit is required
+                </div>
+                <div class="invalid-feedback"
+                  *ngIf="practiceForm.get('memoryLimit')?.errors?.['min'] && practiceForm.get('memoryLimit')?.touched">
+                  Memory limit must be at least 16 MB
+                </div>
+              </div>
+            </div>
+
+            <!-- Solution (Rich Text Editor) -->
+            <div class="mb-4">
+              <label for="solution" class="form-label fw-bold">Solution Explanation</label>
+              <quill-editor id="solution" formControlName="solution" [modules]="quillModules"
+                style="min-height: 250px; display: block;" theme="snow"
+                [ngClass]="{'is-invalid': practiceForm.get('solution')?.invalid && practiceForm.get('solution')?.touched}"></quill-editor>
+              <div class="text-danger mt-1"
+                *ngIf="practiceForm.get('solution')?.errors?.['required'] && practiceForm.get('solution')?.touched">
+                Solution is required
+              </div>
+              <div class="text-danger mt-1"
+                *ngIf="practiceForm.get('solution')?.errors?.['minlength'] && practiceForm.get('solution')?.touched">
+                Solution must be at least 20 characters
+              </div>
+              <small class="text-muted mt-1">Use code-block for syntax highlighted code examples</small>
+            </div>
+
+            <!-- Hints -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">Hints (Optional)</label>
+              <div formArrayName="hints">
+                <div *ngFor="let hint of hintsArray.controls; let i = index" [formGroupName]="i" class="mb-2">
+                  <div class="input-group">
+                    <input type="text" formControlName="text" class="form-control" placeholder="Hint {{ i + 1 }}">
+                    <button type="button" class="btn btn-outline-danger" (click)="removeHint(i)"
+                      [disabled]="hintsArray.length === 1">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-outline-secondary mt-2" (click)="addHint()">
+                <i class="fas fa-plus me-1"></i> Add Hint
+              </button>
+            </div>
+
+            <!-- Tags -->
+            <div class="mb-4">
+              <label for="tags" class="form-label fw-bold">Tags</label>
+              <input type="text" id="tags" formControlName="tags" class="form-control"
+                placeholder="Enter tags separated by commas (e.g. javascript, algorithms, data structures)">
+              <small class="text-muted">Separate tags with commas</small>
+            </div>
+
+            <!-- Publish Status -->
+            <div class="mb-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="isPublished" formControlName="isPublished">
+                <label class="form-check-label" for="isPublished">
+                  Publish immediately
+                </label>
+              </div>
+              <small class="text-muted">Uncheck to save as draft</small>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="d-flex justify-content-between mt-4">
+              <button type="button" class="btn btn-outline-secondary btn-lg" (click)="cancel()">
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-primary btn-lg" [disabled]="!practiceForm.valid || loading">
+                <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" role="status"
+                  aria-hidden="true"></span>
+                {{ loading ? 'Saving...' : 'Create Question' }}
+              </button>
+            </div>
+
+            <!-- Form Validation Feedback -->
+            <div class="mt-3" *ngIf="practiceForm.invalid">
+              <div class="alert alert-warning">
+                <h5>Please fix the following issues:</h5>
+                <ul class="mb-0">
+                  <li *ngIf="practiceForm.get('title')?.errors?.['required']">Title is required</li>
+                  <li *ngIf="practiceForm.get('title')?.errors?.['minlength']">Title must be at least 5 characters</li>
+                  <li *ngIf="practiceForm.get('category')?.errors?.['required']">Category is required</li>
+                  <li *ngIf="practiceForm.get('description')?.errors?.['required']">Description is required</li>
+                  <li *ngIf="practiceForm.get('description')?.errors?.['minlength']">Description must be at least 20
+                    characters</li>
+                  <li *ngIf="practiceForm.get('solution')?.errors?.['required']">Solution is required</li>
+                  <li *ngIf="practiceForm.get('solution')?.errors?.['minlength']">Solution must be at least 20
+                    characters</li>
+                  <li
+                    *ngIf="practiceForm.get('questionType')?.value === 'multiple-choice' && optionsArray.errors?.['minOptions']">
+                    At least 2 options are required
+                  </li>
+                  <li
+                    *ngIf="practiceForm.get('questionType')?.value === 'multiple-choice' && optionsArray.errors?.['noCorrectOption']">
+                    Please mark at least one option as correct
+                  </li>
+                  <li
+                    *ngIf="practiceForm.get('questionType')?.value === 'coding' && practiceForm.get('codeTemplate')?.errors?.['required']">
+                    Code template is required
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Debug Section (only visible during development) -->
+            <div class="mt-4 p-3 border border-secondary rounded">
+              <h5>Form Debug Information:</h5>
+              <p>Form Valid: {{ practiceForm.valid }}</p>
+              <p>Question Type: {{ practiceForm.get('questionType')?.value }}</p>
+              <p>Form Touched: {{ practiceForm.touched }}</p>
+              <p>Form Dirty: {{ practiceForm.dirty }}</p>
+
+              <div *ngIf="practiceForm.get('questionType')?.value === 'coding'">
+                <h6>Coding Question Fields:</h6>
+                <p>Code Template Valid: {{ practiceForm.get('codeTemplate')?.valid }}</p>
+                <p>Test Cases Valid: {{ testCasesArray.valid }}</p>
+                <p>Test Cases Count: {{ testCasesArray.length }}</p>
+                <p>All Fields Test:</p>
+                <ul>
+                  <li>Title Valid: {{ practiceForm.get('title')?.valid }}</li>
+                  <li>Category Valid: {{ practiceForm.get('category')?.valid }}</li>
+                  <li>Description Valid: {{ practiceForm.get('description')?.valid }}</li>
+                  <li>Solution Valid: {{ practiceForm.get('solution')?.valid }}</li>
+                  <li>Code Template Valid: {{ practiceForm.get('codeTemplate')?.valid }}</li>
+                  <li>Test Cases Valid: {{ practiceForm.get('testCases')?.valid }}</li>
+                  <li>Time Limit Valid: {{ practiceForm.get('timeLimit')?.valid }}</li>
+                  <li>Memory Limit Valid: {{ practiceForm.get('memoryLimit')?.valid }}</li>
+                </ul>
+              </div>
+
+              <div *ngIf="practiceForm.get('questionType')?.value === 'multiple-choice'">
+                <h6>Multiple Choice Fields:</h6>
+                <p>Options Valid: {{ optionsArray.valid }}</p>
+                <p>Options Count: {{ optionsArray.length }}</p>
+                <p>All Fields Test:</p>
+                <ul>
+                  <li>Title Valid: {{ practiceForm.get('title')?.valid }}</li>
+                  <li>Category Valid: {{ practiceForm.get('category')?.valid }}</li>
+                  <li>Description Valid: {{ practiceForm.get('description')?.valid }}</li>
+                  <li>Solution Valid: {{ practiceForm.get('solution')?.valid }}</li>
+                  <li>Options Valid: {{ practiceForm.get('options')?.valid }}</li>
+                  <li>Time Limit Valid: {{ practiceForm.get('timeLimit')?.valid }}</li>
+                  <li>Memory Limit Valid: {{ practiceForm.get('memoryLimit')?.valid }}</li>
+                </ul>
+              </div>
+
+              <h6>Invalid Fields:</h6>
+              <ul>
+                <li *ngIf="!practiceForm.get('title')?.valid">Title: {{ practiceForm.get('title')?.errors | json }}</li>
+                <li *ngIf="!practiceForm.get('category')?.valid">Category: {{ practiceForm.get('category')?.errors |
+                  json }}</li>
+                <li *ngIf="!practiceForm.get('description')?.valid">Description: {{
+                  practiceForm.get('description')?.errors | json }}</li>
+                <li *ngIf="!practiceForm.get('solution')?.valid">Solution: {{ practiceForm.get('solution')?.errors |
+                  json }}</li>
+                <li *ngIf="!practiceForm.get('options')?.valid">Options: {{ practiceForm.get('options')?.errors | json
+                  }}</li>
+                <li *ngIf="!practiceForm.get('codeTemplate')?.valid">Code Template: {{
+                  practiceForm.get('codeTemplate')?.errors | json }}</li>
+                <li *ngIf="!practiceForm.get('testCases')?.valid">Test Cases: {{ practiceForm.get('testCases')?.errors |
+                  json }}</li>
+                <li *ngIf="!practiceForm.get('timeLimit')?.valid">Time Limit: {{ practiceForm.get('timeLimit')?.errors |
+                  json }}</li>
+                <li *ngIf="!practiceForm.get('memoryLimit')?.valid">Memory Limit: {{
+                  practiceForm.get('memoryLimit')?.errors | json }}</li>
+              </ul>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

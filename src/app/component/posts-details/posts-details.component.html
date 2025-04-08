@@ -8,6 +8,11 @@
   <!-- Your content goes here -->
 </div>
 <div class="container mt-5 postDetailscontainer">
+  <!-- Top banner ad -->
+  <div class="mb-4">
+    <app-google-ad></app-google-ad>
+  </div>
+
   <div class="row">
     <div class="col-lg-8">
       <!-- Post content-->
@@ -19,37 +24,54 @@
             {{ singlePostArray.title }}
           </h1>
           <!-- Post meta content-->
-          <div class="text-muted fst-italic mb-2 p-3" *ngIf="singlePostArray">
-            {{ singlePostArray.createdAt.toMillis() | date }}
+          <div class="text-muted fst-italic mb-2 p-3" *ngIf="singlePostArray && singlePostArray.createdAt">
+            {{ singlePostArray.createdAt.toMillis ? (singlePostArray.createdAt.toMillis() | date) : (singlePostArray.createdAt | date) }}
           </div>
           <!-- Post categories-->
           <a
             class="badge bg-secondary text-decoration-none link-light p-3 ml-3"
-            href="#!"
-            >Web Design</a
+            *ngIf="singlePostArray && singlePostArray.category && singlePostArray.category.Category"
+            [routerLink]="['/category', singlePostArray.category.Category]"
+            style="cursor: pointer;"
+            >{{ singlePostArray.category.Category }}</a
+          >
+          <a
+            class="badge bg-secondary text-decoration-none link-light p-3 ml-3"
+            *ngIf="singlePostArray && singlePostArray.category && !singlePostArray.category.Category && singlePostArray.category"
+            [routerLink]="['/category', singlePostArray.category]"
+            style="cursor: pointer;"
+            >{{ singlePostArray.category }}</a
           >
           <a
             class="badge bg-secondary text-decoration-none link-light p-3 m-3"
-            href="#!"
-            >Freebies</a
+            *ngIf="singlePostArray && singlePostArray.postType"
+            [routerLink]="['/category', singlePostArray.postType]"
+            style="cursor: pointer;"
+            >{{ singlePostArray.postType | titlecase }}</a
           >
         </header>
         <!-- Preview image figure-->
-        <figure class="mb-4">
+        <figure class="mb-4" *ngIf="singlePostArray && (singlePostArray.featuredImage || singlePostArray.postImgPath)">
           <img
             class="img-fluid rounded"
-            *ngIf="singlePostArray"
-            src="{{ singlePostArray.postImgPath }}"
-            alt="..."
-            style="width: 300px"
+            [src]="singlePostArray.featuredImage || singlePostArray.postImgPath"
+            alt="Post featured image"
+            style="max-width: 100%; height: auto;"
           />
         </figure>
         <!-- Post content-->
         <section
           class="mb-5 p-3"
-          [innerHTML]="singlePostArray?.content"
+          [innerHTML]="processedContent || singlePostArray?.content"
           #contentContainer
+          *ngIf="singlePostArray && (processedContent || singlePostArray.content)"
         ></section>
+
+        <!-- Ad after main content -->
+        <div class="my-4">
+          <app-google-ad></app-google-ad>
+        </div>
+
         <div class="text-center" *ngIf="!singlePostArray">
           <div class="spinner-border" role="status">
             <span class="visually-hidden">Loading...</span>
@@ -60,76 +82,166 @@
           <div class="spinner-border ms-auto" aria-hidden="true"></div>
         </div>
       </article>
+      
+      <!-- Related Posts Section -->
+      <section class="mb-5" *ngIf="relatedPosts && relatedPosts.length > 0">
+        <h4 class="mb-4">Related Posts</h4>
+        <div class="row">
+          <div class="col-md-4 mb-3" *ngFor="let post of relatedPosts">
+            <div class="card h-100">
+              <div class="card-body">
+                <h5 class="card-title">{{ post.data.title }}</h5>
+                <p class="card-text text-muted small">
+                  {{ post.data.createdAt?.toDate() | date }}
+                </p>
+                <a [routerLink]="['/', createPermalink(post.data.title) + '-' + post.id]" class="btn btn-outline-primary btn-sm">Read More</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
       <!-- Comments section-->
       <section class="mb-5">
         <div class="card bg-light">
           <div class="card-body">
+            <h4 class="mb-4">Comments ({{commentArray.length}})</h4>
             <!-- Comment form-->
+            <div *ngIf="!loginUser" class="alert alert-info mb-4">
+              <i class="fas fa-info-circle me-2"></i>
+              <span>Please <a [routerLink]="['/auth']" class="alert-link">login</a> to join the discussion and leave a comment.</span>
+            </div>
             <form
+              *ngIf="loginUser"
               [formGroup]="commentForm"
               class="mb-4"
               (ngSubmit)="submitComment()"
             >
-              <textarea
-                formControlName="comment"
-                class="form-control"
-                rows="3"
-                placeholder="Join the discussion and leave a comment!"
-              ></textarea>
-              <div
-                *ngIf="
-                  commentForm.get('comment')?.hasError('required') &&
-                  commentForm.get('comment')?.touched
-                "
-                class="text-danger"
-              >
-                Comment is required.
+              <div class="d-flex align-items-center mb-3">
+                <img
+                  class="rounded-circle me-3"
+                  style="width: 40px; height: 40px; object-fit: cover;"
+                  [src]="loginUser?.photoURL || 'https://icon-library.com/images/default-user-icon/default-user-icon-13.jpg'"
+                  alt="User avatar"
+                />
+                <div class="flex-grow-1">
+                  <textarea
+                    formControlName="comment"
+                    class="form-control"
+                    rows="3"
+                    placeholder="Join the discussion and leave a comment!"
+                  ></textarea>
+                </div>
               </div>
-              <div
-                *ngIf="
-                  commentForm.get('comment')?.hasError('minlength') &&
-                  commentForm.get('comment')?.touched
-                "
-                class="text-danger"
-              >
-                Comment must be at least 5 characters long.
+              <div class="d-flex justify-content-end">
+                <button
+                  class="btn btn-primary"
+                  type="submit"
+                  [disabled]="commentForm.invalid"
+                >
+                  Post Comment
+                </button>
               </div>
-              <button type="submit" class="btn btn-primary">
-                Submit Comment
-              </button>
             </form>
 
-            <!-- Comment with nested comments-->
-            <div *ngIf="commentArray">
-              <div class="d-flex mb-4" *ngFor="let com of commentArray">
-                <!-- Parent comment-->
-                <div class="flex-shrink-0">
-                  <img
-                    class="rounded-circle"
-                    style="width: 40px"
-                    src="{{ com.data.userIMG }}"
-                    alt="..."
-                  />
+            <!-- Comments list-->
+            <div *ngIf="commentArray.length > 0; else noComments" class="comment-section">
+              <div class="comment mb-4" *ngFor="let com of commentArray; let i = index">
+                <div class="comment-header">
+                  <div class="comment-author">
+                    <img
+                      class="rounded-circle"
+                      style="width: 40px; height: 40px; object-fit: cover;"
+                      [src]="com.data.userIMG"
+                      alt="User avatar"
+                    />
+                    <div class="ms-2">
+                      <div class="comment-author-name">{{ com.data.userName }}</div>
+                      <div class="comment-date">{{ com.data.dateTime }}</div>
+                    </div>
+                  </div>
                 </div>
-                <div class="ms-3">
-                  <div class="fw-bold">{{ com.data.userName }}</div>
-                  <div class="card mt-3">
-                    <div class="card-body">
-                      <p class="card-text">{{ com.data.comment }}</p>
-                      <small class="text-muted">{{ com.data.dateTime }}</small>
+                <div class="comment-content mt-2">
+                  <p class="mb-2">{{ com.data.comment }}</p>
+                </div>
+                <div class="comment-actions">
+                  <div class="comment-action" (click)="likeComment(com.id, i)">
+                    <i class="fas" [ngClass]="com.data.isLikedByCurrentUser ? 'fa-heart text-danger' : 'fa-heart'"></i>
+                    <span>{{ com.data.likes || 0 }} {{ com.data.likes === 1 ? 'Like' : 'Likes' }}</span>
+                  </div>
+                  <div class="comment-action" (click)="toggleReplyForm(i)">
+                    <i class="fas fa-reply"></i>
+                    <span>Reply</span>
+                  </div>
+                </div>
+                
+                <!-- Login prompt for reply -->
+                <div class="alert alert-info mt-3" *ngIf="showReplyForm === i && !loginUser">
+                  <i class="fas fa-info-circle me-2"></i>
+                  <span>Please <a [routerLink]="['/auth']" class="alert-link">login</a> to reply to comments.</span>
+                </div>
+                
+                <!-- Reply form -->
+                <div class="reply-form mt-3" *ngIf="showReplyForm === i && loginUser">
+                  <div class="d-flex">
+                    <input 
+                      type="text" 
+                      class="form-control me-2" 
+                      placeholder="Write a reply..." 
+                      [(ngModel)]="replyText"
+                      (keyup.enter)="addReply(com.id, i)"
+                    >
+                    <button class="btn btn-sm btn-primary" (click)="addReply(com.id, i)" [disabled]="!replyText">Reply</button>
+                  </div>
+                </div>
+                
+                <!-- Replies -->
+                <div class="comment-replies mt-3" *ngIf="com.data.replies && com.data.replies.length > 0">
+                  <div class="comment reply-comment mb-2" *ngFor="let reply of com.data.replies">
+                    <div class="comment-header">
+                      <div class="comment-author">
+                        <img
+                          class="rounded-circle"
+                          style="width: 30px; height: 30px; object-fit: cover;"
+                          [src]="reply.userIMG"
+                          alt="User avatar"
+                        />
+                        <div class="ms-2">
+                          <div class="comment-author-name">{{ reply.userName }}</div>
+                          <div class="comment-date">{{ reply.dateTime }}</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="comment-content mt-2">
+                      <p class="mb-2">{{ reply.text }}</p>
+                    </div>
+                    <div class="comment-actions">
+                      <div class="comment-action" (click)="likeReply(com.id, reply.id, i)">
+                        <i class="fas" [ngClass]="reply.isLikedByCurrentUser ? 'fa-heart text-danger' : 'fa-heart'"></i>
+                        <span>{{ reply.likes || 0 }} {{ reply.likes === 1 ? 'Like' : 'Likes' }}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-
-            <div *ngIf="!commentArray">Loging comment</div>
+            
+            <ng-template #noComments>
+              <div class="text-center py-4">
+                <p class="text-muted mb-0">No comments yet. Be the first to comment!</p>
+              </div>
+            </ng-template>
           </div>
         </div>
       </section>
     </div>
     <!-- Side widgets-->
     <div class="col-lg-4 order-md-first d-flex flex-column">
+      <!-- Sidebar ad -->
+      <div class="mb-4">
+        <app-google-ad [isSidebar]="true"></app-google-ad>
+      </div>
+
       <div class="d-flex search-form">
         <input type="text" placeholder="Search Questions..." aria-label="Search" class="form-control me-2"
           [(ngModel)]="questions" [matAutocomplete]="auto" name="questions"
@@ -152,9 +264,10 @@
               <ul class="list-unstyled mb-0" *ngIf="category">
                 <li *ngFor="let cat of category">
                   <a
-                    [routerLink]="'/' + cat.data.permalink"
-                    [queryParams]="{ id: cat.id }"
-                    >{{ cat.data.category.Category }}</a>
+                    [routerLink]="['/category', getCategoryValue(cat)]"
+                    class="text-decoration-none"
+                    style="cursor: pointer;"
+                    >{{ cat.data?.category?.Category || cat.data?.category || cat.name || 'Unnamed Category' }}</a>
                 </li>
               </ul>
             </div>
@@ -169,7 +282,7 @@
             your interview.</b
           >
         </div>
-        <ul *ngIf="arrayOfAllQuestion" class="list-group questionslists">
+        <ul *ngIf="arrayOfAllQuestion && arrayOfAllQuestion.length > 0" class="list-group questionslists">
           <li
             *ngFor="let q of arrayOfAllQuestion; let i = index"
             class="list-group-item"
@@ -182,6 +295,15 @@
           </li>
         </ul>
       </div>
+      
+      <!-- Practice Button -->
+      <div class="card mb-4 practiceSticky">
+        <div class="card-body text-center">
+          <h5 class="card-title">Ready to practice?</h5>
+          <p class="card-text">Test your knowledge with our interactive practice questions.</p>
+          <a routerLink="/practice" class="btn btn-primary">Go to Practice</a>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -193,3 +315,4 @@
     </p>
   </div>
 </footer>
+

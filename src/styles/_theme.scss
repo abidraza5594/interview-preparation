@@ -1,0 +1,258 @@
+// Light Theme (Default)
+:root {
+  // Colors
+  --primary-color: #{$primary-color};
+  --secondary-color: #{$secondary-color};
+  --accent-color: #{$accent-color};
+  --background-color: #{$background-color};
+  --text-color: #{$text-color};
+  --border-color: #{$border-color};
+
+  // Typography
+  --base-font-family: #{$base-font-family};
+  --heading-font-family: #{$heading-font-family};
+  --base-font-size: #{$base-font-size};
+  --heading-1: #{$heading-1};
+  --heading-2: #{$heading-2};
+  --heading-3: #{$heading-3};
+
+  // Spacing
+  --spacing-xs: #{$spacing-xs};
+  --spacing-sm: #{$spacing-sm};
+  --spacing-md: #{$spacing-md};
+  --spacing-lg: #{$spacing-lg};
+  --spacing-xl: #{$spacing-xl};
+
+  // Border
+  --border-radius: #{$border-radius};
+
+  // Box Shadows
+  --box-shadow: #{$box-shadow};
+  --box-shadow-lg: #{$box-shadow-lg};
+
+  // Transitions
+  --transition-base: #{$transition-base};
+  --transition-fast: #{$transition-fast};
+  --transition-slow: #{$transition-slow};
+}
+
+// Dark Theme
+[data-theme="dark"] {
+  // Colors
+  --primary-color: #{lighten($primary-color, 10%)};
+  --secondary-color: #{lighten($secondary-color, 10%)};
+  --accent-color: #{lighten($accent-color, 10%)};
+  --background-color: #{$dark-mode};
+  --text-color: #{lighten($text-color, 80%)};
+  --border-color: #{lighten($dark-mode, 20%)};
+
+  // Typography
+  --base-font-family: #{$base-font-family};
+  --heading-font-family: #{$heading-font-family};
+  --base-font-size: #{$base-font-size};
+  --heading-1: #{$heading-1};
+  --heading-2: #{$heading-2};
+  --heading-3: #{$heading-3};
+
+  // Spacing
+  --spacing-xs: #{$spacing-xs};
+  --spacing-sm: #{$spacing-sm};
+  --spacing-md: #{$spacing-md};
+  --spacing-lg: #{$spacing-lg};
+  --spacing-xl: #{$spacing-xl};
+
+  // Border
+  --border-radius: #{$border-radius};
+
+  // Box Shadows
+  --box-shadow: #{darken($box-shadow, 20%)};
+  --box-shadow-lg: #{darken($box-shadow-lg, 20%)};
+
+  // Transitions
+  --transition-base: #{$transition-base};
+  --transition-fast: #{$transition-fast};
+  --transition-slow: #{$transition-slow};
+}
+
+// Custom Theme Colors
+.theme-primary {
+  --primary-color: #{$primary-color};
+}
+
+.theme-secondary {
+  --secondary-color: #{$secondary-color};
+}
+
+.theme-accent {
+  --accent-color: #{$accent-color};
+}
+
+// Custom Theme Backgrounds
+.bg-gradient {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+}
+
+.bg-gradient-dark {
+  background: linear-gradient(135deg, var(--dark-mode), darken($dark-mode, 10%));
+}
+
+// Custom Theme Text
+.text-gradient {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+// Custom Theme Borders
+.border-gradient {
+  border: 2px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(135deg, var(--primary-color), var(--secondary-color)) border-box;
+}
+
+// Custom Theme Shadows
+.shadow-custom {
+  box-shadow: 0 4px 6px rgba(var(--primary-color), 0.1),
+              0 1px 3px rgba(var(--primary-color), 0.08);
+}
+
+// Custom Theme Animations
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+// Custom Theme Transitions
+.transition-all {
+  transition: var(--transition-base);
+}
+
+.transition-transform {
+  transition: transform var(--transition-base);
+}
+
+.transition-opacity {
+  transition: opacity var(--transition-base);
+}
+
+// Custom Theme Utilities
+.blur {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+// Custom Theme Components
+.card-glass {
+  @extend .glass;
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+}
+
+.button-glass {
+  @extend .glass;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: var(--transition-base);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+// Custom Theme Layouts
+.layout-glass {
+  @extend .glass;
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+}
+
+// Custom Theme Navigation
+.nav-glass {
+  @extend .glass;
+  border-radius: var(--border-radius);
+  padding: var(--spacing-sm);
+}
+
+// Custom Theme Forms
+.input-glass {
+  @extend .glass;
+  border: none;
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius);
+  color: var(--text-color);
+  width: 100%;
+  transition: var(--transition-base);
+
+  &:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+// Custom Theme Tables
+.table-glass {
+  @extend .glass;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+
+  th, td {
+    padding: var(--spacing-sm);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  th {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+// Custom Theme Modals
+.modal-glass {
+  @extend .glass;
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  max-width: 500px;
+  width: 100%;
+  margin: var(--spacing-md);
+}
+
+// Custom Theme Alerts
+.alert-glass {
+  @extend .glass;
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+// Custom Theme Badges
+.badge-glass {
+  @extend .glass;
+  border-radius: 10rem;
+  padding: 0.25em 0.6em;
+  font-size: 75%;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+} 

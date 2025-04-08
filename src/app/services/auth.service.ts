@@ -44,6 +44,10 @@ export class AuthService {
       this.loadUser();
       this.loggedIn.next(true);
       this.isLoggedInGuard = true;
+      
+      // Set token in localStorage
+      localStorage.setItem('token', await user?.getIdToken() || '');
+      
       this.router.navigate(['/']);
     } catch (error: any) {
       this.toaster.error('Error creating account: ' + error);
@@ -60,6 +64,10 @@ export class AuthService {
       this.loadUser();
       this.loggedIn.next(true);
       this.isLoggedInGuard = true;
+      
+      // Set token in localStorage
+      localStorage.setItem('token', await user?.getIdToken() || '');
+      
       this.router.navigate(['/']);
     } catch (error) {
       this.toaster.error('Invalid Credentials');
@@ -91,6 +99,7 @@ export class AuthService {
     this.afAuth.signOut().then(() => {
       this.toaster.success('Logout Successful.');
       localStorage.removeItem('user');
+      localStorage.removeItem('token');
       this.loggedIn.next(false);
       this.isLoggedInGuard = false;
       this.router.navigate(['/']);
@@ -102,7 +111,22 @@ export class AuthService {
   }
 
   getCurrentUser(): any {
-    return this.afAuth.currentUser;
+    // First try to get the user from localStorage
+    const userString = localStorage.getItem('user');
+    if (userString) {
+      try {
+        const user = JSON.parse(userString);
+        // Return the user object if it exists
+        if (user) {
+          return user;
+        }
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+    
+    // If no user in localStorage, return null
+    return null;
   }
 
   loginSweetAlert(frontend: any): void {
@@ -114,15 +138,52 @@ export class AuthService {
     }
   }
   navigateToDetailsPage(frontend: any): void {
-    const navigationExtras = {
-      queryParams: { id: frontend.id },
-    };
-    this.router.navigate([`/${frontend.data.permalink}`], navigationExtras);
+    // Check if post data exists
+    if (frontend && frontend.id) {
+      // Create a permalink from the title if available
+      if (frontend.data && frontend.data.title) {
+        // Convert title to URL-friendly format
+        const permalink = this.createPermalink(frontend.data.title) + '-' + frontend.id;
+        // Navigate to the permalink route
+        this.router.navigate([`/${permalink}`]);
+      } else {
+        // Fallback to just the ID if title is not available
+        this.router.navigate([`/${frontend.id}`]);
+      }
+    } else {
+      console.error('Invalid post data:', frontend);
+      this.toaster.error('Error navigating to post');
+    }
+  }
+  
+  // Helper method to create a permalink from a title
+  createPermalink(title: string): string {
+    if (!title) return '';
+    
+    // Convert to lowercase, replace spaces with hyphens, and remove special characters
+    return title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-')     // Replace spaces with hyphens
+      .replace(/-+/g, '-')      // Replace multiple hyphens with a single hyphen
+      .trim();                  // Trim leading/trailing spaces
   }
   checkIfUserLoggedIn(): boolean {
+    const token = localStorage.getItem('token');
     const storedUserString = localStorage.getItem('user');
-    const storedUserObject = storedUserString ? JSON.parse(storedUserString) : null;
-    return !!storedUserObject && (!!storedUserObject.displayName || !!storedUserObject.user);
+    
+    // Check if both token and user exist in localStorage
+    if (!token || !storedUserString) {
+      return false;
+    }
+    
+    try {
+      const storedUserObject = JSON.parse(storedUserString);
+      return !!storedUserObject; // Return true if user object exists and is valid
+    } catch (e) {
+      console.error('Error parsing user data:', e);
+      return false;
+    }
   }   
   showLoginRequiredAlert(): void {
     Swal.fire({
@@ -146,9 +207,65 @@ export class AuthService {
       this.router.navigate(['/']);
       this.toaster.success('Login Successfully');
       localStorage.setItem('user', JSON.stringify(user));
+      
+      // Set token in localStorage for Google sign-in
+      if (user && user.user) {
+        user.user.getIdToken().then(token => {
+          localStorage.setItem('token', token);
+        });
+        
+        // Save user data to Firestore if it doesn't exist
+        const uid = user.user.uid;
+        const userData = {
+          uid: uid,
+          email: user.user.email || '',
+          displayName: user.user.displayName || 'Google User',
+          photoURL: user.user.photoURL || '',
+          role: 'user', // Default role
+          isActive: true,
+          createdAt: new Date(),
+          lastLogin: new Date(),
+          provider: 'google'
+        };
+        
+        // Check if user exists in Firestore
+        this.afs.doc(`users/${uid}`).get().subscribe(docSnapshot => {
+          if (!docSnapshot.exists) {
+            // User doesn't exist, create new user document
+            this.afs.doc(`users/${uid}`).set(userData)
+              .then(() => {
+                console.log('New Google user added to Firestore');
+              })
+              .catch(error => {
+                console.error('Error adding Google user to Firestore:', error);
+              });
+          } else {
+            // User exists, update lastLogin
+            const data = docSnapshot.data() as any;
+            this.afs.doc(`users/${uid}`).update({
+              lastLogin: new Date(),
+              displayName: userData.displayName,
+              photoURL: userData.photoURL
+            }).then(() => {
+              console.log('User login time updated');
+            });
+          }
+        });
+      }
     }, err => {
       this.toaster.error(err.message);
     })
   }
 
+  // Reset password functionality
+  resetPassword(email: string): Promise<void> {
+    return this.afAuth.sendPasswordResetEmail(email)
+      .then(() => {
+        this.toaster.success('Password reset email sent. Check your inbox.');
+      })
+      .catch(error => {
+        this.toaster.error('Error sending password reset email: ' + error.message);
+        throw error;
+      });
+  }
 }

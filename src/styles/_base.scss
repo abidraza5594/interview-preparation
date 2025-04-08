@@ -1,0 +1,220 @@
+// Reset
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+// Base Styles
+html {
+  font-size: $base-font-size;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: $base-font-family;
+  color: $text-color;
+  line-height: 1.6;
+  background-color: $background-color;
+}
+
+// Typography
+h1, h2, h3, h4, h5, h6 {
+  font-family: $heading-font-family;
+  line-height: 1.2;
+  margin-bottom: $spacing-md;
+}
+
+h1 { font-size: $heading-1; }
+h2 { font-size: $heading-2; }
+h3 { font-size: $heading-3; }
+
+// Links
+a {
+  color: $primary-color;
+  text-decoration: none;
+  transition: $transition-base;
+
+  &:hover {
+    color: darken($primary-color, 10%);
+  }
+}
+
+// Lists
+ul, ol {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: $spacing-md;
+}
+
+// Images
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+// Forms
+input, textarea, select {
+  font-family: $base-font-family;
+  font-size: $base-font-size;
+  padding: $spacing-sm;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  width: 100%;
+  margin-bottom: $spacing-sm;
+  transition: $transition-base;
+
+  &:focus {
+    outline: none;
+    border-color: $primary-color;
+    box-shadow: 0 0 0 2px rgba($primary-color, 0.2);
+  }
+}
+
+// Buttons
+button {
+  @include button;
+  cursor: pointer;
+  font-family: $base-font-family;
+  font-size: $base-font-size;
+}
+
+// Tables
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: $spacing-md;
+
+  th, td {
+    padding: $spacing-sm;
+    border: 1px solid $border-color;
+    text-align: left;
+  }
+
+  th {
+    background-color: lighten($background-color, 5%);
+    font-weight: bold;
+  }
+}
+
+// Container
+.container {
+  @include container;
+}
+
+// Section
+.section {
+  padding: $spacing-lg 0;
+}
+
+// Card
+.card {
+  @include card;
+  margin-bottom: $spacing-md;
+}
+
+// Grid
+.row {
+  @include flex(row, flex-start, stretch);
+  flex-wrap: wrap;
+  margin: 0 -$spacing-sm;
+}
+
+.col {
+  padding: 0 $spacing-sm;
+  flex: 1;
+}
+
+// Responsive Grid
+@for $i from 1 through 12 {
+  .col-#{$i} {
+    flex: 0 0 percentage($i / 12);
+    max-width: percentage($i / 12);
+  }
+}
+
+// Responsive Images
+.img-fluid {
+  max-width: 100%;
+  height: auto;
+}
+
+// Responsive Tables
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+// Responsive Embeds
+.embed-responsive {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+
+  &::before {
+    display: block;
+    content: "";
+  }
+
+  .embed-responsive-item,
+  iframe,
+  embed,
+  object,
+  video {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+}
+
+// Responsive Utilities
+.hidden {
+  display: none !important;
+}
+
+.visible {
+  display: block !important;
+}
+
+// Print Styles
+@media print {
+  * {
+    background: transparent !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  a, a:visited {
+    text-decoration: underline;
+  }
+
+  a[href]:after {
+    content: " (" attr(href) ")";
+  }
+
+  img {
+    max-width: 100% !important;
+  }
+
+  @page {
+    margin: 2cm;
+  }
+
+  p, h2, h3 {
+    orphans: 3;
+    widows: 3;
+  }
+
+  h2, h3 {
+    page-break-after: avoid;
+    page-break-inside: avoid;
+  }
+} 

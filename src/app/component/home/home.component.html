@@ -49,13 +49,15 @@
                         <ul class="nav nav-tabs nav-pills nav-fill" id="postTab" role="tablist">
                             <li class="nav-item" role="presentation">
                                 <button (click)="setActiveTab('frontend')" [class.active]="activeTab === 'frontend'"
-                                    class="nav-link" id="popular-tab" type="button">
+                                    class="nav-link" id="popular-tab" type="button"
+                                    style="background-color: var(--primary-color); color: black !important;">
                                     Frontend
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
                                 <button (click)="setActiveTab('backend')" [class.active]="activeTab === 'backend'"
-                                    class="nav-link" id="recent-tab" type="button">
+                                    class="nav-link" id="recent-tab" type="button"
+                                    style="background-color: var(--primary-color); color: black !important;">
                                     Backend
                                 </button>
                             </li>
@@ -98,9 +100,9 @@
                                 <div class="post" data-aos="fade-right">
                                     <div class="thumb rounded">
                                         <a href="#" class="category-badge position-absolute">Lifestyle</a>
-                                        <span class="post-format">
+                                        <!-- <span class="post-format">
                                             <i class="icon-picture"></i>
-                                        </span>
+                                        </span> -->
                                         <a href="#">
                                             <div class="inner" *ngIf="bigFeaturePost"
                                                 (click)="handleLinkClick(bigFeaturePost)">
@@ -111,7 +113,9 @@
                                     <ul class="meta list-inline mt-4 mb-0">
                                         <li class="list-inline-item">
                                             <a href="#">
-                                                <img class="author" src="https://media.licdn.com/dms/image/D4D03AQHbDFz46FdS3Q/profile-displayphoto-shrink_800_800/0/1702389833531?e=1709769600&v=beta&t=Y-9LbkrJOSoI0RG_Sbjru57OY_-5qCd66T5q51Kz5j0" style="width: 30px;" alt="">
+                                                <img class="author"
+                                                    src="https://media.licdn.com/dms/image/D4D03AQHbDFz46FdS3Q/profile-displayphoto-shrink_800_800/0/1702389833531?e=1709769600&v=beta&t=Y-9LbkrJOSoI0RG_Sbjru57OY_-5qCd66T5q51Kz5j0"
+                                                    style="width: 30px;" alt="">
                                                 Abid Ansari
                                             </a>
                                         </li>
@@ -160,7 +164,7 @@
                     <div class="sidebar m-0 p-0 stickyPart">
                         <div class="widget rounded">
                             <div class="widget-about text-center" data-aos="zoom-in-left">
-                                <div style="margin-top: -30px;"><app-logo></app-logo></div>
+                                <div style="margin-top: -15px;"><app-logo></app-logo></div>
                                 <p class="mb-4" style="text-align: justify;">
                                     Crack any interview with confidence! Our platform is your secret weapon for
                                     mastering a wide range of questions and scenarios. Elevate your skills, showcase
@@ -195,16 +199,17 @@
                                 <form [formGroup]="newsLetterForm">
                                     <div class="mb-2">
                                         <input type="email" class="form-control w-100 text-center"
-                                        formControlName="newsLetterEmail"
-                                        placeholder="Email address...">
+                                            formControlName="newsLetterEmail" placeholder="Email address...">
                                     </div>
-                                    <div class="text-danger small" *ngIf="newsLetterForm.get('newsLetterEmail').hasError('required') && newsLetterForm.get('newsLetterEmail').touched">
+                                    <div class="text-danger small"
+                                        *ngIf="newsLetterForm.get('newsLetterEmail').hasError('required') && newsLetterForm.get('newsLetterEmail').touched">
                                         Email is required.
-                                      </div>                                      
-                                    <button class="btn btn-default btn-full" (click)="newsLetterEmailHandler()">Sign Up</button>
+                                    </div>
+                                    <button class="btn btn-default btn-full" (click)="newsLetterEmailHandler()">Sign
+                                        Up</button>
                                 </form>
                                 <span class="newsletter-privacy text-center mt-3">
-                                    By signing up, you agree to our <a href="#">Privacy policy</a>
+                                    By signing up, you agree to our <a routerLink="/privacy-policy">Privacy Policy</a>
                                 </span>
                             </div>
                         </div>
@@ -278,10 +283,13 @@
                         </ul>
                     </div>
                     <div class="col-md-4">
-                        <a href="#" id="return-to-top" class="float-md-end">
-                            <i class="icon-arrow-up"></i>
-                            Back to Top
-                        </a>
+                        <div class="d-flex justify-content-md-end">
+                            <a routerLink="/privacy-policy" class="me-3">Privacy Policy</a>
+                            <a href="#" id="return-to-top">
+                                <i class="icon-arrow-up"></i>
+                                Back to Top
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
