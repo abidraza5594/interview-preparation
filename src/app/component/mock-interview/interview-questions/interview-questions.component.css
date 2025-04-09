@@ -7,10 +7,16 @@
 
 /* Progress Bar */
 .progress-container {
-  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
 }
 
 .progress {
+  flex: 1;
+  margin-right: 10px;
+  min-width: 150px;
   height: 8px;
   background-color: #f0f0f0;
   border-radius: 4px;
@@ -23,6 +29,7 @@
 }
 
 .progress-text {
+  white-space: nowrap;
   text-align: right;
   font-size: 14px;
   color: #666;
@@ -187,7 +194,17 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: background-color 0.2s ease;
+  transition: all 0.3s ease;
+}
+
+.submit-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.submit-button .fa-spinner {
+  margin-right: 6px;
 }
 
 .submit-button:hover {
@@ -380,4 +397,127 @@
   .answer-textarea {
     min-height: 120px;
   }
+}
+
+/* Error message styling */
+.error-message {
+  color: #dc3545;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  padding: 10px 15px;
+  margin: 10px 0;
+  font-size: 0.9rem;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.fa-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* AI Model Indicator */
+.ai-model-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: white;
+  margin-left: 10px;
+}
+
+.ai-model-indicator i {
+  margin-right: 5px;
+  font-size: 0.9rem;
+}
+
+.ai-model-indicator.gemini {
+  background-color: #4285F4; /* Google blue */
+}
+
+.ai-model-indicator.deepseek {
+  background-color: #0073E6; /* DeepSeek blue */
+}
+
+.ai-model-indicator.mistral {
+  background-color: #6C5CE7; /* Mistral purple */
+}
+
+.ai-model-indicator.fallback {
+  background-color: #E74C3C; /* Red for fallback */
+}
+
+.model-indicator {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+}
+
+.model-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.model-badge i {
+  font-size: 0.9rem;
+}
+
+.gemini {
+  background-color: #1E88E5;
+}
+
+.mistral {
+  background-color: #8E24AA;
+}
+
+.fallback {
+  background-color: #FB8C00;
+}
+
+.submit-btn {
+  position: relative;
+  min-width: 140px;
+}
+
+.submit-btn.disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.submit-btn i {
+  margin-right: 5px;
+}
+
+@keyframes analyzing-pulse {
+  0% { background-color: #007bff; }
+  50% { background-color: #0056b3; }
+  100% { background-color: #007bff; }
+}
+
+.submit-btn:disabled {
+  animation: analyzing-pulse 2s infinite;
 }

@@ -22,6 +22,9 @@ export class InterviewQuestionsComponent implements OnInit, OnDestroy {
   currentUserResponse: string = '';
   isAISpeaking: boolean = false;
   manualResponse: string = '';
+  isSubmitting: boolean = false;
+  errorMessage: string = '';
+  currentAIModel: string = 'gemini'; // Default model
   
   constructor(
     private mockInterviewService: MockInterviewService,
@@ -86,6 +89,31 @@ export class InterviewQuestionsComponent implements OnInit, OnDestroy {
       this.mockInterviewService.interviewState$.subscribe(state => {
         if (state === 'generating_feedback') {
           this.questionsComplete.emit();
+        }
+        this.cdr.markForCheck();
+      })
+    );
+    
+    // Listen for AI model changes
+    this.subscriptions.push(
+      this.mockInterviewService.currentAIModel$.subscribe((model: string) => {
+        this.currentAIModel = model;
+        this.cdr.markForCheck();
+      })
+    );
+    
+    // Listen for errors from the service
+    this.subscriptions.push(
+      this.mockInterviewService.errorMessage$.subscribe((message: string) => {
+        if (message) {
+          this.errorMessage = message;
+          // Auto-clear error after 5 seconds
+          setTimeout(() => {
+            this.errorMessage = '';
+            this.cdr.markForCheck();
+          }, 5000);
+        } else {
+          this.errorMessage = '';
         }
         this.cdr.markForCheck();
       })
@@ -157,22 +185,44 @@ export class InterviewQuestionsComponent implements OnInit, OnDestroy {
   }
   
   submitManualResponse(response: string): void {
-    if (response && response.trim()) {
-      console.log('Submitting manual response:', response);
-      
-      // Check if the answer is too short or potentially random text
-      if (response.trim().length < 15) {
-        // Show a warning prompt before submitting very short answers
-        if (!confirm('Your answer seems very short. Are you sure you want to submit it? Click Cancel to continue editing.')) {
-          return; // User chose to continue editing
-        }
-      }
-      
-      this.mockInterviewService.processManualInput(response);
-      // Clear the input field after submitting
-      this.manualResponse = '';
+    if (!response || !response.trim()) {
+      this.errorMessage = 'Please provide an answer before submitting.';
       this.cdr.markForCheck();
+      return;
     }
+
+    // Clear any previous error message
+    this.errorMessage = '';
+
+    console.log('Submitting manual response:', response);
+    
+    // Check if the answer is too short or potentially random text
+    if (response.trim().length < 15) {
+      // Show a warning prompt before submitting very short answers
+      if (!confirm('Your answer seems very short. Are you sure you want to submit it? Click Cancel to continue editing.')) {
+        return; // User chose to continue editing
+      }
+    }
+    
+    // Show loading indicator
+    this.isSubmitting = true;
+    
+    // Inform user that we're analyzing their answer
+    this.mockInterviewService.speak('I am analyzing your answer. This might take a moment as I evaluate your response thoroughly.');
+    
+    // Process the response and handle submission
+    this.mockInterviewService.processManualInput(response);
+    
+    // Clear the input field after submitting
+    this.manualResponse = '';
+    
+    // Hide loading after a delay - increased to account for API processing time
+    setTimeout(() => {
+      this.isSubmitting = false;
+      this.cdr.markForCheck();
+    }, 8000);  // Increased from 1000ms to 8000ms to give more time for API calls
+    
+    this.cdr.markForCheck();
   }
   
   async changeQuestion(): Promise<void> {
@@ -242,14 +292,28 @@ export class InterviewQuestionsComponent implements OnInit, OnDestroy {
       const firstUnansweredIndex = unansweredQuestions[0] - 1;
       this.mockInterviewService.navigateToQuestion(firstUnansweredIndex);
       this.manualResponse = this.mockInterviewService.getResponseForQuestion(firstUnansweredIndex) || '';
-      alert(`Please answer all questions before submitting. Starting with question ${unansweredQuestions[0]}.`);
+      const message = `Please answer all questions before submitting. Starting with question ${unansweredQuestions[0]}.`;
+      this.mockInterviewService.speak(message);
       return;
     }
 
     // If all questions are answered, proceed with submission
     if (confirm('Are you sure you want to end the interview and get feedback?')) {
       console.log('User confirmed interview submission');
+      
+      // Show loading state
+      this.isSubmitting = true;
+      
+      // Speak a message about generating comprehensive feedback
+      this.mockInterviewService.speak('I am now generating comprehensive feedback on all your answers. This may take a moment as I analyze your performance across all questions.');
+      
       this.mockInterviewService.manualSubmitInterview();
+      
+      // Reset the submission state after a delay
+      setTimeout(() => {
+        this.isSubmitting = false;
+        this.cdr.markForCheck();
+      }, 10000);
     }
   }
 

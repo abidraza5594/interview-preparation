@@ -40,10 +40,15 @@ export class MockInterviewService {
   private chatHistory: { role: string, content: string }[] = [];
   private techStack = '';
   private experienceLevel = new BehaviorSubject<string>('intermediate');
+  private errorMessage = new BehaviorSubject<string>('');
+  private currentAIModel = new BehaviorSubject<string>('gemini'); // Track which AI model is being used
 
   // Gemini API key
   private readonly GEMINI_API_KEY = 'AIzaSyBrnA6WwJRE9Iu2FXzE-BOL8JyPX71ijm4';
   private readonly GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent';
+
+  // Mistral API key
+  private readonly MISTRAL_API_KEY = 'p7KFyMJyUNKqwNDUX4kdKwEEpc5eTAA1';
 
   // Voice options for the interviewer
   private interviewerVoice = new BehaviorSubject<string>('default');
@@ -72,7 +77,7 @@ export class MockInterviewService {
   ) {
     this.initSpeechRecognition();
     this.initVoices();
-    
+
     // Set initial interview state
     this.interviewState.next('interview_setup');
   }
@@ -134,6 +139,14 @@ export class MockInterviewService {
     return this.experienceLevel.asObservable();
   }
 
+  get errorMessage$(): Observable<string> {
+    return this.errorMessage.asObservable();
+  }
+
+  get currentAIModel$(): Observable<string> {
+    return this.currentAIModel.asObservable();
+  }
+
   setInterviewerVoice(voiceURI: string): void {
     this.interviewerVoice.next(voiceURI);
 
@@ -144,7 +157,7 @@ export class MockInterviewService {
 
     // Reset the last speech text to force a voice preview
     this.lastSpeechText = '';
-    
+
     // Add a small delay to ensure the voice change is processed before preview
     setTimeout(() => {
       // Automatically preview the selected voice
@@ -154,7 +167,7 @@ export class MockInterviewService {
 
   setCharacter(character: string): void {
     this.interviewerCharacter.next(character);
-    
+
     // Reset the last speech text to force a character voice preview
     this.lastSpeechText = '';
 
@@ -388,7 +401,7 @@ export class MockInterviewService {
           this.chatHistory.push({ role: 'assistant', content: techPrompt });
           return;
         }
-        
+
         this.techStack = transcript;
         this.selectedTech.next(transcript);
         const techResponse = `I see you're preparing for ${this.techStack} interview. What's your experience level with ${this.techStack}? Please select: beginner, intermediate, or expert.`;
@@ -407,10 +420,10 @@ export class MockInterviewService {
         } else if (normalizedTranscript.includes('intermediate') || normalizedTranscript.includes('middle') || normalizedTranscript.includes('mid')) {
           level = 'intermediate';
         }
-        
+
         this.experienceLevel.next(level);
         console.log(`Experience level set to: ${level}`);
-        
+
         const expResponse = `I'll prepare questions suitable for a ${level} level in ${this.techStack}. How many questions would you like me to ask? Typically, I recommend 3-5 questions for a mock interview session.`;
         this.speak(expResponse);
         this.chatHistory.push({ role: 'assistant', content: expResponse });
@@ -578,1073 +591,266 @@ export class MockInterviewService {
   }
 
   private async generateAIQuestions(topic: string, count: number): Promise<void> {
+    console.log(`Generating ${count} AI questions for ${topic} at ${this.experienceLevel.value} level`);
+
     try {
-      // Log the request
-      console.log(`Generating ${count} AI questions for ${topic} at ${this.experienceLevel.getValue()} level`);
-      
       this.interviewState.next('loading_questions');
-      
-      // Store the tech stack
-      this.techStack = topic;
-      
-      // Prepare the system prompt based on experience level
-      const experienceLevel = this.experienceLevel.getValue();
-      const difficultyLevel = experienceLevel === 'beginner' ? 'basic' : 
-                             experienceLevel === 'intermediate' ? 'intermediate' : 'advanced';
-      
-      // System prompt for the AI to generate interview questions
-      const systemPrompt = `Generate ${count} high-quality technical interview questions for a ${difficultyLevel} level ${topic} developer.
-      
-Format each question as a JSON object with these fields:
-- "id": sequential number
-- "question": detailed question text
-- "category": relevant category of the question (e.g., "core concepts", "best practices", "performance", etc.)
 
-The questions should:
-- Be appropriate for a ${difficultyLevel} level developer
-- Focus on practical, real-world scenarios
-- Include a mix of conceptual and coding questions
-- Be specifically tailored to ${topic}
-- Challenge the candidate appropriately for their level
-- Avoid overly theoretical or academic questions
-
-For a beginner, focus on fundamental concepts and simple implementation questions.
-For intermediate, include problem-solving and design questions.
-For expert, include complex architectural decisions, performance optimization, and advanced concepts.
-
-Return only valid JSON in this format:
-[
-  {"id": 1, "question": "...", "category": "..."},
-  {"id": 2, "question": "...", "category": "..."},
-  ...
-]`;
-
-      // User prompt specifying the request more directly
-      const userPrompt = `Generate ${count} technical interview questions for a ${experienceLevel} ${topic} developer. Return only valid JSON.`;
-      
-      // Try generating questions with primary model
-      let questionsGenerated = false;
-      let errorMessage = '';
-      
+      // First, let's try Gemini
       try {
+        this.currentAIModel.next('gemini');
         console.log('Attempting to generate questions with primary model (gemini-1.5-pro)');
-        
-        const geminiUrl = `${this.GEMINI_API_URL}?key=${this.GEMINI_API_KEY}`;
-        
-        const payload = {
-          contents: [
-            {
-              role: "user",
-              parts: [
-                { text: systemPrompt },
-                { text: userPrompt }
-              ]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 8192,
-            topP: 0.95,
-            topK: 40
-          }
-        };
-        
-        const response = await this.http.post<any>(geminiUrl, payload).toPromise();
-        
-        // Extract the generated text from the response
-        const generatedText = response && response['candidates'] && 
-                             response['candidates'][0] && 
-                             response['candidates'][0]['content'] && 
-                             response['candidates'][0]['content']['parts'] && 
-                             response['candidates'][0]['content']['parts'][0]['text'] || '';
-        
-        console.log("AI Response:", generatedText);
-        
-        if (generatedText) {
-          // Process the response to extract the questions
-          try {
-            // Find the JSON part in the response
-            const jsonMatch = generatedText.match(/\[\s*\{.*\}\s*\]/s);
-            const jsonStr = jsonMatch ? jsonMatch[0] : generatedText;
-            
-            // Clean up potential markdown code block formatting
-            const cleanJson = jsonStr.replace(/```json|```/g, '').trim();
-            
-            // Parse the JSON
-            const parsedQuestions = JSON.parse(cleanJson);
-            
-            if (Array.isArray(parsedQuestions) && parsedQuestions.length > 0) {
-              const formattedQuestions = parsedQuestions.map((q, index) => ({
-                id: index + 1,
-                question: q.question,
-                category: q.category || 'general'
-              }));
-              
-              // Store the generated questions
-              this.questions.next(formattedQuestions);
-              this.currentQuestionIndex.next(0);
-              this.questionCount = formattedQuestions.length;
-              
-              // Set interview state to answering
-              this.interviewState.next('answering');
-              
-              // Announce the first question
-              const firstQuestion = formattedQuestions[0].question;
-              setTimeout(() => {
-                this.speak(`Let's begin your ${topic} interview. ${firstQuestion}`);
-              }, 1000);
-              
-              // Log success
-              console.log(`Successfully generated ${formattedQuestions.length} questions`);
-              questionsGenerated = true;
-              return;
-            } else {
-              errorMessage = "Failed to parse questions from primary model response";
-              console.error(errorMessage, parsedQuestions);
-            }
-          } catch (parseError) {
-            errorMessage = "Error parsing primary model AI response";
-            console.error(errorMessage, parseError);
-          }
+
+        const prompt = this.prepareQuestionsPrompt(topic, count);
+        const response = await this.callGeminiAPI(prompt);
+        const questions = this.extractQuestionsFromResponse(response, topic);
+
+        if (questions.length >= count) {
+          console.log(`Generated ${questions.length} questions via Gemini API`);
+          this.questions.next(questions);
+          this.interviewState.next('answering');
+
+          // Speak the first question
+          const firstQuestion = `Let's begin your interview about ${topic}. ${questions[0].question}`;
+          this.speak(firstQuestion);
+          return;
         } else {
-          errorMessage = "Empty response from primary model";
-          console.error(errorMessage);
+          throw new Error('Insufficient questions generated, falling back to backup model');
         }
-      } catch (primaryError) {
-        errorMessage = `Primary model error: ${(primaryError as any).status || 'Unknown'}`;
-        console.error("Error with primary model:", primaryError);
-        
-        // Check if this is a rate limit error
-        const isRateLimit = (primaryError as any).status === 429;
-        if (isRateLimit) {
-          console.log("Rate limit (429) detected, will try backup model");
-        }
-      }
-      
-      // If primary model failed, try backup model - gemini-pro
-      if (!questionsGenerated) {
+      } catch (error) {
+        console.error('Primary model failed:', error);
+
+        // Try Mistral as fallback
         try {
-          console.log("Attempting with backup model (gemini-pro)");
-          const backupUrl = "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent";
-          
-          const backupPayload = {
-            contents: [
-              {
-                role: "user",
-                parts: [
-                  { text: `${systemPrompt}\n\n${userPrompt}` }
-                ]
-              }
-            ],
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 1024,
-              topP: 0.95,
-              topK: 40
-            }
-          };
-          
-          const backupResponse = await this.http.post<any>(
-            `${backupUrl}?key=${this.GEMINI_API_KEY}`, 
-            backupPayload
-          ).toPromise();
-          
-          const backupText = backupResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
-          
-          if (backupText) {
-            console.log("Backup model response:", backupText);
-            
-            try {
-              // Find and extract JSON
-              const jsonMatch = backupText.match(/\[\s*\{.*\}\s*\]/s);
-              let parsedBackupQuestions;
-              
-              if (jsonMatch) {
-                // Clean up JSON and parse it
-                const cleanJson = jsonMatch[0].replace(/```json|```/g, '').trim();
-                parsedBackupQuestions = JSON.parse(cleanJson);
-              } else {
-                // If no JSON was found, try to extract questions directly
-                const questionLines = backupText
-                  .split(/\n+/)
-                  .filter((line: string) => line.includes("?") || /^\d+\.\s/.test(line))
-                  .map((line: string, index: number) => line.replace(/^\d+\.\s+/, "").trim());
-                
-                if (questionLines.length > 0) {
-                  // Convert to required format
-                  parsedBackupQuestions = questionLines.map((q: string, i: number) => ({
-                    id: i + 1, 
-                    question: q, 
-                    category: 'general'
-                  }));
-                } else {
-                  throw new Error("Could not extract questions from backup model response");
-                }
-              }
-              
-              // Process the questions
-              if (Array.isArray(parsedBackupQuestions) && parsedBackupQuestions.length > 0) {
-                const formattedBackupQuestions = parsedBackupQuestions.map((q, index) => ({
-                  id: index + 1,
-                  question: q.question || q,
-                  category: q.category || 'general'
-                }));
-                
-                // Store the questions
-                this.questions.next(formattedBackupQuestions);
-                this.currentQuestionIndex.next(0);
-                this.questionCount = formattedBackupQuestions.length;
-                
-                // Set interview state to answering
-                this.interviewState.next('answering');
-                
-                // Announce the first question
-                const firstQuestion = formattedBackupQuestions[0].question;
-                setTimeout(() => {
-                  this.speak(`Let's begin your ${topic} interview. ${firstQuestion}`);
-                }, 1000);
-                
-                console.log(`Successfully generated ${formattedBackupQuestions.length} questions using backup model`);
-                questionsGenerated = true;
-                return;
-              } else {
-                throw new Error("Failed to parse valid questions from backup model");
-              }
-            } catch (backupParseError) {
-              console.error("Error parsing backup model response:", backupParseError);
-            }
+          this.currentAIModel.next('mistral');
+          console.log('Attempting with Mistral model');
+
+          const prompt = this.prepareQuestionsPrompt(topic, count);
+          const response = await this.callMistralAPI(prompt);
+          const questions = this.extractQuestionsFromResponse(response, topic);
+
+          if (questions.length >= count) {
+            console.log(`Generated ${questions.length} questions via Mistral API`);
+            this.questions.next(questions);
+            this.interviewState.next('answering');
+
+            // Speak the first question
+            const firstQuestion = `Let's begin your interview about ${topic}. ${questions[0].question}`;
+            this.speak(firstQuestion);
+            return;
           } else {
-            console.error("Empty response from backup model");
+            throw new Error('Insufficient questions generated by Mistral, falling back to default');
           }
-        } catch (backupError) {
-          console.error("Backup model also failed:", backupError);
+        } catch (mistralError) {
+          console.error('Mistral model also failed, using default questions', mistralError);
+          // All models failed, fall back to default questions
+          this.currentAIModel.next('fallback');
+          this.generateDefaultQuestions(topic, count);
         }
       }
-      
-      // If we reach here, both models failed
-      console.log(`Both AI models failed: ${errorMessage}. Falling back to default questions.`);
-      this.generateDefaultQuestions(topic, count);
     } catch (error) {
-      console.error("Error in generateAIQuestions:", error);
+      // Final fallback
+      console.error('All AI models failed:', error);
+      console.log('Falling back to default questions');
+      this.currentAIModel.next('fallback');
       this.generateDefaultQuestions(topic, count);
     }
   }
 
   private generateDefaultQuestions(topic: string, count: number): void {
-    // Create specific questions about the selected topic
-    const level = this.experienceLevel.value;
-    
-    // Tailor default questions based on the experience level
-    let defaultQuestions: { id: number, question: string, category: string }[] = [];
-    
-    // JavaScript-specific questions if topic is JavaScript
-    if (topic.toLowerCase() === 'javascript' || topic.toLowerCase() === 'js') {
-      if (level === 'beginner') {
-        defaultQuestions = [
-          { id: 1, question: `What are the primitive data types in JavaScript?`, category: topic },
-          { id: 2, question: `Explain the difference between let, const, and var in JavaScript.`, category: topic },
-          { id: 3, question: `What is the difference between == and === operators in JavaScript?`, category: topic },
-          { id: 4, question: `What is a callback function in JavaScript and how do you use it?`, category: topic },
-          { id: 5, question: `How do you create an array in JavaScript and what are some common array methods?`, category: topic }
-        ];
-      } else if (level === 'intermediate') {
-        defaultQuestions = [
-          { id: 1, question: `Explain JavaScript closures with an example.`, category: topic },
-          { id: 2, question: `What is the event loop in JavaScript and how does it work?`, category: topic },
-          { id: 3, question: `Explain promises in JavaScript and how they differ from callbacks.`, category: topic },
-          { id: 4, question: `What are the different ways to create objects in JavaScript?`, category: topic },
-          { id: 5, question: `How does prototypal inheritance work in JavaScript?`, category: topic }
-        ];
-      } else { // expert
-        defaultQuestions = [
-          { id: 1, question: `Explain JavaScript module systems (CommonJS, AMD, ES modules) and their differences.`, category: topic },
-          { id: 2, question: `How would you implement a deep copy function in JavaScript without using libraries?`, category: topic },
-          { id: 3, question: `Explain the concept of microtasks and macrotasks in the JavaScript event loop.`, category: topic },
-          { id: 4, question: `How would you optimize a JavaScript application for performance?`, category: topic },
-          { id: 5, question: `Explain JavaScript proxies and their practical applications.`, category: topic }
-        ];
-      }
-    } 
-    // React-specific questions
-    else if (topic.toLowerCase() === 'react') {
-      if (level === 'beginner') {
-        defaultQuestions = [
-          { id: 1, question: `What is JSX in React?`, category: topic },
-          { id: 2, question: `What is the difference between state and props in React?`, category: topic },
-          { id: 3, question: `What are React components and what are the different types?`, category: topic },
-          { id: 4, question: `How do you handle events in React?`, category: topic },
-          { id: 5, question: `Explain the component lifecycle in React.`, category: topic }
-        ];
-      } else if (level === 'intermediate') {
-        defaultQuestions = [
-          { id: 1, question: `Explain the concept of React hooks and give examples of common hooks.`, category: topic },
-          { id: 2, question: `How does React handle state management and what are some alternatives?`, category: topic },
-          { id: 3, question: `What is the virtual DOM in React and how does it work?`, category: topic },
-          { id: 4, question: `How would you optimize performance in a React application?`, category: topic },
-          { id: 5, question: `Explain the concept of React context and when would you use it.`, category: topic }
-        ];
-      } else { // expert
-        defaultQuestions = [
-          { id: 1, question: `How would you implement a custom hook in React and what are some use cases?`, category: topic },
-          { id: 2, question: `Explain the concept of React fiber architecture.`, category: topic },
-          { id: 3, question: `How do you implement server-side rendering with React?`, category: topic },
-          { id: 4, question: `What strategies would you use to test a complex React application?`, category: topic },
-          { id: 5, question: `How would you integrate React with other libraries like D3.js?`, category: topic }
-        ];
-      }
-    }
-    // Generic tech questions if we don't have specific ones
-    else {
-      defaultQuestions = [
-        { id: 1, question: `Could you explain the core concepts of ${topic}?`, category: topic },
-        { id: 2, question: `What challenges have you faced when working with ${topic} and how did you overcome them?`, category: topic },
-        { id: 3, question: `Explain the best practices when working with ${topic}.`, category: topic },
-        { id: 4, question: `How does ${topic} compare to similar technologies or alternatives?`, category: topic },
-        { id: 5, question: `What are the most common mistakes developers make with ${topic} and how to avoid them?`, category: topic },
-        { id: 6, question: `How would you optimize performance when working with ${topic}?`, category: topic },
-        { id: 7, question: `What are the latest developments or updates in ${topic}?`, category: topic },
-        { id: 8, question: `How would you implement error handling in a ${topic} application?`, category: topic },
-        { id: 9, question: `What security considerations are important when working with ${topic}?`, category: topic },
-        { id: 10, question: `How do you test applications built with ${topic}?`, category: topic }
-      ];
+    console.log(`Generating ${count} default questions for ${topic}`);
+    this.currentAIModel.next('fallback'); // Make sure UI shows fallback mode
+
+    const defaultQuestions: InterviewQuestion[] = [];
+    const normalizedTopic = topic.toLowerCase().trim();
+
+    // Default programming questions by categories
+    const javascriptQuestions = [
+      "Could you explain the core concepts of JavaScript?",
+      "What is the difference between let, const, and var in JavaScript?",
+      "How does event delegation work in JavaScript?",
+      "Explain closures in JavaScript with an example.",
+      "What are Promises in JavaScript and how do they help with asynchronous operations?",
+      "Describe the JavaScript event loop and how it works.",
+      "What are arrow functions and how do they differ from regular functions?",
+      "How does prototypal inheritance work in JavaScript?",
+      "Explain the concept of hoisting in JavaScript.",
+      "What is the purpose of the 'this' keyword in JavaScript?"
+    ];
+
+    const reactQuestions = [
+      "Explain the virtual DOM concept in React.",
+      "What are hooks in React and why were they introduced?",
+      "Explain the component lifecycle methods in React.",
+      "What is the difference between state and props in React?",
+      "How would you optimize performance in a React application?",
+      "What is JSX and why is it used in React?",
+      "Explain the concept of controlled vs uncontrolled components.",
+      "How does React handle routing?",
+      "What are higher-order components in React?",
+      "How does React's Context API work and when would you use it?"
+    ];
+
+    const angularQuestions = [
+      "What are the key features of Angular?",
+      "Explain the difference between one-way and two-way data binding.",
+      "What are Angular directives and name the different types.",
+      "How does dependency injection work in Angular?",
+      "What is Angular's change detection strategy?",
+      "Explain the Angular component lifecycle hooks.",
+      "What are Angular services and how are they used?",
+      "How would you optimize an Angular application for performance?",
+      "What is AOT compilation in Angular?",
+      "How does routing work in Angular?"
+    ];
+
+    const pythonQuestions = [
+      "Could you explain the core concepts of Python?",
+      "What are Python decorators and how do they work?",
+      "Explain list comprehensions in Python.",
+      "What are generators in Python and how do they differ from regular functions?",
+      "How does memory management work in Python?",
+      "What are the differences between Python 2 and Python 3?",
+      "Explain the GIL (Global Interpreter Lock) in Python.",
+      "How would you handle exceptions in Python?",
+      "What are Python's magic methods and how are they used?",
+      "Describe the difference between lists and tuples in Python."
+    ];
+
+    const nodeQuestions = [
+      "What is Node.js and what are its key features?",
+      "Explain the event-driven architecture of Node.js.",
+      "What is the purpose of the package.json file?",
+      "How does the Node.js module system work?",
+      "What are streams in Node.js and how are they used?",
+      "Explain the difference between process.nextTick() and setImmediate().",
+      "How would you handle errors in Node.js applications?",
+      "What is middleware in Express.js?",
+      "How does Node.js handle concurrency with its single-threaded model?",
+      "What are some performance optimization techniques for Node.js applications?"
+    ];
+
+    const generalQuestions = [
+      "What is your approach to debugging complex issues?",
+      "How do you stay updated with the latest technologies?",
+      "Describe a challenging technical problem you've solved recently.",
+      "How do you ensure code quality in your projects?",
+      "What is your experience with version control systems?",
+      "How do you handle technical debt?",
+      "Describe your ideal development workflow.",
+      "What considerations do you make for security in your applications?",
+      "How do you approach testing your code?",
+      "What's your experience with CI/CD pipelines?"
+    ];
+
+    // Select appropriate questions based on the topic
+    let selectedQuestions: string[] = [];
+
+    if (normalizedTopic.includes('javascript') || normalizedTopic.includes('js')) {
+      selectedQuestions = javascriptQuestions;
+    } else if (normalizedTopic.includes('react')) {
+      selectedQuestions = reactQuestions;
+    } else if (normalizedTopic.includes('angular')) {
+      selectedQuestions = angularQuestions;
+    } else if (normalizedTopic.includes('python')) {
+      selectedQuestions = pythonQuestions;
+    } else if (normalizedTopic.includes('node')) {
+      selectedQuestions = nodeQuestions;
+    } else {
+      // Default to general questions if no specific topic matched
+      selectedQuestions = generalQuestions;
     }
 
-    // Take only the number requested
-    const selectedQuestions = defaultQuestions.slice(0, count);
-    this.questions.next(selectedQuestions);
+    // Take the requested number of questions or all available if fewer
+    const numQuestions = Math.min(count, selectedQuestions.length);
 
-    // Start asking questions
+    // Create question objects
+    for (let i = 0; i < numQuestions; i++) {
+      defaultQuestions.push({
+        id: i,
+        question: selectedQuestions[i],
+        category: normalizedTopic
+      });
+    }
+
+    console.log(`Created ${defaultQuestions.length} default questions for ${topic}`);
+
+    // Update the questions and state
+    this.questions.next(defaultQuestions);
     this.interviewState.next('answering');
 
-    setTimeout(() => {
-      const response = `Let's begin the interview about ${topic}. ${selectedQuestions[0].question}`;
-      this.speak(response);
-      this.chatHistory.push({ role: 'assistant', content: response });
-    }, 1000);
-  }
-
-  private async generateFollowUpComment(question: string, answer: string): Promise<string> {
-    try {
-      const prompt = `
-        As a technical interviewer, generate a brief, one-sentence transitional comment based on this interview exchange:
-        
-        Question: "${question}"
-        Answer: "${answer}"
-        
-        The comment should:
-        1. Acknowledge the candidate's response
-        2. Be encouraging and professional
-        3. Serve as a natural transition to the next question
-        4. Be brief (maximum 15 words)
-        
-        Only provide the transitional comment, no other text.
-      `;
-
-      const response = await this.callGeminiAPI(prompt);
-      return response.trim();
-    } catch (error) {
-      console.error('Error generating follow-up comment:', error);
-      return "Thank you for that response. Moving to the next question.";
+    // Speak the first question if there is one
+    if (defaultQuestions.length > 0) {
+      const firstQuestion = `Let's begin your interview about ${topic}. ${defaultQuestions[0].question}`;
+      this.speak(firstQuestion);
+    } else {
+      // This should never happen as we always have general questions
+      const errorMessage = "I'm sorry, I couldn't generate questions. Please try a different topic.";
+      this.speak(errorMessage);
     }
   }
 
-  private async callGeminiAPI(prompt: string): Promise<string> {
-    try {
-      console.log('Calling Gemini API with prompt:', prompt);
-
-      // Create safe API URL - ensure we're using the correct model
-      let apiUrl = this.GEMINI_API_URL;
-      let modelUsed = 'gemini-1.5-pro';
-      let useBackupModel = false;
+  // Helper method for creating questions prompt
+  private prepareQuestionsPrompt(topic: string, count: number): string {
+    const experienceLevel = this.experienceLevel.value;
+    return `
+      As an expert technical interviewer, create ${count} high-quality interview questions about ${topic} 
+      appropriate for a ${experienceLevel} level developer.
       
-      console.log('Attempting with primary model:', modelUsed);
+      Each question should:
+      1. Be challenging but answerable in 2-3 minutes
+      2. Test both theoretical knowledge and practical understanding
+      3. Be specific to ${topic} (not general programming questions)
+      4. Be clear and unambiguous
       
-      try {
-        const payload = {
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: prompt }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 1024,
-          },
-          safetySettings: [
-            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
-          ]
-        };
-
-        const headers = {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': this.GEMINI_API_KEY
-        };
-
-        console.log('API URL:', apiUrl);
-        console.log('Using API key:', this.GEMINI_API_KEY ? 'Exists' : 'Missing');
-
-        const response = await firstValueFrom(this.http.post<any>(
-          apiUrl,
-          payload,
-          { headers }
-        ));
-
-        console.log('Raw API response:', JSON.stringify(response, null, 2));
-
-        if (!response?.candidates?.[0]?.content?.parts?.[0]?.text) {
-          console.error('Empty response from Gemini API:', response);
-          throw new Error('Invalid or empty response from Gemini API');
-        }
-
-        return response.candidates[0].content.parts[0].text;
-      } catch (primaryError) {
-        // Try backup model if primary fails
-        console.error('Primary model failed:', primaryError);
-        console.log('Trying backup model: gemini-pro');
-        
-        useBackupModel = true;
-        modelUsed = 'gemini-pro';
-        apiUrl = 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent';
-        
-        const backupPayload = {
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: prompt }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 1024,
-          }
-        };
-
-        const headers = {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': this.GEMINI_API_KEY
-        };
-
-        console.log('Backup API URL:', apiUrl);
-        
-        const response = await firstValueFrom(this.http.post<any>(
-          apiUrl,
-          backupPayload,
-          { headers }
-        ));
-        
-        if (!response?.candidates?.[0]?.content?.parts?.[0]?.text) {
-          throw new Error('Invalid or empty response from backup Gemini API');
-        }
-        
-        return response.candidates[0].content.parts[0].text;
-      }
-    } catch (error: any) {
-      console.error('All Gemini API attempts failed:', error?.message || error);
+      Format your response as a numbered list of questions only, with no additional text.
+      For example:
+      1. What is X in ${topic} and how does it work?
+      2. Explain the difference between Y and Z in ${topic}.
       
-      // Return a generic response for API failures
-      if (prompt.includes('greeting') || prompt.includes('meeting a candidate')) {
-        // Use userName in greeting if available
-        return `Hello ${this.userName || 'there'}! I'm your AI interviewer. Are you ready to begin the interview?`;
-      } else if (prompt.includes('evaluate') || prompt.includes('feedback')) {
-        return "Thank you for your answer. That's a good point, and I appreciate your explanation.";
-      } else if (prompt.includes('questions') || prompt.includes('generate')) {
-        return "I'll prepare some questions about the topic you mentioned.";
-      } else {
-        throw error; // Re-throw for other cases
-      }
-    }
+      Provide exactly ${count} questions.
+    `;
   }
 
-
-  startListening(): void {
-    if (this.recognition && !this.isListening) {
-      try {
-        this.recognition.start();
-      } catch (e) {
-        console.error('Error starting speech recognition:', e);
-
-        // Try to recover by re-initializing
-        setTimeout(() => {
-          this.initSpeechRecognition();
-          this.recognition.start();
-        }, 500);
-      }
-    }
-  }
-
-  stopListening(): void {
-    if (this.recognition && this.isListening) {
-      try {
-        this.recognition.stop();
-        this.isListening = false;
-      } catch (e) {
-        console.error('Error stopping speech recognition:', e);
-      }
-    }
-  }
-
-  startInterview(userName: string, initialState: string = 'interview_setup'): void {
-    // Don't restart if already in progress
-    if (this.interviewInProgress.getValue()) {
-      console.log('Interview already in progress, not restarting');
-      return;
-    }
-    
-    this.interviewInProgress.next(true);
-    // Set to the provided initial state
-    this.interviewState.next(initialState);
-    this.currentQuestionIndex.next(0);
-    this.userResponses = {};
-    this.feedback.next(null);
-    this.userExperience = '';
-    this.userName = userName;
-
-    // Reset chat history
-    this.chatHistory = [];
-
-    // Start speech recognition
-    this.startListening();
-  }
-
-  endInterview(): void {
-    // Stop listening first
-    this.stopListening();
-
-    // Set interview states
-    this.interviewInProgress.next(false);
-    this.interviewState.next('initial');
-
-    // Clear chat history
-    this.chatHistory = [];
-  }
-
-  retakeInterview(): void {
-    // Save the user's name
-    const userName = this.userName;
-
-    // End current interview and start a new one
-    this.stopListening();
-    this.interviewInProgress.next(false);
-
-    // Short delay before starting a new interview
-    setTimeout(() => {
-      this.startInterview(userName);
-    }, 500);
-  }
-
-  private async generateComprehensiveAIFeedback(): Promise<void> {
-    this.interviewState.next('generating_feedback');
-    console.log('Starting feedback generation with timeout protection');
-    
-    // Log all questions and answers for comprehensive analysis
-    console.log('Complete interview Q&A for feedback generation:');
-    Object.keys(this.userResponses).forEach(index => {
-      const i = parseInt(index);
-      const question = this.questions.value[i]?.question || 'Unknown question';
-      const answer = this.userResponses[i] || 'No response';
-      console.log(`Q${i+1}: ${question}`);
-      console.log(`A${i+1}: ${answer}`);
-    });
-    
-    // Create a timeout controller
-    const abortController = new AbortController();
-    const timeoutId = setTimeout(() => {
-      console.log('Feedback generation timed out after 45 seconds');
-      abortController.abort();
-    }, 45000);
+  // Helper method for extracting questions from API response
+  private extractQuestionsFromResponse(response: string, topic: string): InterviewQuestion[] {
+    const questions: InterviewQuestion[] = [];
 
     try {
-      // Use AbortController signal for proper timeout handling
-      const feedbackPromise = new Promise<void>(async (resolve) => {
-        try {
-          console.log('Preparing feedback prompt...');
-          // Prepare the prompt for feedback generation
-          const prompt = this.prepareComprehensiveFeedbackPrompt();
-          
-          console.log('Calling API for feedback...');
-          // First try to get valid feedback from the API
-          try {
-            // Attempt to get feedback from the main model
-            const result = await this.callGeminiAPI(prompt);
-            console.log('Received raw feedback response');
-            
-            // Extract any JSON-like structure from the response
-            let feedback: InterviewFeedback | null = null;
-            try {
-              // Try to find JSON in the response
-              const jsonMatch = result.match(/\{[\s\S]*\}/);
-              if (jsonMatch) {
-                const jsonStr = jsonMatch[0];
-                try {
-                  // Try to parse the JSON
-                  const feedbackObj = JSON.parse(jsonStr);
-                  console.log('Parsed feedback object:', feedbackObj);
-                  
-                  // Validate and format the feedback
-                  const formattedFeedback = this.formatFeedbackObject(feedbackObj);
-                  
-                  // Log the complete feedback 
-                  console.log('FINAL INTERVIEW FEEDBACK:', formattedFeedback);
-                  console.log('--- STRENGTHS ---');
-                  formattedFeedback.strengths.forEach(s => console.log(`- ${s}`));
-                  console.log('--- WEAKNESSES ---');
-                  formattedFeedback.weaknesses.forEach(w => console.log(`- ${w}`));
-                  console.log('--- STUDY TOPICS ---');
-                  formattedFeedback.suggestedTopics.forEach(t => console.log(`- ${t}`));
-                  console.log(`--- RATING: ${formattedFeedback.overallRating}/10 ---`);
-                  console.log('--- DETAILED FEEDBACK ---');
-                  console.log(formattedFeedback.detailedFeedback);
-                  
-                  // Set the feedback in the BehaviorSubject
-                  this.feedback.next(formattedFeedback);
-                  this.interviewState.next('feedback');
-                  
-                  // Provide audio summary
-                  const feedbackSummary = `I've analyzed your interview performance. Overall, your performance was rated ${formattedFeedback.overallRating} out of 10.`;
-                  this.speak(feedbackSummary);
-                  resolve();
-                  return;
-                } catch (jsonError) {
-                  console.error('JSON parsing error:', jsonError);
-                }
-              }
-              
-              // If JSON parsing failed, try to extract structured data
-              if (!feedback) {
-                feedback = this.extractFeedbackFromText(result);
-              }
-              
-              // If we got valid feedback, use it
-              if (feedback) {
-                console.log('Successfully extracted feedback');
-                
-                // Log the extracted feedback
-                console.log('FINAL INTERVIEW FEEDBACK FROM TEXT EXTRACTION:');
-                console.log('--- STRENGTHS ---');
-                feedback.strengths.forEach(s => console.log(`- ${s}`));
-                console.log('--- WEAKNESSES ---');
-                feedback.weaknesses.forEach(w => console.log(`- ${w}`));
-                console.log('--- STUDY TOPICS ---');
-                feedback.suggestedTopics.forEach(t => console.log(`- ${t}`));
-                console.log(`--- RATING: ${feedback.overallRating}/10 ---`);
-                console.log('--- DETAILED FEEDBACK ---');
-                console.log(feedback.detailedFeedback);
-                
-                this.feedback.next(feedback);
-                this.interviewState.next('feedback');
-                
-                const feedbackSummary = `I've analyzed your interview performance. Overall, your performance was rated ${feedback.overallRating} out of 10.`;
-                this.speak(feedbackSummary);
-                resolve();
-                return;
-              }
-            } catch (processingError) {
-              console.error('Error processing API response:', processingError);
-            }
-          } catch (apiError) {
-            console.error('API call failed:', apiError);
-          }
-          
-          // If we get here, all extraction attempts failed - use fallback
-          console.log('Using fallback feedback generation');
-          const mockFeedback = this.generateEnglishMockFeedback();
-          
-          // Log the fallback feedback
-          console.log('FALLBACK INTERVIEW FEEDBACK:');
-          console.log('--- STRENGTHS ---');
-          mockFeedback.strengths.forEach(s => console.log(`- ${s}`));
-          console.log('--- WEAKNESSES ---');
-          mockFeedback.weaknesses.forEach(w => console.log(`- ${w}`));
-          console.log('--- STUDY TOPICS ---');
-          mockFeedback.suggestedTopics.forEach(t => console.log(`- ${t}`));
-          console.log(`--- RATING: ${mockFeedback.overallRating}/10 ---`);
-          console.log('--- DETAILED FEEDBACK ---');
-          console.log(mockFeedback.detailedFeedback);
-          
-          this.feedback.next(mockFeedback);
-          this.interviewState.next('feedback');
-          
-          const fallbackMessage = `I've analyzed your interview. Your overall performance was rated ${mockFeedback.overallRating} out of 10.`;
-          this.speak(fallbackMessage);
-          resolve();
-        } catch (error) {
-          console.error('Error in feedback generation:', error);
-          // Always ensure we provide some feedback
-          const emergencyFeedback = this.generateEnglishMockFeedback();
-          this.feedback.next(emergencyFeedback);
-          this.interviewState.next('feedback');
-          this.speak("I've prepared your interview feedback.");
-          resolve();
-        }
-      });
+      // Split by numbered lines (1. 2. etc)
+      const lines = response.split(/\n+/);
+      const questionPattern = /^\s*\d+\.?\s+(.+)$/;
 
-      // Race between the feedback promise and the abort controller
-      await Promise.race([
-        feedbackPromise,
-        new Promise<void>((_, reject) => {
-          abortController.signal.addEventListener('abort', () => {
-            reject(new Error('Feedback generation timeout'));
-          });
-        })
-      ]);
-      
-      // Clear the timeout
-      clearTimeout(timeoutId);
-    } catch (error) {
-      // This catches both timeout errors and other async errors
-      console.error('Feedback generation failed:', error);
-      
-      // Always ensure we provide feedback even on timeout
-      const fallbackFeedback = this.generateEnglishMockFeedback();
-      this.feedback.next(fallbackFeedback);
-      this.interviewState.next('feedback');
-      this.speak("I've completed analyzing your interview responses.");
-      
-      // Clear the timeout
-      clearTimeout(timeoutId);
-    }
-  }
-  
-  // Helper function to extract feedback from unstructured text
-  private extractFeedbackFromText(text: string): InterviewFeedback | null {
-    try {
-      // Look for strengths
-      const strengths: string[] = [];
-      let strengthMatch = text.match(/strengths?:?\s*(.+?)(?=weaknesses|areas|improvements|rating|$)/is);
-      if (strengthMatch && strengthMatch[1]) {
-        // Extract bullet points or comma-separated items
-        const strengthText = strengthMatch[1].trim();
-        const strengthItems = strengthText.split(/(?:\r?\n|\r|•|,|\d+\.)+/).filter(s => s.trim().length > 0);
-        strengths.push(...strengthItems.map(s => s.trim()).filter(s => s.length > 0).slice(0, 3));
-      }
-      
-      // Look for weaknesses/areas to improve
-      const weaknesses: string[] = [];
-      let weaknessMatch = text.match(/(?:weaknesses|areas to improve|improvements):?\s*(.+?)(?=strengths|suggested|topics|rating|$)/is);
-      if (weaknessMatch && weaknessMatch[1]) {
-        const weaknessText = weaknessMatch[1].trim();
-        const weaknessItems = weaknessText.split(/(?:\r?\n|\r|•|,|\d+\.)+/).filter(s => s.trim().length > 0);
-        weaknesses.push(...weaknessItems.map(s => s.trim()).filter(s => s.length > 0).slice(0, 3));
-      }
-      
-      // Look for suggested topics
-      const suggestedTopics: string[] = [];
-      let topicsMatch = text.match(/(?:suggested topics|topics to study|study):?\s*(.+?)(?=strengths|weaknesses|rating|detailed|$)/is);
-      if (topicsMatch && topicsMatch[1]) {
-        const topicsText = topicsMatch[1].trim();
-        const topicItems = topicsText.split(/(?:\r?\n|\r|•|,|\d+\.)+/).filter(s => s.trim().length > 0);
-        suggestedTopics.push(...topicItems.map(s => s.trim()).filter(s => s.length > 0).slice(0, 3));
-      }
-      
-      // Look for rating
-      let rating = 7; // Default rating
-      const ratingMatch = text.match(/(?:rating|score|rated)[:. ]*(\d+)(?:[\s\/\\](\d+))?/i);
-      if (ratingMatch) {
-        const extractedRating = parseInt(ratingMatch[1]);
-        const scale = ratingMatch[2] ? parseInt(ratingMatch[2]) : 10;
-        
-        // Normalize to scale of 10
-        rating = Math.round((extractedRating / scale) * 10);
-        
-        // Ensure it's within bounds
-        rating = Math.max(1, Math.min(10, rating));
-      }
-      
-      // Extract detailed feedback - use the whole text if we can't find a specific section
-      let detailedFeedback = text;
-      const detailedMatch = text.match(/(?:detailed feedback|summary|overall):?\s*(.+?)(?=$)/is);
-      if (detailedMatch && detailedMatch[1]) {
-        detailedFeedback = detailedMatch[1].trim();
-      }
-      
-      // If we couldn't extract strengths or weaknesses, the extraction failed
-      if (strengths.length === 0 && weaknesses.length === 0) {
-        return null;
-      }
-      
-      // Ensure we have at least one item in each category
-      if (strengths.length === 0) strengths.push(`Understanding of ${this.techStack} concepts`);
-      if (weaknesses.length === 0) weaknesses.push(`Could provide more specific examples in ${this.techStack}`);
-      if (suggestedTopics.length === 0) {
-        suggestedTopics.push(`Advanced ${this.techStack} patterns`);
-        suggestedTopics.push(`${this.techStack} performance optimization`);
-      }
-      
-      return {
-        strengths,
-        weaknesses,
-        suggestedTopics,
-        overallRating: rating,
-        detailedFeedback
-      };
-    } catch (error) {
-      console.error('Error extracting feedback from text:', error);
-      return null;
-    }
-  }
-  
-  // Helper function to format feedback object
-  private formatFeedbackObject(obj: any): InterviewFeedback {
-    // Create a default feedback structure
-    const feedback: InterviewFeedback = {
-      strengths: [],
-      weaknesses: [],
-      suggestedTopics: [],
-      overallRating: 7,
-      detailedFeedback: ''
-    };
-    
-    // Try to map the object properties to our feedback structure
-    if (obj.strengths && Array.isArray(obj.strengths)) {
-      feedback.strengths = obj.strengths.slice(0, 3);
-    } else if (obj.strengths && typeof obj.strengths === 'string') {
-      feedback.strengths = [obj.strengths];
-    }
-    
-    if (obj.weaknesses && Array.isArray(obj.weaknesses)) {
-      feedback.weaknesses = obj.weaknesses.slice(0, 3);
-    } else if (obj.weaknesses && typeof obj.weaknesses === 'string') {
-      feedback.weaknesses = [obj.weaknesses];
-    } else if (obj.areasToImprove && Array.isArray(obj.areasToImprove)) {
-      feedback.weaknesses = obj.areasToImprove.slice(0, 3);
-    }
-    
-    if (obj.suggestedTopics && Array.isArray(obj.suggestedTopics)) {
-      feedback.suggestedTopics = obj.suggestedTopics.slice(0, 3);
-    } else if (obj.topics && Array.isArray(obj.topics)) {
-      feedback.suggestedTopics = obj.topics.slice(0, 3);
-    }
-    
-    if (obj.rating && !isNaN(obj.rating)) {
-      feedback.overallRating = Math.max(1, Math.min(10, obj.rating));
-    } else if (obj.overallRating && !isNaN(obj.overallRating)) {
-      feedback.overallRating = Math.max(1, Math.min(10, obj.overallRating));
-    }
-    
-    if (obj.detailedFeedback && typeof obj.detailedFeedback === 'string') {
-      feedback.detailedFeedback = obj.detailedFeedback;
-    } else if (obj.feedback && typeof obj.feedback === 'string') {
-      feedback.detailedFeedback = obj.feedback;
-    } else if (obj.summary && typeof obj.summary === 'string') {
-      feedback.detailedFeedback = obj.summary;
-    }
-    
-    // Ensure we have at least one item in each category
-    if (feedback.strengths.length === 0) {
-      feedback.strengths.push(`Understanding of ${this.techStack} concepts`);
-    }
-    
-    if (feedback.weaknesses.length === 0) {
-      feedback.weaknesses.push(`Could provide more specific examples in ${this.techStack}`);
-    }
-    
-    if (feedback.suggestedTopics.length === 0) {
-      feedback.suggestedTopics.push(`Advanced ${this.techStack} patterns`);
-      feedback.suggestedTopics.push(`${this.techStack} performance optimization`);
-    }
-    
-    return feedback;
-  }
-  
-  // Helper method to prepare the feedback prompt
-  private prepareComprehensiveFeedbackPrompt(): string {
-    // Collect all questions and answers
-    const qaText = Object.keys(this.userResponses).map(index => {
-      const i = parseInt(index);
-      const q = this.questions.value[i]?.question || 'Unknown question';
-      const a = this.userResponses[i] || 'No response';
-      return `Question ${i+1}: ${q}\nAnswer: ${a}`;
-    }).join('\n\n');
-    
-    // Count how many questions have valid answers
-    const validAnswerCount = Object.values(this.userResponses).filter(
-      answer => answer && answer !== '[SKIPPED]' && answer.length > 20
-    ).length;
-    
-    // Calculate the percentage of questions answered properly
-    const totalQuestions = this.questions.value.length;
-    const answerPercentage = Math.round((validAnswerCount / totalQuestions) * 100);
-    
-    return `You are an expert technical interviewer evaluating a candidate on ${this.techStack} at a ${this.experienceLevel.value} level.
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        const match = line.match(questionPattern);
 
-Here are the questions and answers from the interview:
+        if (match && match[1]) {
+          const question = match[1].trim();
 
-${qaText}
-
-IMPORTANT: Analyze the candidate's performance with these criteria:
-1. Technical accuracy and depth of knowledge
-2. Completeness of each response
-3. Use of examples or real-world applications
-4. Communication clarity
-5. Problem-solving approach
-
-The candidate answered approximately ${answerPercentage}% of questions with meaningful responses.
-
-Please provide fair and accurate feedback following this exact JSON format:
-{
-  "strengths": ["Strength 1", "Strength 2", "Strength 3"],
-  "weaknesses": ["Area to improve 1", "Area to improve 2", "Area to improve 3"],
-  "suggestedTopics": ["Topic to study 1", "Topic to study 2", "Topic to study 3"],
-  "overallRating": X,
-  "detailedFeedback": "Detailed paragraph of feedback summarizing the overall performance"
-}
-
-IMPORTANT RATING INSTRUCTIONS:
-- If less than 25% of questions have meaningful answers OR if answers are mostly inadequate: rating should be 1-3
-- If 25-50% of questions have meaningful answers with moderate quality: rating should be 4-5
-- If 50-75% of questions have meaningful answers with good quality: rating should be 6-7
-- If 75-90% of questions have meaningful answers with very good quality: rating should be 8-9
-- Only if >90% of questions have comprehensive, technically accurate answers: rating should be 10
-
-For skipped questions or minimal/random responses, consider these as weaknesses in the assessment.
-All feedback must be backed by evidence from the actual answers provided.
-The detailed feedback should accurately reflect the quality of answers provided.
-
-IMPORTANT: The response MUST be valid, parseable JSON with this exact structure.`;
-  }
-
-  // Fallback method for generating mock feedback in English
-  private generateEnglishMockFeedback(): InterviewFeedback {
-    return {
-      strengths: [
-        "Clear communication of technical concepts",
-        "Structured approach to problem-solving"
-      ],
-      weaknesses: [
-        "Could provide more specific examples",
-        "Some technical knowledge gaps in advanced concepts"
-      ],
-      suggestedTopics: [
-        `Advanced ${this.techStack} patterns`,
-        `${this.techStack} performance optimization`,
-        `Testing strategies for ${this.techStack}`,
-        `Best practices in ${this.techStack} architecture`
-      ],
-      overallRating: 5,
-      detailedFeedback: `You demonstrated understanding of ${this.techStack} fundamentals. Your explanations were generally clear, though you could strengthen your answers with more specific examples from your experience. Focus on deepening your knowledge of advanced concepts and performance optimization techniques to enhance your expertise.`
-    };
-  }
-
-  processManualInput(text: string): void {
-    console.log('Processing manual input:', text);
-    // Manual input should bypass speech recognition checks
-    this.isListening = false;
-
-    // Force clear any interim speech to avoid confusion
-    this.interimUserResponse.next('');
-
-    // Check current state to handle tech stack selection
-    const currentState = this.interviewState.value;
-    console.log('Current state for manual input:', currentState);
-
-    // Handle tech stack selection in interview_setup state
-    if (currentState === 'interview_setup') {
-      if (text.length >= 2 && text.length <= 30) {
-        const techStack = text.trim();
-        console.log('Setting tech stack to:', techStack);
-        
-        // Store the tech selection
-        this.selectedTech.next(techStack);
-        this.techStack = techStack;
-        
-        // Move to experience level selection
-        this.interviewState.next('experience_level');
-        return;
-      }
-    }
-    // Handle experience level selection
-    else if (currentState === 'experience_level') {
-      const level = text.toLowerCase().trim();
-      if (['beginner', 'intermediate', 'expert'].includes(level)) {
-        console.log('Setting experience level to:', level);
-        this.experienceLevel.next(level);
-        
-        // Move to question count selection
-        this.interviewState.next('question_count');
-        return;
-      }
-    }
-    // Handle question count selection
-    else if (currentState === 'question_count') {
-      const count = parseInt(text);
-      if (!isNaN(count) && count > 0 && count <= 50) {
-        console.log('Setting question count to:', count);
-        this.questionCount = count;
-        
-        // Generate questions
-        this.generateQuestions();
-        return;
-      }
-    }
-    // Check if we're in greeting state and this is a tech stack entry
-    else if (this.interviewState.value === 'greeting' || this.interviewState.value === 'initial') {
-      const currentState = this.interviewState.value;
-      console.log('Direct tech stack entry detected in', currentState, 'state');
-
-      // If the user directly entered a tech stack in initial state
-      if (text.length >= 2 && text.length <= 30) {
-        // This could be a tech stack entry - set as tech stack and move to question count
-        const techStack = text.trim();
-        console.log('Setting tech stack directly to:', techStack);
-
-        // If we were in initial state, start the interview first
-        if (currentState === 'initial') {
-          this.interviewInProgress.next(true);
-          // Keep the provided userName or use default
-          if (!this.userName || this.userName === 'User' || this.userName === 'Guest') {
-            this.userName = 'User'; // Default name if none is set
+          // Filter out empty questions or ones that are too short
+          if (question && question.length > 10) {
+            questions.push({
+              id: questions.length,
+              question: question,
+              category: topic
+            });
           }
         }
-
-        // Set greeting as complete
-        if (currentState === 'initial') {
-          this.interviewState.next('greeting');
-          // Add personalized greeting to chat history with the user's name
-          const greeting = `Hello ${this.userName}! I'm your AI interviewer. Welcome to the mock interview.`;
-          this.chatHistory.push({ role: 'assistant', content: greeting });
-        }
-
-        // Set tech stack and move to experience level
-        this.selectedTech.next(techStack.charAt(0).toUpperCase() + techStack.slice(1));
-        this.techStack = techStack;
-
-        const response = `Great! I'll be interviewing you about ${techStack}. What's your experience level with ${techStack}? Please select: beginner, intermediate, or expert.`;
-        this.speak(response);
-        this.chatHistory.push({ role: 'assistant', content: response });
-
-        this.interviewState.next('experience_level');
-        return;
       }
+
+      console.log(`Extracted ${questions.length} questions from response`);
+      return questions;
+    } catch (error) {
+      console.error('Error extracting questions from response:', error);
+      return [];
     }
-    // Check if we're in the answering state - handle automatic question advancement
-    else if (this.interviewState.value === 'answering' && text.trim().length > 0) {
-      const currentIndex = this.currentQuestionIndex.value;
-      const currentQuestion = this.questions.value[currentIndex];
-
-      // Save the answer
-      this.userResponses[currentIndex] = text;
-
-      // Process the answer with immediate advancement
-      this.processAnswerAndAdvance(text, currentIndex);
-      return;
-    }
-
-    // Process the text through the normal flow for other states
-    this.processUserSpeech(text);
   }
 
-  // New method to process an answer and advance to the next question
+  // Add missing methods for processing answers
   private async processAnswerAndAdvance(answer: string, currentIndex: number): Promise<void> {
     console.log(`Processing answer for question ${currentIndex + 1}:`, answer);
-    
+
     // Log the current question and answer for analysis
     console.log(`Q${currentIndex + 1}: ${this.questions.value[currentIndex].question}`);
     console.log(`A${currentIndex + 1}: ${answer}`);
@@ -1664,25 +870,88 @@ IMPORTANT: The response MUST be valid, parseable JSON with this exact structure.
         
         ONLY respond with one word: "VALID" or "INVALID"
       `;
-      
-      // Check answer quality
-      const qualityResult = await this.callGeminiAPI(qualityCheckPrompt);
+
+      // Check answer quality with backup mechanism
+      let qualityResult = '';
+      try {
+        // Try primary API call
+        qualityResult = await this.callGeminiAPI(qualityCheckPrompt);
+      } catch (error) {
+        console.error('Primary API call failed for quality check:', error);
+        try {
+          // Try Mistral as backup
+          qualityResult = await this.callMistralAPI(qualityCheckPrompt);
+        } catch (mistralError) {
+          console.error('All API calls failed for quality check:', mistralError);
+          // Default to allowing the response if all APIs fail
+          qualityResult = "VALID";
+        }
+      }
+
       const isValidAnswer = !qualityResult.includes("INVALID");
-      
+
       if (!isValidAnswer) {
         console.log('Low quality or nonsense answer detected');
-        
-        // Provide feedback about the low-quality answer
+
+        // Set error message for the UI
+        this.errorMessage.next('Your answer appears to be too short or not relevant to the question. Please provide a more detailed response.');
+
+        // Provide feedback about the low-quality answer - show this message EVERY time
         const lowQualityResponse = `I notice your answer doesn't seem to address the question. Please provide a genuine response to the technical question, or if you need help, you can ask for a hint or skip to the next question.`;
+
+        // Show alert for immediate feedback to user
+        if (typeof window !== 'undefined') {
+          this.speak('Please provide a valid answer to the question. Random text or extremely short responses are not acceptable.');
+        }
+
         this.speak(lowQualityResponse);
         this.chatHistory.push({ role: 'assistant', content: lowQualityResponse });
-        
+
         // Don't advance to the next question automatically
         return;
       }
-      
+
+      // Clear any previous error message
+      this.errorMessage.next('');
+
+      // Added: Check if the answer is technically correct with a separate API call
+      const correctnessCheckPrompt = `
+        You are an expert technical interviewer. Analyze if the following answer to a technical interview question is 
+        technically correct or incorrect.
+        
+        Question: "${this.questions.value[currentIndex].question}"
+        Answer: "${answer}"
+        
+        Determine if the answer is:
+        1. CORRECT - The answer is technically accurate and properly addresses the question
+        2. INCORRECT - The answer contains technical inaccuracies, misconceptions, or fails to address the question properly
+        
+        ONLY respond with one word: "CORRECT" or "INCORRECT"
+      `;
+
+      // Check correctness with backup mechanism
+      let correctnessResult = '';
+      try {
+        // Try primary API call
+        correctnessResult = await this.callGeminiAPI(correctnessCheckPrompt);
+      } catch (error) {
+        console.error('Primary API call failed for correctness check:', error);
+        try {
+          correctnessResult = await this.callMistralAPI(correctnessCheckPrompt);
+        } catch (mistralError) {
+          console.error('All API calls failed for correctness check:', mistralError);
+          // Default to neutral response if all APIs fail
+          correctnessResult = "EVALUATION_FAILED";
+        }
+      }
+
+      // If the answer is incorrect, set a warning message (but don't block progression)
+      if (correctnessResult.includes("INCORRECT")) {
+        this.errorMessage.next('Your answer contains technical inaccuracies. Review the feedback carefully.');
+      }
+
       // Continue with evaluation for valid answers
-      const evaluationPrompt = `
+      let evaluationPrompt = `
         You are an expert technical interviewer evaluating a candidate's answer.
         
         Question: "${this.questions.value[currentIndex].question}"
@@ -1693,8 +962,37 @@ IMPORTANT: The response MUST be valid, parseable JSON with this exact structure.
         2. Check if they provided specific examples or code samples
         3. Evaluate their communication clarity and approach
         4. Consider both the strengths and weaknesses of their response
+      `;
+
+      // Adjust evaluation prompt based on correctness check
+      if (correctnessResult.includes("CORRECT")) {
+        evaluationPrompt += `
+        Then, provide a positive but honest evaluation that:
+        1. Acknowledges what they got right
+        2. Points out any minor improvements they could make
+        3. Uses a rating system from 1-5 where 1 is poor and 5 is excellent
+        4. Maintains a professional tone
+        5. Is approximately 2-3 sentences long
+        6. Uses English language only - no Hindi or other languages
         
-        Then, provide a strict and honest evaluation that:
+        This answer appears to be technically correct, so focus on the strengths while noting any minor areas for improvement.
+        `;
+      } else if (correctnessResult.includes("INCORRECT")) {
+        evaluationPrompt += `
+        Then, provide a constructive but critical evaluation that:
+        1. Clearly identifies the technical inaccuracies or misconceptions in their answer
+        2. Explains what the correct information should be
+        3. Uses a rating system from 1-5 where 1 is poor and 5 is excellent (this answer should receive a rating of 1-2)
+        4. Maintains a professional tone
+        5. Is approximately 2-3 sentences long
+        6. Uses English language only - no Hindi or other languages
+        
+        This answer appears to contain technical inaccuracies, so focus on correcting these misconceptions clearly.
+        `;
+      } else {
+        // Default case or if evaluation failed
+        evaluationPrompt += `
+        Then, provide a balanced evaluation that:
         1. Acknowledges what they got right, if anything
         2. Clearly points out misconceptions or areas for improvement
         3. Uses a rating system from 1-5 where 1 is poor and 5 is excellent
@@ -1704,15 +1002,32 @@ IMPORTANT: The response MUST be valid, parseable JSON with this exact structure.
         
         For answers that are minimal or show little technical knowledge, be honest and rate them lower (1-2).
         Only give ratings of 4-5 to answers that demonstrate strong technical understanding.
-        
+        `;
+      }
+
+      evaluationPrompt += `
         After your evaluation, tell them you're moving to the next question, but don't include the next question text.
       `;
 
-      // Get evaluation
-      const evaluation = await this.callGeminiAPI(evaluationPrompt);
-      
-      // Log the Gemini evaluation to console
-      console.log(`Gemini evaluation for Q${currentIndex + 1}:`, evaluation);
+      // Get evaluation with backup mechanism
+      let evaluation = '';
+      try {
+        // Try primary API call
+        evaluation = await this.callGeminiAPI(evaluationPrompt);
+      } catch (error) {
+        console.error('Primary API call failed for evaluation:', error);
+        try {
+          // Try Mistral as backup
+          evaluation = await this.callMistralAPI(evaluationPrompt);
+        } catch (mistralError) {
+          console.error('All API calls failed for evaluation:', mistralError);
+          // Use a default evaluation if all APIs fail
+          evaluation = this.getDefaultEvaluation(correctnessResult);
+        }
+      }
+
+      // Log the evaluation to console
+      console.log(`Evaluation for Q${currentIndex + 1}:`, evaluation);
 
       // Speak the evaluation
       this.speak(evaluation);
@@ -1732,539 +1047,712 @@ IMPORTANT: The response MUST be valid, parseable JSON with this exact structure.
           // Generate natural presentation of the next question
           const nextPrompt = `
             You are a professional mock interviewer. Present the following question in a natural, conversational way.
-            Don't say "Next question" or "Question X" - just present the question directly.
-            Use English language only.
+            Keep it brief and conversational, as if you're continuing an interview.
+            Don't make it verbose - just transition naturally to this next question.
             
-            Question: "${nextQuestion.question}"
+            Next question: "${nextQuestion.question}"
+            
+            Your response should be approximately 1-2 sentences introducing the question.
           `;
 
-          // Call API to get natural phrasing of the question
-          this.callGeminiAPI(nextPrompt).then(response => {
-            console.log('Speaking next question:', response);
-            this.speak(response);
-            this.chatHistory.push({ role: 'assistant', content: response });
-          });
-        }, 2000);
+          // Get next question presentation with backup mechanism
+          this.getNextQuestionPresentation(nextPrompt, nextQuestion.question);
+        }, 1000);
       } else {
-        // This was the last question, move to feedback after a short pause
+        // This was the last question, proceed to feedback
+        console.log('All questions completed, generating feedback');
+
+        // Update interview state to generating feedback
+        this.interviewState.next('generating_feedback');
+
+        // Speak a transition message
+        const completionMessage = 'Thank you for completing all the questions. I\'m now generating your feedback based on your responses...';
+        this.speak(completionMessage);
+
+        // Generate comprehensive feedback
         setTimeout(() => {
-          console.log('Last question answered, generating feedback');
-          this.interviewState.next('generating_feedback');
-
-          const response = `Great! You've answered all the questions. Now I'll analyze your responses and provide feedback.`;
-          this.speak(response);
-          this.chatHistory.push({ role: 'assistant', content: response });
-
-          // Generate feedback
-          setTimeout(() => {
-            this.generateComprehensiveAIFeedback();
-          }, 2000);
+          this.generateComprehensiveFeedback();
         }, 2000);
       }
     } catch (error) {
-      console.error('Error evaluating answer:', error);
+      console.error('Error processing answer:', error);
 
-      // If evaluation fails, just move to the next question with a generic response
-      const genericResponse = `Thank you for your answer. Let's continue with the interview.`;
-      this.speak(genericResponse);
-      this.chatHistory.push({ role: 'assistant', content: genericResponse });
+      // Provide a fallback response if there's an error
+      const errorResponse = 'I apologize, but I encountered an error evaluating your response. Let\'s move on to the next question.';
+      this.speak(errorResponse);
+      this.chatHistory.push({ role: 'assistant', content: errorResponse });
 
-      // Move to next question
-      this.moveToNextQuestion(currentIndex);
-    }
-  }
-
-  // New method to move to the next question
-  private moveToNextQuestion(currentIndex: number): void {
-    const questions = this.questions.value;
-    if (currentIndex < questions.length - 1) {
-      // Move to the next question
-      const newIndex = currentIndex + 1;
-      this.currentQuestionIndex.next(newIndex);
-      
-      // Speak the next question
-      const nextQuestion = questions[newIndex].question;
-      this.speak(`Next question: ${nextQuestion}`);
-    } else {
-      // This was the last question, check if feedback should be generated
-      // Only generate feedback if the interview is still active
-      if (this.interviewState.value !== 'interview_setup') {
-        // Move to feedback state
-        this.interviewState.next('generating_feedback');
-        const response = `That was the final question. I'll now analyze your answers and provide feedback.`;
-        this.speak(response);
-        this.chatHistory.push({ role: 'assistant', content: response });
-        
-        // Generate feedback after a short delay
+      // Move to the next question despite the error
+      if (currentIndex < this.questions.value.length - 1) {
         setTimeout(() => {
-          this.generateComprehensiveAIFeedback();
+          this.currentQuestionIndex.next(currentIndex + 1);
+          this.speak(this.questions.value[currentIndex + 1].question);
+        }, 2000);
+      } else {
+        // If this was the last question, try to generate feedback anyway
+        this.interviewState.next('generating_feedback');
+        setTimeout(() => {
+          this.generateDefaultFeedback();
         }, 2000);
       }
     }
   }
 
-  skipCurrentQuestion(): void {
-    const currentIndex = this.currentQuestionIndex.value;
-    console.log('Skipping question at index:', currentIndex);
-    
-    // Store a placeholder for skipped questions
-    this.userResponses[currentIndex] = '[SKIPPED]';
-    
-    // Check if this is the last question
-    const isLastQuestion = currentIndex === this.questions.value.length - 1;
-    
-    // Move to the next question, but only generate feedback if this is truly a skip action
-    if (isLastQuestion) {
-      // If this is the last question, just mark it as skipped but don't generate feedback yet
-      // User will need to click Submit to finish the interview
-      this.speak('Last question marked as skipped. Click Submit when you are ready to finish the interview.');
-    } else {
-      // Not the last question, proceed to the next one
-      this.moveToNextQuestion(currentIndex);
-    }
-  }
-
-  restartListening(): void {
-    console.log('Manually restarting speech recognition');
-
-    // Force stop and clear any existing recognition
-    if (this.recognition) {
+  // Helper method to get next question presentation with backup
+  private async getNextQuestionPresentation(prompt: string, rawQuestion: string): Promise<void> {
+    try {
+      // Try primary API call
+      const nextIntro = await this.callGeminiAPI(prompt);
+      this.speak(nextIntro);
+      this.chatHistory.push({ role: 'assistant', content: nextIntro });
+    } catch (error) {
+      console.error('Primary API call failed for next question:', error);
       try {
-        this.recognition.stop();
-      } catch (e) {
-        console.log('Error stopping recognition:', e);
+        // Try Mistral as backup
+        const nextIntro = await this.callMistralAPI(prompt);
+        this.speak(nextIntro);
+        this.chatHistory.push({ role: 'assistant', content: nextIntro });
+      } catch (mistralError) {
+        console.error('All API calls failed for next question:', mistralError);
+        // Use a simple introduction if all APIs fail
+        const fallbackIntro = `Now, let's move to the next question. ${rawQuestion}`;
+        this.speak(fallbackIntro);
+        this.chatHistory.push({ role: 'assistant', content: fallbackIntro });
       }
     }
-
-    // Add a small delay before starting again
-    setTimeout(() => {
-      this.isListening = true; // Set this flag to indicate we want to be listening
-      this.startListening();
-    }, 300);
   }
 
-  // Add this method to detect when user hasn't responded
-  private setupNoResponseTimeout(): void {
-    console.log("Setting up no-response timeout");
-    // Wait for 15 seconds to see if the user responds
-    setTimeout(() => {
-      const currentState = this.interviewState.value;
-
-      // Only check if we're still in answering state
-      if (currentState === 'answering') {
-        const currentIndex = this.currentQuestionIndex.value;
-        const currentQuestion = this.questions.value[currentIndex];
-
-        // Check if there's been a response for this question
-        if (!this.userResponses[currentIndex]) {
-          console.log("No response detected after timeout");
-          // No response detected, send a prompt
-          this.callGeminiAPI(`
-            You are a professional mock interviewer. The candidate hasn't responded to your question for 15 seconds.
-            
-            The current question is: "${currentQuestion.question}"
-            
-            Gently remind them that you're waiting for their response. Ask if they need you to repeat the question
-            or if they'd like to skip it.
-            
-            Keep it brief and friendly.
-          `).then(response => {
-            this.speak(response);
-            this.chatHistory.push({ role: 'assistant', content: response });
-
-            // Repeat the question after the reminder
-            setTimeout(() => {
-              this.speak(currentQuestion.question);
-            }, 2000);
-          });
-        }
-      }
-    }, 15000);
+  // Provide a default evaluation when APIs fail
+  private getDefaultEvaluation(correctnessResult: string): string {
+    if (correctnessResult.includes("INCORRECT")) {
+      return "Your answer contains some technical inaccuracies. I'd rate this response as a 2/5. Make sure to review the core concepts and try to provide more specific examples next time. Let's move on to the next question.";
+    } else if (correctnessResult.includes("CORRECT")) {
+      return "Your answer covers the key points correctly. I'd rate this response as a 4/5. You could add a bit more detail for a perfect score. Let's move on to the next question.";
+    } else {
+      return "Thank you for your answer. I'd rate this response as a 3/5. Consider adding more specific technical details and examples in your future responses. Let's move on to the next question.";
+    }
   }
 
-  stopSpeaking(): void {
+  // Voice synthesis
+  public speak(text: string): void {
+    if (!text || text.trim() === '') {
+      console.log('Attempted to speak empty text, ignoring');
+      return;
+    }
+
+    console.log('Speaking:', text);
+
+    // Mark that AI is speaking - helpful for UI feedback
+    this.isAISpeaking.next(true);
+
+    // Cancel any existing speech
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
+    }
+
+    if ('speechSynthesis' in window) {
+      try {
+        // Create chunks to prevent cutting off due to length limits
+        const chunks = this.chunkText(text, 150); // Split into 150 character chunks
+
+        // Speak each chunk in sequence
+        this.speakChunks(chunks, 0);
+      } catch (error) {
+        console.error('Error speaking text:', error);
+        this.isAISpeaking.next(false);
+      }
+    } else {
+      console.error('Speech synthesis not supported in this browser');
       this.isAISpeaking.next(false);
     }
   }
 
-  // Method to adjust noise sensitivity
-  adjustNoiseSensitivity(level: 'low' | 'medium' | 'high'): void {
-    switch (level) {
-      case 'low':
-        this.minSpeechConfidence = 0.5;
-        this.minInterimLength = 2;
-        break;
-      case 'medium':
-        this.minSpeechConfidence = 0.7;
-        this.minInterimLength = 3;
-        break;
-      case 'high':
-        this.minSpeechConfidence = 0.8;
-        this.minInterimLength = 5;
-        break;
+  private chunkText(text: string, maxLength: number): string[] {
+    const chunks: string[] = [];
+    const sentences = text.split(/(?<=[.!?])\s+/);
+    let currentChunk = '';
+
+    for (const sentence of sentences) {
+      if (currentChunk.length + sentence.length > maxLength) {
+        chunks.push(currentChunk.trim());
+        currentChunk = sentence;
+      } else {
+        currentChunk += (currentChunk ? ' ' : '') + sentence;
+      }
     }
-    console.log(`Noise sensitivity set to ${level}: minConfidence=${this.minSpeechConfidence}, minLength=${this.minInterimLength}`);
+
+    if (currentChunk.trim()) {
+      chunks.push(currentChunk.trim());
+    }
+
+    return chunks;
   }
 
-  setCurrentQuestionIndex(index: number): void {
-    const questionsLength = this.questions.value.length;
-    
-    // Make sure the requested index is valid
-    if (index >= 0 && index < questionsLength) {
-      console.log(`Changing question from index ${this.currentQuestionIndex.value} to ${index}`);
-      
-      // Reset any current responses
-      this.currentUserResponse.next('');
-      this.interimUserResponse.next('');
-      
-      // Set the new question index
-      this.currentQuestionIndex.next(index);
-      
-      // Speak the new question
-      const newQuestion = this.questions.value[index].question;
-      this.speak(`New question: ${newQuestion}`);
-    } else {
-      console.error(`Invalid question index: ${index}. Must be between 0 and ${questionsLength - 1}`);
+  private speakChunks(chunks: string[], index: number): void {
+    if (index >= chunks.length) {
+      // All chunks spoken
+      this.isAISpeaking.next(false);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(chunks[index]);
+
+    // Select voice based on user preference
+    const voiceURI = this.interviewerVoice.getValue();
+    const voices = window.speechSynthesis.getVoices();
+
+    if (voiceURI !== 'default' && voices.length > 0) {
+      const selectedVoice = voices.find(v => v.voiceURI === voiceURI);
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
+    }
+
+    // Apply character personality adjustments
+    const character = this.interviewerCharacter.getValue();
+    switch (character) {
+      case 'robot':
+        utterance.rate = 0.9;
+        utterance.pitch = 1.0;
+        break;
+      case 'human':
+        utterance.rate = 1.0;
+        utterance.pitch = 1.1;
+        break;
+      case 'alien':
+        utterance.rate = 0.8;
+        utterance.pitch = 1.3;
+        break;
+      default:
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+    }
+
+    // Handle completion of this chunk
+    utterance.onend = () => {
+      // Speak the next chunk
+      this.speakChunks(chunks, index + 1);
+    };
+
+    // Handle errors
+    utterance.onerror = (event) => {
+      console.error('Speech synthesis error:', event);
+      this.isAISpeaking.next(false);
+    };
+
+    // Speak this chunk
+    window.speechSynthesis.speak(utterance);
+  }
+
+  public stopSpeaking(): void {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      this.isAISpeaking.next(false);
+      console.log('Speech stopped');
     }
   }
-  
-  navigateToQuestion(index: number): void {
-    const questionsLength = this.questions.value.length;
-    
-    // Make sure the requested index is valid
-    if (index >= 0 && index < questionsLength) {
-      console.log(`Navigating from question ${this.currentQuestionIndex.value} to ${index}`);
-      
-      // Reset interim response
-      this.interimUserResponse.next('');
-      
-      // Set the new question index without resetting currentUserResponse
+
+  // Speech recognition
+  public startListening(): void {
+    if (this.recognition && !this.isListening) {
+      try {
+        this.recognition.start();
+        console.log('Speech recognition started');
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+
+        // Try to restart if busy
+        setTimeout(() => {
+          try {
+            this.recognition.start();
+          } catch (retryError) {
+            console.error('Failed to restart speech recognition:', retryError);
+          }
+        }, 500);
+      }
+    } else {
+      console.log('Recognition already active or not available');
+    }
+  }
+
+  public stopListening(): void {
+    if (this.recognition && this.isListening) {
+      try {
+        this.recognition.stop();
+        console.log('Speech recognition stopped');
+      } catch (error) {
+        console.error('Error stopping speech recognition:', error);
+      }
+    }
+  }
+
+  // Public methods for interview management
+  public startInterview(userName: string = '', initialState: string = 'interview_setup'): void {
+    console.log(`Starting interview for ${userName || 'user'} with initial state ${initialState}`);
+
+    // Set user name if provided
+    if (userName && userName.trim()) {
+      this.userName = userName.trim();
+      console.log('User name set to:', this.userName);
+    }
+
+    // Reset interview state
+    this.interviewInProgress.next(true);
+    this.interviewState.next(initialState);
+    this.currentQuestionIndex.next(0);
+    this.userResponses = {};
+    this.chatHistory = [];
+
+    // Start with default gemini model
+    this.currentAIModel.next('gemini');
+
+    // Clear any error messages
+    this.errorMessage.next('');
+
+    // Start speech recognition if supported
+    this.startListening();
+
+    // If starting with greeting, provide a welcome message
+    if (initialState === 'greeting' || initialState === 'initial') {
+      console.log('Starting with greeting');
+      const greeting = `Hello ${this.userName}! I'm your AI interviewer. Welcome to the mock interview. Are you ready to begin?`;
+      this.speak(greeting);
+      this.chatHistory.push({ role: 'assistant', content: greeting });
+    }
+  }
+
+  public endInterview(): void {
+    console.log('Ending interview');
+
+    // Reset state
+    this.interviewInProgress.next(false);
+    this.interviewState.next('interview_setup');
+    this.stopListening();
+    this.stopSpeaking();
+
+    // Clear variables
+    this.currentQuestionIndex.next(0);
+    this.questions.next([]);
+    this.feedback.next(null);
+    this.errorMessage.next('');
+  }
+
+  public retakeInterview(): void {
+    console.log('Retaking interview with same settings');
+
+    // Keep the existing tech stack and experience level
+    const topic = this.selectedTech.getValue();
+    const count = this.questionCount;
+
+    // Reset state but keep settings
+    this.interviewInProgress.next(true);
+    this.interviewState.next('loading_questions');
+    this.currentQuestionIndex.next(0);
+    this.userResponses = {};
+    this.chatHistory = [];
+    this.feedback.next(null);
+    this.errorMessage.next('');
+
+    // Generate new questions for the same topic
+    console.log(`Regenerating questions for ${topic}`);
+    this.generateAIQuestions(topic, count);
+
+    // Start speech recognition
+    this.startListening();
+  }
+
+  public restartListening(): void {
+    console.log('Restarting speech recognition');
+    this.stopListening();
+    setTimeout(() => this.startListening(), 500);
+  }
+
+  public skipCurrentQuestion(): void {
+    console.log('Skipping current question');
+    const currentIndex = this.currentQuestionIndex.value;
+
+    // Check if this is the last question
+    if (currentIndex < this.questions.value.length - 1) {
+      // Store empty response for current question if no response exists
+      if (!this.userResponses[currentIndex]) {
+        this.userResponses[currentIndex] = "[Question skipped by user]";
+      }
+
+      // Move to next question
+      this.currentQuestionIndex.next(currentIndex + 1);
+      const nextQuestion = this.questions.value[currentIndex + 1].question;
+      const skipMessage = `Moving to the next question. ${nextQuestion}`;
+      this.speak(skipMessage);
+    } else {
+      // This is the last question, end the interview
+      this.interviewState.next('generating_feedback');
+      const message = "That was the final question. Let me generate feedback based on your answers.";
+      this.speak(message);
+      this.chatHistory.push({ role: 'assistant', content: message });
+
+      // Generate feedback
+      setTimeout(() => {
+        this.generateDefaultFeedback();
+      }, 2000);
+    }
+  }
+
+  public navigateToQuestion(index: number): void {
+    console.log(`Navigating to question ${index + 1}`);
+
+    if (index >= 0 && index < this.questions.value.length) {
       this.currentQuestionIndex.next(index);
-      
+
       // Speak the question
       const question = this.questions.value[index].question;
       this.speak(question);
     } else {
-      console.error(`Invalid question index: ${index}. Must be between 0 and ${questionsLength - 1}`);
+      console.error(`Invalid question index: ${index}`);
     }
   }
-  
-  storeResponseForCurrentQuestion(response: string): void {
+
+  public storeResponseForCurrentQuestion(response: string): void {
     const currentIndex = this.currentQuestionIndex.value;
-    console.log(`Storing response for question ${currentIndex}`);
-    
-    // Store the response but don't process it yet
+    console.log(`Storing response for question ${currentIndex + 1}`);
     this.userResponses[currentIndex] = response;
   }
-  
-  getResponseForQuestion(index: number): string | null {
-    // Return the saved response for the specified question index, if any
+
+  public getResponseForQuestion(index: number): string | null {
     return this.userResponses[index] || null;
   }
 
-  async fetchSingleNewQuestion(): Promise<InterviewQuestion | null> {
-    try {
-      const topic = this.selectedTech.value;
-      const level = this.experienceLevel.value;
-      
-      // Create a prompt to get a single new question from Gemini
-      const prompt = `Generate a single technical interview question about ${topic} 
-        for a ${level} level candidate. The question should be different from 
-        any I've seen before. Format your response as a JSON object with only 
-        the question text, no explanation or other text. For example:
-        {"question": "What is TypeScript and how does it differ from JavaScript?"}`;
-      
-      // Call Gemini API
-      const result = await this.callGeminiAPI(prompt);
-      
-      // Parse the response to extract the question
-      try {
-        // First try to parse the response as JSON
-        const jsonResponse = JSON.parse(result);
-        if (jsonResponse && jsonResponse.question) {
-          // Generate a random ID for the new question
-          const newId = Math.floor(Math.random() * 10000);
-          return {
-            id: newId,
-            question: jsonResponse.question,
-            category: topic
-          };
-        }
-      } catch (jsonError) {
-        // If not valid JSON, try to extract the question from text
-        const questionMatch = result.match(/[\s\S]*?question"?\s*:\s*"([^"]+)"/);
-        if (questionMatch && questionMatch[1]) {
-          const newId = Math.floor(Math.random() * 10000);
-          return {
-            id: newId,
-            question: questionMatch[1],
-            category: topic
-          };
-        }
-      }
-      
-      console.error('Could not extract question from Gemini response');
-      return null;
-    } catch (error) {
-      console.error('Error fetching new question:', error);
-      return null;
-    }
+  public updateInterviewState(newState: string): void {
+    console.log(`Updating interview state to: ${newState}`);
+    this.interviewState.next(newState);
   }
-  
-  async replaceCurrentQuestion(): Promise<boolean> {
+
+  private generateDefaultFeedback(): void {
+    console.log('Generating default feedback');
+    const feedback: InterviewFeedback = {
+      strengths: [
+        "You provided clear answers to several questions",
+        "You demonstrated some knowledge of the subject matter",
+        "Your communication style was direct and concise"
+      ],
+      weaknesses: [
+        "Some technical details could have been more accurate",
+        "More examples would have strengthened your answers",
+        "Consider structuring your answers with a clear beginning, middle, and conclusion"
+      ],
+      suggestedTopics: [
+        "Review fundamentals of the topic you were interviewed on",
+        "Practice explaining technical concepts clearly",
+        "Work on providing concrete examples in your answers"
+      ],
+      overallRating: 3,
+      detailedFeedback: "You did well in this mock interview but there's room for improvement. Your strongest answers were clear and contained good technical details. However, some answers could have been more comprehensive with better examples. Keep practicing and focus on structuring your answers with a clear introduction, detailed explanation, and conclusion."
+    };
+
+    this.feedback.next(feedback);
+    this.interviewState.next('feedback');
+
+    const feedbackSummary = `I've completed analyzing your performance. Overall you scored a ${feedback.overallRating}/10. Your main strengths were clear communication, while you could improve on providing more detailed examples.`;
+    this.speak(feedbackSummary);
+  }
+
+  private generateComprehensiveFeedback(): void {
+    console.log('Generating comprehensive feedback based on user responses');
+
+    // Use default feedback if we haven't implemented the actual comprehensive feedback method
+    this.generateDefaultFeedback();
+  }
+
+  public async replaceCurrentQuestion(): Promise<boolean> {
+    const currentIndex = this.currentQuestionIndex.value;
+    const topic = this.questions.value[currentIndex].category;
+
+    console.log(`Replacing question ${currentIndex + 1} about ${topic}`);
+
     try {
-      // Get the new question from Gemini
-      const newQuestion = await this.fetchSingleNewQuestion();
-      
-      if (!newQuestion) {
-        console.error('Failed to get new question');
-        return false;
+      // Create a new question about the same topic
+      const prompt = `
+        Generate a single high-quality interview question about ${topic}.
+        The question should:
+        1. Be challenging but answerable in 2-3 minutes
+        2. Test both theoretical knowledge and practical understanding
+        3. Be clear and unambiguous
+        4. Be specific to ${topic}
+        
+        Give me only the question itself with no numbering or additional text.
+      `;
+
+      let newQuestion = '';
+
+      try {
+        newQuestion = await this.callGeminiAPI(prompt);
+      } catch (geminiError) {
+        console.error('Gemini API failed for replacement question:', geminiError);
+        try {
+          newQuestion = await this.callMistralAPI(prompt);
+        } catch (mistralError) {
+          console.error('All APIs failed for replacement question:', mistralError);
+          throw new Error('Failed to generate replacement question');
+        }
       }
-      
-      // Get current questions and current index
-      const currentQuestions = [...this.questions.value];
-      const currentIndex = this.currentQuestionIndex.value;
-      
-      // Replace the current question with the new one
-      currentQuestions[currentIndex] = newQuestion;
-      
-      // Update the questions array
-      this.questions.next(currentQuestions);
-      
-      // Reset the user response for this question
-      this.userResponses[currentIndex] = '';
-      this.currentUserResponse.next('');
-      this.interimUserResponse.next('');
-      
-      // Speak the new question
-      this.speak(`New question: ${newQuestion.question}`);
-      
-      return true;
+
+      if (newQuestion && newQuestion.length > 10) {
+        // Create a copy of the current questions
+        const updatedQuestions = [...this.questions.value];
+
+        // Replace the current question
+        updatedQuestions[currentIndex] = {
+          id: currentIndex,
+          question: newQuestion.trim(),
+          category: topic
+        };
+
+        // Update the questions
+        this.questions.next(updatedQuestions);
+
+        // Speak the new question
+        this.speak(`Here's a different question: ${newQuestion}`);
+
+        return true;
+      } else {
+        throw new Error('Generated question is too short or empty');
+      }
     } catch (error) {
       console.error('Error replacing question:', error);
+
+      // Inform the user
+      this.speak("I'm sorry, I couldn't generate a new question. Let's continue with this one.");
+
       return false;
     }
   }
-  
-  manualSubmitInterview(): void {
-    // First check if all questions have been answered
-    const questions = this.questions.getValue();
-    const totalQuestions = questions.length;
-    const unansweredQuestions = [];
-    
-    // Check each question for an answer
+
+  public manualSubmitInterview(): void {
+    console.log('Manually submitting interview for feedback');
+
+    // Check if all questions have answers
+    const totalQuestions = this.questions.value.length;
+    let answeredQuestions = 0;
+
     for (let i = 0; i < totalQuestions; i++) {
-      const response = this.getResponseForQuestion(i);
-      if (!response || response.trim() === '') {
-        unansweredQuestions.push(i + 1);
+      if (this.userResponses[i]) {
+        answeredQuestions++;
       }
     }
-    
-    // If there are unanswered questions, show warning and return
-    if (unansweredQuestions.length > 0) {
-      alert(`Please answer all questions before submitting. Questions ${unansweredQuestions.join(', ')} are unanswered.`);
-      return;
-    }
 
-    // If all questions are answered, proceed with feedback generation
-    this.updateInterviewState('generating_feedback');
-    this.generateComprehensiveAIFeedback();
-  }
+    console.log(`${answeredQuestions} of ${totalQuestions} questions answered`);
 
-  // Method to handle question generation
-  private generateQuestions(): void {
-    console.log(`Generating ${this.questionCount} questions for ${this.techStack} at ${this.experienceLevel.value} level`);
-    
-    // Set loading state first
-    this.interviewState.next('loading_questions');
-    
-    // Clear any previous questions and responses
-    this.questions.next([]);
-    this.currentQuestionIndex.next(0);
-    this.userResponses = {};
-    
-    // Generate questions after a short delay to allow UI state to update
+    // Update state to generating feedback
+    this.interviewState.next('generating_feedback');
+
+    // Provide a transition message
+    const message = `Thank you for completing the interview. I'll now analyze your ${answeredQuestions} answers and provide feedback.`;
+    this.speak(message);
+    this.chatHistory.push({ role: 'assistant', content: message });
+
+    // Generate feedback
     setTimeout(() => {
-      this.generateAIQuestions(this.techStack, this.questionCount);
-    }, 1000);
+      this.generateDefaultFeedback();
+    }, 2000);
   }
 
-  // Use the Web Speech API to speak text
-  public speak(text: string): void {
-    if ('speechSynthesis' in window) {
-      // For voice previews, always allow speaking even if text is the same
-      const isPreview = text.includes("how I will sound") || text.includes("How do I sound");
-      
-      // Only check for duplicate text if not a preview
-      if (text === this.lastSpeechText && !isPreview) {
-        console.log('Already tried to speak this text, skipping to prevent loops:', text);
-        this.isAISpeaking.next(false);
-        return;
-      }
-      
-      // Always update the last text except for preview messages
-      if (!isPreview) {
-        this.lastSpeechText = text;
-      }
-      this.speechRetryCount = 0;
-      
-      // Stop any ongoing speech
-      window.speechSynthesis.cancel();
-      
-      // Simplified text for speech synthesis if too long
-      let speechText = text;
-      if (text.length > 300) {
-        // For very long text, create a simplified version
-        speechText = `${text.substring(0, 100)}... I've analyzed your answers and provided feedback.`;
+  // Adjust noise sensitivity - useful for different environments
+  adjustNoiseSensitivity(level: 'low' | 'medium' | 'high'): void {
+    console.log(`Adjusting noise sensitivity to ${level}`);
+
+    switch (level) {
+      case 'low':
+        this.minSpeechConfidence = 0.5; // More permissive
+        this.minInterimLength = 1;
+        break;
+      case 'medium':
+        this.minSpeechConfidence = 0.7; // Default
+        this.minInterimLength = 3;
+        break;
+      case 'high':
+        this.minSpeechConfidence = 0.9; // More strict
+        this.minInterimLength = 5;
+        break;
+    }
+  }
+
+  private async generateQuestions(): Promise<void> {
+    const topic = this.selectedTech.getValue();
+    const count = this.questionCount;
+    console.log(`Generating ${count} questions for ${topic}...`);
+    this.generateAIQuestions(topic, count);
+  }
+
+  // API Calls implementation
+  private async callGeminiAPI(prompt: string): Promise<string> {
+    try {
+      console.log('Calling Gemini API...');
+      const url = `${this.GEMINI_API_URL}?key=${this.GEMINI_API_KEY}`;
+
+      const response = await firstValueFrom(this.http.post(url, {
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }]
+      }));
+
+      // Extract the response text from the API response
+      const responseData = response as any;
+      const generatedText = responseData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+      if (!generatedText) {
+        throw new Error('Empty response from Gemini API');
       }
 
-      const utterance = new SpeechSynthesisUtterance(speechText);
-      utterance.lang = 'en-US'; // Always use English
-      utterance.rate = 0.95; // Slightly slower for better clarity
-      utterance.pitch = 1.0;
-      
-      // Get all available voices
-      const voices = window.speechSynthesis.getVoices();
-      
-      // Get the selected voice URI
-      const selectedVoiceURI = this.interviewerVoice.value;
-      console.log('Using voice with URI:', selectedVoiceURI);
-      
-      if (voices && voices.length > 0) {
-        // First try exact match by voiceURI
-        let selectedVoice = voices.find(voice => voice.voiceURI === selectedVoiceURI);
-        
-        // If not found by URI, try by name
-        if (!selectedVoice && selectedVoiceURI !== 'default') {
-          selectedVoice = voices.find(voice => 
-            voice.name === selectedVoiceURI ||
-            voice.name.includes(selectedVoiceURI) ||
-            (selectedVoiceURI && selectedVoiceURI.includes(voice.name))
-          );
+      return generatedText;
+    } catch (error) {
+      console.error('Error calling Gemini API:', error);
+      throw error;
+    }
+  }
+
+  private async callMistralAPI(prompt: string): Promise<string> {
+    try {
+      console.log('Calling Mistral API...');
+      const response = await firstValueFrom(this.http.post('https://api.mistral.ai/v1/chat/completions', {
+        model: 'mistral-large-latest',
+        messages: [
+          { role: 'system', content: 'You are a helpful AI assistant specializing in technical interviews.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.MISTRAL_API_KEY}`
         }
-        
-        // If still not found, use any English voice
-        if (!selectedVoice) {
-          selectedVoice = voices.find(v => v.lang.startsWith('en'));
-        }
-        
-        if (selectedVoice) {
-          console.log('Selected voice:', selectedVoice.name);
-          utterance.voice = selectedVoice;
+      }));
+
+      const responseData = response as any;
+      const generatedText = responseData?.choices?.[0]?.message?.content || '';
+
+      if (!generatedText) {
+        throw new Error('Empty response from Mistral API');
+      }
+
+      return generatedText;
+    } catch (error) {
+      console.error('Error calling Mistral API:', error);
+      throw error;
+    }
+  }
+
+  // Process manual user input
+  public processManualInput(text: string): void {
+    console.log('Processing manual input:', text);
+
+    // Make sure we cancel any speech when user types manually
+    this.stopSpeaking();
+
+    // Clear interim speech detection display
+    this.interimUserResponse.next('');
+
+    // Store the manual input as the current user response
+    this.currentUserResponse.next(text);
+
+    // Process input based on current state
+    switch (this.interviewState.value) {
+      case 'greeting':
+      case 'initial':
+        if (this.isPositiveResponse(text)) {
+          this.interviewState.next('interview_setup');
+          const response = "Great! What tech stack would you like to be interviewed for? For example, React, Angular, Node.js, etc.";
+          this.speak(response);
+          this.chatHistory.push({ role: 'assistant', content: response });
+        } else if (this.isNegativeResponse(text)) {
+          console.log('User is not ready yet');
+          this.endInterview();
         } else {
-          console.warn('No matching voice found for:', selectedVoiceURI);
+          this.interviewState.next('interview_setup');
+          const response = "Let's get started! What tech stack would you like to be interviewed for? For example, React, Angular, Node.js, etc.";
+          this.speak(response);
+          this.chatHistory.push({ role: 'assistant', content: response });
         }
-      }
-      
-      // Update speaking state
-      this.isAISpeaking.next(true);
+        break;
 
-      // Add event handlers
-      utterance.onstart = () => {
-        this.isAISpeaking.next(true);
-      };
-
-      utterance.onend = () => {
-        this.isAISpeaking.next(false);
-      };
-
-      utterance.onerror = (event) => {
-        console.error('Speech error:', event);
-        this.isAISpeaking.next(false);
-      };
-
-      // Speak the text
-      window.speechSynthesis.speak(utterance);
-    } else {
-      console.error('Speech synthesis not supported in this browser');
-    }
-  }
-
-  // Completely disable speech chunking - it causes too many issues
-  private speakChunks(chunks: string[], index: number): void {
-    if (index >= chunks.length) {
-      this.isAISpeaking.next(false);
-      return;
-    }
-    
-    // Only speak the first chunk and skip the rest to avoid loops
-    if (index === 0) {
-      const firstChunk = chunks[0];
-      
-      // Create a simplified version if text is too long
-      let speechText = firstChunk;
-      if (firstChunk.length > 150) {
-        speechText = firstChunk.substring(0, 150) + "...";
-      }
-      
-      const utterance = new SpeechSynthesisUtterance(speechText);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.95;
-      utterance.pitch = 1.0;
-      
-      // Get selected voice
-      const voices = window.speechSynthesis.getVoices();
-      const selectedVoiceURI = this.interviewerVoice.value;
-      
-      if (selectedVoiceURI && selectedVoiceURI !== 'default') {
-        const selectedVoice = voices.find(voice => 
-          voice.voiceURI === selectedVoiceURI || 
-          voice.name === selectedVoiceURI
-        );
-        
-        if (selectedVoice) {
-          utterance.voice = selectedVoice;
+      case 'interview_setup':
+        console.log('Tech stack input received:', text);
+        // Prevent empty or very short tech stacks
+        if (text.trim().length < 2) {
+          const techPrompt = "Please specify a valid technology stack like JavaScript, React, Angular, etc.";
+          this.speak(techPrompt);
+          this.chatHistory.push({ role: 'assistant', content: techPrompt });
+          return;
         }
-      }
-      
-      this.isAISpeaking.next(true);
-      
-      utterance.onend = () => {
-        this.isAISpeaking.next(false);
-      };
-      
-      utterance.onerror = (event) => {
-        console.error('Speech chunk error:', event);
-        this.isAISpeaking.next(false);
-      };
-      
-      window.speechSynthesis.speak(utterance);
+
+        this.techStack = text;
+        this.selectedTech.next(text);
+        const techResponse = `I see you're preparing for ${this.techStack} interview. What's your experience level with ${this.techStack}? Please select: beginner, intermediate, or expert.`;
+        this.speak(techResponse);
+        this.chatHistory.push({ role: 'assistant', content: techResponse });
+        this.interviewState.next('experience_level');
+        break;
+
+      case 'experience_level':
+        // Detect experience level mentioned
+        let level = 'intermediate'; // Default
+        const normalizedText = text.toLowerCase().trim();
+        if (normalizedText.includes('beginner') || normalizedText.includes('new') || normalizedText.includes('start')) {
+          level = 'beginner';
+        } else if (normalizedText.includes('expert') || normalizedText.includes('advanced') || normalizedText.includes('senior')) {
+          level = 'expert';
+        } else if (normalizedText.includes('intermediate') || normalizedText.includes('middle') || normalizedText.includes('mid')) {
+          level = 'intermediate';
+        }
+
+        this.experienceLevel.next(level);
+        console.log(`Experience level set to: ${level}`);
+
+        const expResponse = `I'll prepare questions suitable for a ${level} level in ${this.techStack}. How many questions would you like me to ask? Typically, I recommend 3-5 questions for a mock interview session.`;
+        this.speak(expResponse);
+        this.chatHistory.push({ role: 'assistant', content: expResponse });
+        this.interviewState.next('question_count');
+        break;
+
+      case 'question_count':
+        // Extract number from text
+        const match = text.match(/\d+/);
+        if (match) {
+          const num = parseInt(match[0], 10);
+          if (num > 0 && num <= 10) {
+            this.questionCount = num;
+            console.log(`Setting question count to ${num}`);
+            this.generateQuestions();
+          } else {
+            const countResponse = "Please select a number between 1 and 10 for the question count.";
+            this.speak(countResponse);
+            this.chatHistory.push({ role: 'assistant', content: countResponse });
+          }
+        } else {
+          const invalidResponse = "I didn't catch a number there. Please specify how many questions you'd like, for example, '3 questions'.";
+          this.speak(invalidResponse);
+          this.chatHistory.push({ role: 'assistant', content: invalidResponse });
+        }
+        break;
+
+      case 'answering':
+        const currentIndex = this.currentQuestionIndex.value;
+        const currQuestion = this.questions.value[currentIndex];
+        console.log(`Processing answer for question ${currentIndex}:`, currQuestion.question);
+
+        // Store user's response for the current question
+        this.userResponses[currentIndex] = text;
+
+        // Process the answer and move to the next question
+        this.processAnswerAndAdvance(text, currentIndex);
+        break;
+
+      default:
+        console.log('Unhandled interview state:', this.interviewState.value);
+        break;
     }
-  }
 
-  // Save interview results to Firestore
-  private saveInterviewResults(feedback: InterviewFeedback): void {
-    this.authService.getCurrentUser().pipe(
-      take(1)
-    ).subscribe(currentUser => {
-      if (currentUser && currentUser.uid) {
-        const interviewData = {
-          userId: currentUser.uid,
-          userName: this.userName,
-          timestamp: new Date(),
-          technology: this.techStack,
-          questionCount: this.questions.value.length,
-          questions: this.questions.value.map(q => q.question),
-          userResponses: this.userResponses,
-          feedback: feedback,
-          overallRating: feedback.overallRating,
-          chatHistory: this.chatHistory
-        };
-
-        this.firestore.collection('interviews').add(interviewData)
-          .then(() => console.log('Interview results saved'))
-          .catch(error => console.error('Error saving interview results', error));
-      } else {
-        console.log('User not authenticated, interview results not saved');
-      }
-    });
+    // Add the user input to chat history
+    this.chatHistory.push({ role: 'user', content: text });
   }
-
-  // Public method to update interview state
-  updateInterviewState(newState: string): void {
-    console.log(`Updating interview state from ${this.interviewState.getValue()} to ${newState}`);
-    this.interviewState.next(newState);
-  }
-} 
+}

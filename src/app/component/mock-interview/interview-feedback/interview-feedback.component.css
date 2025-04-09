@@ -315,3 +315,41 @@
   margin-bottom: 5px;
   color: #555;
 }
+
+.model-info {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.model-badge {
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.model-badge i {
+  font-size: 1rem;
+}
+
+.gemini {
+  background-color: #1E88E5;
+}
+
+.mistral {
+  background-color: #8E24AA;
+}
+
+.fallback {
+  background-color: #FB8C00;
+}
+
+.tech-stack {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 10px;
+}

@@ -18,10 +18,11 @@ export class InterviewFeedbackComponent implements OnInit, OnDestroy {
   private subscriptions: Subscription[] = [];
   isLoading = true;
   feedback: InterviewFeedback | null = null;
-  selectedTech = '';
+  selectedTech: string = '';
   currentState: string = 'generating_feedback';
   waitingDuration: number = 0;
   loadingProgress: number = 0;
+  currentAIModel: string = 'gemini'; // Default model
   
   // Loading animation properties
   private loadingTimer: any;
@@ -56,6 +57,14 @@ export class InterviewFeedbackComponent implements OnInit, OnDestroy {
           this.feedback = feedback;
           this.cdr.markForCheck();
         }
+      })
+    );
+    
+    // Get the current AI model
+    this.subscriptions.push(
+      this.mockInterviewService.currentAIModel$.subscribe(model => {
+        this.currentAIModel = model;
+        this.cdr.markForCheck();
       })
     );
     
@@ -170,5 +179,14 @@ ${this.feedback.detailedFeedback}
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
+  }
+  
+  getModelDisplayName(): string {
+    switch(this.currentAIModel) {
+      case 'gemini': return 'Gemini AI';
+      case 'mistral': return 'Mistral AI';
+      case 'fallback': return 'Fallback System';
+      default: return this.currentAIModel;
+    }
   }
 }

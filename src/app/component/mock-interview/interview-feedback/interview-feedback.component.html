@@ -17,7 +17,13 @@
   <!-- Feedback Results -->
   <div *ngIf="currentState === 'feedback' && feedback" class="feedback-results">
     <div class="feedback-header">
-      <h2>Your Interview Analysis</h2>
+      <h2>Your Interview Feedback</h2>
+      <div class="tech-stack">{{ selectedTech }} Interview</div>
+      <div class="model-info">
+        <span class="model-badge" [ngClass]="currentAIModel">
+          <i class="fas fa-robot"></i> Feedback by {{ getModelDisplayName() }}
+        </span>
+      </div>
       
       <div class="overall-rating">
         <div class="rating-score" [class]="getRatingClass()">

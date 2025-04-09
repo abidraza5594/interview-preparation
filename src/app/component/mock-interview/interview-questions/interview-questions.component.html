@@ -13,6 +13,11 @@
     <div class="progress-text">
       Question {{ currentQuestionIndex + 1 }} of {{ questions.length }}
     </div>
+    
+    <!-- AI Model Indicator -->
+    <div class="ai-model-indicator" [ngClass]="currentAIModel">
+      <i class="fas fa-robot"></i> {{ currentAIModel | titlecase }}
+    </div>
   </div>
   
   <!-- Current Question -->
@@ -58,9 +63,19 @@
           rows="6"
         ></textarea>
       </div>
+      
+      <!-- Add error message display below textarea -->
+      <div *ngIf="errorMessage" class="error-message">
+        <i class="fas fa-exclamation-triangle"></i> {{ errorMessage }}
+      </div>
+      
       <div class="submit-area">
-        <button class="submit-button" (click)="submitManualResponse(manualResponse)">
-          <i class="fas fa-paper-plane"></i> Submit Answer
+        <button 
+          class="btn btn-primary submit-btn" 
+          (click)="submitManualResponse(manualResponse)" 
+          [disabled]="isSubmitting">
+          <i class="fas" [ngClass]="isSubmitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'"></i>
+          {{ isSubmitting ? 'Analyzing...' : 'Submit Answer' }}
         </button>
       </div>
     </div>
@@ -87,5 +102,14 @@
         <i class="fas fa-check-circle"></i> Submit Interview
       </button>
     </div>
+  </div>
+
+  <div class="model-indicator">
+    <span class="model-badge" [ngClass]="currentAIModel">
+      <i class="fas fa-robot"></i> 
+      {{ currentAIModel === 'gemini' ? 'Gemini' : 
+         currentAIModel === 'mistral' ? 'Mistral' : 
+         currentAIModel === 'fallback' ? 'Fallback' : currentAIModel }}
+    </span>
   </div>
 </div>
