@@ -53,7 +53,7 @@
                   <p class="text-muted">Total Questions</p>
                 </div>
               </div>
-              
+
               <!-- Additional stats for question types -->
               <div class="col-md-6 text-center mt-3">
                 <div class="progress-stat border p-2 rounded">
@@ -67,14 +67,11 @@
                   <p class="text-muted small mb-0">MCQ Questions</p>
                 </div>
               </div>
-              
+
               <div class="col-12 mt-3">
                 <div class="progress">
-                  <div 
-                    class="progress-bar bg-success" 
-                    role="progressbar" 
-                    [style.width.%]="(data.userProgress.completed / data.userProgress.total) * 100"
-                    aria-valuemin="0" 
+                  <div class="progress-bar bg-success" role="progressbar"
+                    [style.width.%]="(data.userProgress.completed / data.userProgress.total) * 100" aria-valuemin="0"
                     aria-valuemax="100">
                     {{ (data.userProgress.completed / data.userProgress.total) * 100 | number:'1.0-0' }}%
                   </div>
@@ -99,18 +96,17 @@
               <p class="text-muted">No posts available yet.</p>
             </div>
             <div class="list-group list-group-flush">
-              <a *ngFor="let post of data.recentPosts" 
-                 [routerLink]="['/', createPermalink(post.title) + '-' + post.id]" 
-                 class="list-group-item list-group-item-action">
+              <a *ngFor="let post of data.recentPosts" [routerLink]="['/', createPermalink(post.title) + '-' + post.id]"
+                class="list-group-item list-group-item-action">
                 <div class="d-flex w-100 justify-content-between">
                   <h6 class="mb-1">{{ post.title }}</h6>
                   <small class="text-muted">{{ formatDate(post.createdAt) }}</small>
                 </div>
-                <p class="mb-1 text-truncate">{{ post.content }}</p>
+                <p class="mb-1 text-truncate" [innerHTML]="(post.excerpt)"></p>
                 <div class="d-flex justify-content-between align-items-center">
                   <small class="text-muted">
                     <span class="badge bg-secondary me-2">
-                      {{ getCategoryName(post.category) }}
+                      {{ getCategoryName(post?.category?.Category) }}
                     </span>
                     <i class="fas fa-eye me-1"></i> {{ post.views }}
                     <i class="fas fa-heart ms-2 me-1"></i> {{ post.likes }}
@@ -132,14 +128,11 @@
               <p class="text-muted">No recommended questions available.</p>
             </div>
             <div class="list-group list-group-flush">
-              <a *ngFor="let question of data.recommendedQuestions" 
-                 [routerLink]="['/practice']" 
-                 [queryParams]="{question: question.id}"
-                 class="list-group-item list-group-item-action">
+              <a *ngFor="let question of data.recommendedQuestions" [routerLink]="['/practice']"
+                [queryParams]="{question: question.id}" class="list-group-item list-group-item-action">
                 <div class="d-flex w-100 justify-content-between">
                   <h6 class="mb-1">{{ question.title }}</h6>
-                  <span class="badge"
-                    [ngClass]="{
+                  <span class="badge" [ngClass]="{
                       'bg-success': question.difficulty === 'easy',
                       'bg-warning': question.difficulty === 'medium',
                       'bg-danger': question.difficulty === 'hard'
@@ -174,9 +167,9 @@
               <p class="text-muted">No popular posts available yet.</p>
             </div>
             <div class="list-group list-group-flush">
-              <a *ngFor="let post of data.popularPosts" 
-                 [routerLink]="['/', createPermalink(post.title) + '-' + post.id]" 
-                 class="list-group-item list-group-item-action">
+              <a *ngFor="let post of data.popularPosts"
+                [routerLink]="['/', createPermalink(post.title) + '-' + post.id]"
+                class="list-group-item list-group-item-action">
                 <div class="d-flex w-100 justify-content-between">
                   <h6 class="mb-1">{{ post.title }}</h6>
                   <small>
@@ -185,7 +178,7 @@
                 </div>
                 <small class="text-muted">
                   <span class="badge bg-secondary me-2">
-                    {{ getCategoryName(post.category) }}
+                    {{ getCategoryName(post?.category?.Category) }}
                   </span>
                   {{ formatDate(post.createdAt) }}
                 </small>
@@ -209,10 +202,7 @@
                 <span>{{ category.count }} posts</span>
               </div>
               <div class="progress">
-                <div 
-                  class="progress-bar" 
-                  [style.width.%]="(category.count / data.categories[0].count) * 100"
-                  [ngClass]="{
+                <div class="progress-bar" [style.width.%]="(category.count / data.categories[0].count) * 100" [ngClass]="{
                     'bg-primary': ''+category.name === 'JavaScript',
                     'bg-success': ''+category.name === 'React',
                     'bg-info': ''+category.name === 'Angular',
@@ -256,4 +246,4 @@
       </div>
     </div>
   </div>
-</div> 
+</div>

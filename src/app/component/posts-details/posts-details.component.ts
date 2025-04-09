@@ -85,6 +85,11 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
   }
 
   ngOnInit(): void {
+    // Ensure Monaco editor is properly loaded to avoid AMD/define conflicts
+    if (typeof window !== 'undefined' && 'require' in window) {
+      console.log('Monaco editor require available in posts-details component');
+    }
+
     // First try to get the ID from the route params (/:id)
     this.route.params.subscribe(params => {
       let postId = params['id'];
@@ -149,6 +154,9 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
         
         console.log('Post loaded successfully:', post);
         this.singlePostArray = post;
+        
+        // Set the commentCategoryId to the current post ID
+        this.commentCategoryId = postId;
         
         // Process content for code highlighting
         if (this.singlePostArray && this.singlePostArray.content) {

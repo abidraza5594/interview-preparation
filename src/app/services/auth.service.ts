@@ -187,22 +187,25 @@ export class AuthService {
     }
   }
   navigateToDetailsPage(frontend: any): void {
-    // Check if post data exists
-    if (frontend && frontend.id) {
-      // Create a permalink from the title if available
-      if (frontend.data && frontend.data.title) {
-        // Convert title to URL-friendly format
-        const permalink = this.createPermalink(frontend.data.title) + '-' + frontend.id;
-        // Navigate to the permalink route
-        this.router.navigate([`/${permalink}`]);
+    // Small delay to ensure MonacoEditor is properly loaded
+    setTimeout(() => {
+      // Check if post data exists
+      if (frontend && frontend.id) {
+        // Create a permalink from the title if available
+        if (frontend.data && frontend.data.title) {
+          // Convert title to URL-friendly format
+          const permalink = this.createPermalink(frontend.data.title) + '-' + frontend.id;
+          // Navigate to the permalink route
+          this.router.navigate([`/${permalink}`]);
+        } else {
+          // Fallback to just the ID if title is not available
+          this.router.navigate([`/${frontend.id}`]);
+        }
       } else {
-        // Fallback to just the ID if title is not available
-        this.router.navigate([`/${frontend.id}`]);
+        console.error('Invalid post data:', frontend);
+        this.toaster.error('Error navigating to post');
       }
-    } else {
-      console.error('Invalid post data:', frontend);
-      this.toaster.error('Error navigating to post');
-    }
+    }, 100);
   }
   
   // Helper method to create a permalink from a title
@@ -323,39 +326,38 @@ export class AuthService {
    * @returns Observable<boolean> True if user is admin
    */
   isAdmin(): Observable<boolean> {
-    return this.user$.pipe(
-      map(user => {
-        if (!user) return false;
-        
-        // Check role with case insensitivity
-        const userRole = user.role || '';
-        
-        // Log for debugging
-        console.log('Role check:', { 
-          uid: user.uid, 
-          userRole, 
-          email: user.email,
-          roleType: typeof userRole
-        });
-        
-        // Robust role checking
-        if (typeof userRole === 'string') {
-          // String comparison with lowercase
-          return userRole.toLowerCase() === 'admin';
-        } else if (userRole && typeof userRole === 'object') {
-          // Handle case if role is somehow stored as object
-          return String(userRole).toLowerCase() === 'admin';
+    return this.afAuth.authState.pipe(
+      switchMap(user => {
+        if (!user) {
+          return of(false);
         }
-          
-        return false;
-      }),
-      catchError(error => {
-        console.error('Error checking admin status:', error);
-        return of(false);
+        
+        // Update last login timestamp whenever a user is checked
+        this.updateLastLogin(user.uid);
+        
+        return this.afs.doc<any>(`users/${user.uid}`).valueChanges().pipe(
+          map(userData => {
+            return userData?.role === 'admin';
+          }),
+          catchError(error => {
+            console.error('Error checking admin status:', error);
+            return of(false);
+          })
+        );
       })
     );
   }
   
+  // Update user's last login timestamp
+  private updateLastLogin(uid: string): void {
+    const now = new Date();
+    this.afs.doc(`users/${uid}`).update({
+      lastLogin: now
+    }).catch(error => {
+      console.error('Error updating lastLogin timestamp:', error);
+    });
+  }
+
   /**
    * Update user role in Firestore
    * @param uid User ID
@@ -424,5 +426,62 @@ export class AuthService {
         );
       })
     );
+  }
+
+  // Sign in with email/password
+  async signIn(email: string, password: string): Promise<any> {
+    try {
+      const result = await this.afAuth.signInWithEmailAndPassword(email, password);
+      
+      // Update last login time
+      if (result.user) {
+        this.updateLastLogin(result.user.uid);
+      }
+      
+      // Navigate and notify
+      this.router.navigate(['/']);
+      this.toaster.success('Welcome back!', 'Login Successful');
+      return result;
+    } catch (error: any) {
+      this.handleAuthError(error);
+      throw error;
+    }
+  }
+
+  // Handle authentication errors
+  private handleAuthError(error: any): void {
+    console.error('Authentication error:', error);
+    let errorMessage = 'An error occurred during authentication';
+    
+    if (error.code) {
+      switch (error.code) {
+        case 'auth/user-not-found':
+          errorMessage = 'User not found. Please check your email.';
+          break;
+        case 'auth/wrong-password':
+          errorMessage = 'Incorrect password. Please try again.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Invalid email format.';
+          break;
+        case 'auth/user-disabled':
+          errorMessage = 'This account has been disabled.';
+          break;
+        case 'auth/email-already-in-use':
+          errorMessage = 'This email is already in use.';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'Password is too weak. Please use a stronger password.';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = 'This operation is not allowed.';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many unsuccessful login attempts. Please try again later.';
+          break;
+      }
+    }
+    
+    this.toaster.error(errorMessage, 'Authentication Error');
   }
 }

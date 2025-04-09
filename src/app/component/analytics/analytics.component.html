@@ -313,11 +313,11 @@
                   <td><span class="badge bg-secondary">{{ getCategoryName(post.category) }}</span></td>
                   <td>
                     <div class="btn-group">
-                      <button class="btn btn-sm btn-outline-primary" title="View post">
+                      <a [routerLink]="['/', createPermalink(post.title) + '-' + post.id]" class="btn btn-sm btn-outline-primary" title="View post">
                         <i class="fas fa-eye"></i>
-                      </button>
+                      </a>
                       <button class="btn btn-sm btn-outline-info" title="View detailed analytics"
-                              (click)="viewPostDetails(post)">
+                              (click)="viewPostDetails(post)" *ngIf="isAdmin">
                         <i class="fas fa-chart-line"></i>
                       </button>
                     </div>
@@ -332,134 +332,137 @@
   </div>
 </div> 
 
-<!-- Detailed Post Analytics Modal -->
-<div class="modal fade show" tabindex="-1" role="dialog" 
-     [ngClass]="{'d-block': showDetailedView, 'd-none': !showDetailedView}"
-     [ngStyle]="{'background-color': showDetailedView ? 'rgba(0,0,0,0.5)' : 'transparent'}">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" *ngIf="selectedPost">
-          Post Analytics: {{ selectedPost.title }}
-        </h5>
-        <button type="button" class="btn-close" (click)="closeDetailedView()"></button>
-      </div>
-      <div class="modal-body">
-        <!-- Loading indicator -->
-        <div *ngIf="loading" class="text-center my-5">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-          <p class="mt-2">Loading post analytics...</p>
+<!-- Detailed Post Analytics Modal - Only show for admin users -->
+<ng-container *ngIf="isAdmin">
+  <div class="modal-backdrop fade show" *ngIf="showDetailedView"></div>
+  <div class="modal fade show" tabindex="-1" role="dialog" 
+       [ngClass]="{'d-block': showDetailedView, 'd-none': !showDetailedView}"
+       style="z-index: 1050;">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" *ngIf="selectedPost">
+            Post Analytics: {{ selectedPost.title }}
+          </h5>
+          <button type="button" class="btn-close" (click)="closeDetailedView()"></button>
         </div>
-        
-        <!-- Post details -->
-        <div *ngIf="!loading && selectedPost">
-          <!-- Summary cards -->
-          <div class="row mb-4">
-            <div class="col-md-4 mb-3">
-              <div class="card summary-card">
-                <div class="card-body text-center">
-                  <h5 class="card-title">Total Views</h5>
-                  <p class="card-text display-4">{{ selectedPost.views }}</p>
-                  <p class="card-text text-muted">
-                    <i class="fas fa-eye me-1"></i>
-                    Lifetime views
-                  </p>
-                </div>
-              </div>
+        <div class="modal-body">
+          <!-- Loading indicator -->
+          <div *ngIf="loading" class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
             </div>
-            <div class="col-md-4 mb-3">
-              <div class="card summary-card">
-                <div class="card-body text-center">
-                  <h5 class="card-title">Total Likes</h5>
-                  <p class="card-text display-4">{{ selectedPost.likes }}</p>
-                  <p class="card-text text-muted">
-                    <i class="fas fa-thumbs-up me-1"></i>
-                    Engagement rate: {{ (selectedPost.likes / (selectedPost.views || 1) * 100) | number:'1.1-1' }}%
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-4 mb-3">
-              <div class="card summary-card">
-                <div class="card-body text-center">
-                  <h5 class="card-title">Total Comments</h5>
-                  <p class="card-text display-4">{{ selectedPost.comments }}</p>
-                  <p class="card-text text-muted">
-                    <i class="fas fa-comment me-1"></i>
-                    Comment rate: {{ (selectedPost.comments / (selectedPost.views || 1) * 100) | number:'1.1-1' }}%
-                  </p>
-                </div>
-              </div>
-            </div>
+            <p class="mt-2">Loading post analytics...</p>
           </div>
           
-          <!-- Views over time -->
-          <div class="card mb-4">
-            <div class="card-header">
-              <h5 class="mb-0">Views Over Time</h5>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-sm">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Views</th>
-                      <th>Trend</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let day of postViewsHistory; let i = index">
-                      <td>{{ day.date | date:'mediumDate' }}</td>
-                      <td>{{ day.views }}</td>
-                      <td>
-                        <div class="progress" style="height: 6px; width: 100px;">
-                          <div class="progress-bar bg-info" 
-                               [style.width.%]="(day.views / (getMaxDailyViews() || 1)) * 100">
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Recent comments -->
-          <div class="card mb-4">
-            <div class="card-header">
-              <h5 class="mb-0">Recent Comments</h5>
-            </div>
-            <div class="card-body">
-              <div *ngIf="postComments.length === 0" class="text-center py-4">
-                <p class="text-muted">No comments on this post yet.</p>
-              </div>
-              <div *ngFor="let comment of postComments" class="mb-3 p-3 border-bottom">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <div class="d-flex align-items-center">
-                    <div class="avatar-placeholder me-2" *ngIf="!comment.photoURL">
-                      {{ comment.displayName?.charAt(0) || 'A' }}
-                    </div>
-                    <img *ngIf="comment.photoURL" [src]="comment.photoURL" 
-                         class="rounded-circle me-2" width="32" height="32" alt="User avatar">
-                    <div>
-                      <div class="fw-bold">{{ comment.displayName || 'Anonymous' }}</div>
-                      <small class="text-muted">{{ getDateFromTimestamp(comment.createdAt) | date:'medium' }}</small>
-                    </div>
+          <!-- Post details -->
+          <div *ngIf="!loading && selectedPost">
+            <!-- Summary cards -->
+            <div class="row mb-4">
+              <div class="col-md-4 mb-3">
+                <div class="card summary-card">
+                  <div class="card-body text-center">
+                    <h5 class="card-title">Total Views</h5>
+                    <p class="card-text display-4">{{ selectedPost.views }}</p>
+                    <p class="card-text text-muted">
+                      <i class="fas fa-eye me-1"></i>
+                      Lifetime views
+                    </p>
                   </div>
                 </div>
-                <p class="mb-0">{{ comment.content }}</p>
+              </div>
+              <div class="col-md-4 mb-3">
+                <div class="card summary-card">
+                  <div class="card-body text-center">
+                    <h5 class="card-title">Total Likes</h5>
+                    <p class="card-text display-4">{{ selectedPost.likes }}</p>
+                    <p class="card-text text-muted">
+                      <i class="fas fa-thumbs-up me-1"></i>
+                      Engagement rate: {{ (selectedPost.likes / (selectedPost.views || 1) * 100) | number:'1.1-1' }}%
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4 mb-3">
+                <div class="card summary-card">
+                  <div class="card-body text-center">
+                    <h5 class="card-title">Total Comments</h5>
+                    <p class="card-text display-4">{{ selectedPost.comments }}</p>
+                    <p class="card-text text-muted">
+                      <i class="fas fa-comment me-1"></i>
+                      Comment rate: {{ (selectedPost.comments / (selectedPost.views || 1) * 100) | number:'1.1-1' }}%
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Views over time -->
+            <div class="card mb-4">
+              <div class="card-header">
+                <h5 class="mb-0">Views Over Time</h5>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Views</th>
+                        <th>Trend</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let day of postViewsHistory; let i = index">
+                        <td>{{ day.date | date:'mediumDate' }}</td>
+                        <td>{{ day.views }}</td>
+                        <td>
+                          <div class="progress" style="height: 6px; width: 100px;">
+                            <div class="progress-bar bg-info" 
+                                 [style.width.%]="(day.views / (getMaxDailyViews() || 1)) * 100">
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Recent comments -->
+            <div class="card mb-4">
+              <div class="card-header">
+                <h5 class="mb-0">Recent Comments</h5>
+              </div>
+              <div class="card-body">
+                <div *ngIf="postComments.length === 0" class="text-center py-4">
+                  <p class="text-muted">No comments on this post yet.</p>
+                </div>
+                <div *ngFor="let comment of postComments" class="mb-3 p-3 border-bottom">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="d-flex align-items-center">
+                      <div class="avatar-placeholder me-2" *ngIf="!comment.photoURL">
+                        {{ comment.displayName?.charAt(0) || 'A' }}
+                      </div>
+                      <img *ngIf="comment.photoURL" [src]="comment.photoURL" 
+                           class="rounded-circle me-2" width="32" height="32" alt="User avatar">
+                      <div>
+                        <div class="fw-bold">{{ comment.displayName || 'Anonymous' }}</div>
+                        <small class="text-muted">{{ getDateFromTimestamp(comment.createdAt) | date:'medium' }}</small>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="mb-0">{{ comment.content }}</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeDetailedView()">Close</button>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeDetailedView()">Close</button>
+        </div>
       </div>
     </div>
   </div>
-</div> 
+</ng-container> 

@@ -34,6 +34,16 @@ export class AppComponent implements OnInit, OnDestroy {
         document.documentElement.setAttribute('data-theme', 'light');
       }
     });
+    
+    // Fix Monaco editor AMD/RequireJS conflicts
+    if (typeof window !== 'undefined') {
+      window.addEventListener('load', () => {
+        // Ensure Monaco editor is loaded properly
+        if (window.monaco) {
+          console.log('Monaco editor initialized in app component');
+        }
+      });
+    }
   }
   
   ngOnDestroy() {

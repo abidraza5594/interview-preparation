@@ -218,6 +218,7 @@ export class CreatePostComponent implements OnInit {
         authorId: user.uid,
         authorName: user.displayName || 'Anonymous',
         authorImage: user.photoURL || '',
+        createdBy: user.uid,
         createdAt: new Date(),
         updatedAt: new Date(),
         views: 0,

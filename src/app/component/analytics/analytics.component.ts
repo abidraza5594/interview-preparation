@@ -87,12 +87,27 @@ export class AnalyticsComponent implements OnInit {
   ngOnInit(): void {
     this.auth.user.subscribe(user => {
       if (user) {
+        // Update user's lastLogin time on app initialization
+        this.updateUserLastLogin(user.uid);
         this.checkAdminStatus(user.uid);
       } else {
+        this.isAdmin = false;
         this.loading = false;
         this.toastr.error('You must be logged in to access analytics');
         this.cdr.markForCheck();
       }
+    });
+  }
+  
+  /**
+   * Update user's lastLogin timestamp in Firestore
+   */
+  updateUserLastLogin(uid: string): void {
+    const now = new Date();
+    this.firestore.collection('users').doc(uid).update({
+      lastLogin: now
+    }).catch(error => {
+      console.error('Error updating lastLogin timestamp:', error);
     });
   }
   
@@ -106,7 +121,7 @@ export class AnalyticsComponent implements OnInit {
         this.toastr.error('You do not have permission to access analytics');
       } else {
         this.toastr.success('Admin access granted');
-        // Load post-specific analytics if user is admin
+        // Load post-specific analytics only if user is admin
         this.loadPostAnalytics();
       }
       
@@ -116,6 +131,7 @@ export class AnalyticsComponent implements OnInit {
     // Handle errors in the subscription
     (error) => {
       console.error('Error checking admin status:', error);
+      this.isAdmin = false;
       this.loading = false;
       this.toastr.error('Error checking admin permissions');
       this.cdr.markForCheck();
@@ -290,6 +306,9 @@ export class AnalyticsComponent implements OnInit {
   updateTimeRange(range: 'day' | 'week' | 'month' | 'year' | 'all'): void {
     this.timeRange = range;
     this.analyticsData$ = this.getAnalyticsData();
+    console.log(this.analyticsData$.subscribe((data: any) => {
+      console.log(data, 'dataaaaaa');
+    }));
   }
   
   getAnalyticsData(): Observable<AnalyticsData> {
@@ -331,7 +350,7 @@ export class AnalyticsComponent implements OnInit {
           ...data,
           // Ensure createdAt is properly captured, default to now if missing
           createdAt: data.createdAt || new Date(),
-          // Ensure lastLogin is properly captured
+          // Fix: Better handling of lastLogin field
           lastLogin: data.lastLogin || null
         };
       })),
@@ -423,11 +442,27 @@ export class AnalyticsComponent implements OnInit {
         const topContributors = users
           .map(user => ({
             ...user,
-            postCount: postsByUser[user.uid] || 0
+            postCount: postsByUser[user.uid] || 0,
+            // Convert createdAt and lastLogin timestamps for correct display
+            createdAt: this.getDateFromTimestamp(user.createdAt) || new Date(),
+            lastLogin: user.lastLogin ? this.getDateFromTimestamp(user.lastLogin) : null
           }))
           .sort((a, b) => b.postCount - a.postCount)
           .slice(0, 5);
-        
+        console.log({
+          totalPosts,
+          totalUsers,
+          totalViews,
+          totalLikes,
+          totalComments,
+          newPosts,
+          newUsers,
+          activeUsers: effectiveActiveUsers,
+          avgPostsPerUser,
+          categoryData,
+          userActivity,
+          topContributors
+        },'>?>?>?>?>?>')
         return {
           totalPosts,
           totalUsers,
@@ -472,9 +507,16 @@ export class AnalyticsComponent implements OnInit {
   }
 
   viewPostDetails(post: Post): void {
+    // Only proceed if user is admin
+    if (!this.isAdmin) {
+      this.toastr.error('You do not have permission to view analytics details');
+      return;
+    }
+    
     this.selectedPost = post;
     this.showDetailedView = true;
     this.loading = true;
+    this.cdr.markForCheck();
     
     // Load post comments - modified to avoid requiring a composite index
     this.firestore.collection('comments', ref => 
@@ -491,10 +533,19 @@ export class AnalyticsComponent implements OnInit {
         const dateB = this.getDateFromTimestamp(b.createdAt) || new Date(0);
         return dateB.getTime() - dateA.getTime(); // Descending order
       }))
-    ).subscribe(comments => {
-      this.postComments = comments;
-      this.loading = false;
-    });
+    ).subscribe(
+      comments => {
+        this.postComments = comments;
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+      error => {
+        console.error('Error loading comments:', error);
+        this.loading = false;
+        this.toastr.error('Error loading comments');
+        this.cdr.markForCheck();
+      }
+    );
     
     // Load post views history (simulated data for now)
     // In a real app, you would fetch this from a dedicated analytics collection
@@ -518,6 +569,7 @@ export class AnalyticsComponent implements OnInit {
     }
     
     this.postViewsHistory = viewsHistory;
+    this.cdr.markForCheck();
   }
   
   closeDetailedView(): void {
@@ -525,6 +577,7 @@ export class AnalyticsComponent implements OnInit {
     this.selectedPost = null;
     this.postComments = [];
     this.postViewsHistory = [];
+    this.cdr.markForCheck();
   }
 
   // Helper method to safely convert Firestore timestamp to Date
@@ -591,5 +644,15 @@ export class AnalyticsComponent implements OnInit {
     
     // Fallback
     return String(category);
+  }
+
+  /**
+   * Create a permalink for a post title
+   */
+  createPermalink(title: string): string {
+    return title
+      .toLowerCase()
+      .replace(/[^\w\s]/gi, '')
+      .replace(/\s+/g, '-');
   }
 } 

@@ -34,8 +34,8 @@ interface UserProgress {
 }
 
 interface DashboardData {
-  recentPosts: Post[];
-  popularPosts: Post[];
+  recentPosts: any[];
+  popularPosts: any[];
   recommendedQuestions: Question[];
   userProgress: {
     started: number;
