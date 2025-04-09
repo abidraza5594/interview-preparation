@@ -71,8 +71,20 @@
         <i class="fas fa-microphone"></i> Restart Mic
       </button>
       
-      <button class="control-button skip-button" (click)="skipQuestion()">
-        <i class="fas fa-forward"></i> Skip Question
+      <button class="control-button new-question-button" (click)="changeQuestion()">
+        <i class="fas fa-exchange-alt"></i> New Question
+      </button>
+      
+      <button class="control-button prev-question-button" (click)="prevQuestion()" [disabled]="currentQuestionIndex === 0">
+        <i class="fas fa-arrow-left"></i> Previous
+      </button>
+      
+      <button class="control-button next-question-button" (click)="nextQuestion()" [disabled]="currentQuestionIndex >= questions.length - 1">
+        <i class="fas fa-arrow-right"></i> Next
+      </button>
+      
+      <button class="control-button submit-interview-button" (click)="submitInterview()">
+        <i class="fas fa-check-circle"></i> Submit Interview
       </button>
     </div>
   </div>

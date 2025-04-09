@@ -49,6 +49,10 @@ export class InterviewQuestionsComponent implements OnInit, OnDestroy {
       this.mockInterviewService.currentQuestionIndex$.subscribe(index => {
         this.currentQuestionIndex = index;
         console.log('Current question index updated:', index);
+        
+        // Load any existing response for this question
+        this.loadExistingResponse(index);
+        
         this.cdr.markForCheck();
       })
     );
@@ -110,6 +114,38 @@ export class InterviewQuestionsComponent implements OnInit, OnDestroy {
     this.mockInterviewService.skipCurrentQuestion();
   }
   
+  prevQuestion(): void {
+    if (this.currentQuestionIndex > 0) {
+      // Save current response if any
+      if (this.manualResponse && this.manualResponse.trim()) {
+        this.mockInterviewService.storeResponseForCurrentQuestion(this.manualResponse);
+      }
+      
+      // Go to previous question
+      this.mockInterviewService.navigateToQuestion(this.currentQuestionIndex - 1);
+      
+      // Reset the manual response field and load any saved response
+      this.manualResponse = this.mockInterviewService.getResponseForQuestion(this.currentQuestionIndex - 1) || '';
+      
+      // Trigger change detection
+      this.cdr.markForCheck();
+    }
+  }
+  
+  nextQuestion(): void {
+    // First check if current question has an answer
+    if (this.manualResponse && this.manualResponse.trim()) {
+      this.mockInterviewService.storeResponseForCurrentQuestion(this.manualResponse);
+    }
+
+    // Only proceed if we're not at the last question
+    if (this.currentQuestionIndex < this.questions.length - 1) {
+      // Go to next question in sequence
+      this.mockInterviewService.navigateToQuestion(this.currentQuestionIndex + 1);
+      this.manualResponse = this.mockInterviewService.getResponseForQuestion(this.currentQuestionIndex + 1) || '';
+    }
+  }
+  
   restartSpeechRecognition(): void {
     this.mockInterviewService.restartListening();
   }
@@ -123,10 +159,111 @@ export class InterviewQuestionsComponent implements OnInit, OnDestroy {
   submitManualResponse(response: string): void {
     if (response && response.trim()) {
       console.log('Submitting manual response:', response);
+      
+      // Check if the answer is too short or potentially random text
+      if (response.trim().length < 15) {
+        // Show a warning prompt before submitting very short answers
+        if (!confirm('Your answer seems very short. Are you sure you want to submit it? Click Cancel to continue editing.')) {
+          return; // User chose to continue editing
+        }
+      }
+      
       this.mockInterviewService.processManualInput(response);
       // Clear the input field after submitting
       this.manualResponse = '';
       this.cdr.markForCheck();
+    }
+  }
+  
+  async changeQuestion(): Promise<void> {
+    // Show loading indicator (could add a spinner in the component)
+    const newQuestionButton = document.querySelector('.new-question-button');
+    const oldBtnText = newQuestionButton?.textContent || '<i class="fas fa-exchange-alt"></i> New Question';
+    
+    if (newQuestionButton) {
+      newQuestionButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+    }
+    
+    try {
+      // Reset the manual response field
+      this.manualResponse = '';
+      
+      // Call the service to replace the current question with a new one
+      const success = await this.mockInterviewService.replaceCurrentQuestion();
+      
+      if (!success) {
+        console.error('Failed to replace question');
+        // If we fail to get a new question, we can restore the button text
+        if (newQuestionButton) {
+          newQuestionButton.innerHTML = oldBtnText;
+        }
+      }
+      
+      // Trigger change detection
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('Error replacing question:', error);
+      
+      // Restore button text on error
+      if (newQuestionButton) {
+        newQuestionButton.innerHTML = oldBtnText;
+      }
+    } finally {
+      // Restore button text after 2 seconds regardless of outcome
+      setTimeout(() => {
+        const button = document.querySelector('.new-question-button');
+        if (button) {
+          button.innerHTML = '<i class="fas fa-exchange-alt"></i> New Question';
+        }
+      }, 2000);
+    }
+  }
+  
+  submitInterview(): void {
+    // First, check if there are any unanswered questions
+    const totalQuestions = this.questions.length;
+    const unansweredQuestions = [];
+    
+    // Save current response if any
+    if (this.manualResponse && this.manualResponse.trim()) {
+      this.mockInterviewService.storeResponseForCurrentQuestion(this.manualResponse);
+    }
+    
+    // Check each question for an answer
+    for (let i = 0; i < totalQuestions; i++) {
+      const response = this.mockInterviewService.getResponseForQuestion(i);
+      if (!response || response.trim() === '') {
+        unansweredQuestions.push(i + 1);
+      }
+    }
+    
+    // If there are unanswered questions, navigate to the first one
+    if (unansweredQuestions.length > 0) {
+      const firstUnansweredIndex = unansweredQuestions[0] - 1;
+      this.mockInterviewService.navigateToQuestion(firstUnansweredIndex);
+      this.manualResponse = this.mockInterviewService.getResponseForQuestion(firstUnansweredIndex) || '';
+      alert(`Please answer all questions before submitting. Starting with question ${unansweredQuestions[0]}.`);
+      return;
+    }
+
+    // If all questions are answered, proceed with submission
+    if (confirm('Are you sure you want to end the interview and get feedback?')) {
+      console.log('User confirmed interview submission');
+      this.mockInterviewService.manualSubmitInterview();
+    }
+  }
+
+  private loadExistingResponse(questionIndex: number): void {
+    // Get any saved response for this question
+    const savedResponse = this.mockInterviewService.getResponseForQuestion(questionIndex);
+    
+    // If there's a saved response that isn't a system marker like [SKIPPED]
+    if (savedResponse && savedResponse !== '[SKIPPED]') {
+      console.log(`Loading saved response for question ${questionIndex}`);
+      this.manualResponse = savedResponse;
+    } else {
+      // Clear the response field for questions without saved responses
+      this.manualResponse = '';
     }
   }
 }

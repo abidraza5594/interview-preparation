@@ -236,6 +236,42 @@
   background-color: #ffe5e5;
 }
 
+.new-question-button {
+  background-color: #f0f8ff;
+  color: #17a2b8;
+  border: 1px solid #ddedff;
+}
+
+.new-question-button:hover {
+  background-color: #e5f2ff;
+}
+
+.prev-question-button, .next-question-button {
+  background-color: #f0f7ff;
+  color: #3498db;
+  border: 1px solid #d0e5ff;
+}
+
+.prev-question-button:hover, .next-question-button:hover {
+  background-color: #e0f0ff;
+}
+
+.prev-question-button[disabled], .next-question-button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.submit-interview-button {
+  background-color: #ebfff0;
+  color: #28a745;
+  border: 1px solid #d4ffdc;
+  margin-left: auto; /* Push this button to the right */
+}
+
+.submit-interview-button:hover {
+  background-color: #d4ffe0;
+}
+
 /* Dark Mode Support */
 :host-context(.dark-theme) .question-card {
   background-color: #2a3647;
@@ -296,6 +332,28 @@
 
 :host-context(.dark-theme) .skip-button:hover {
   background-color: #582a2a;
+}
+
+:host-context(.dark-theme) .submit-interview-button {
+  background-color: #1e3a25;
+  color: #4ade80;
+  border-color: #234c2b;
+}
+
+:host-context(.dark-theme) .submit-interview-button:hover {
+  background-color: #2a4a32;
+}
+
+:host-context(.dark-theme) .prev-question-button, 
+:host-context(.dark-theme) .next-question-button {
+  background-color: #1a2d3d;
+  color: #64b5f6;
+  border-color: #1e3448;
+}
+
+:host-context(.dark-theme) .prev-question-button:hover, 
+:host-context(.dark-theme) .next-question-button:hover {
+  background-color: #234054;
 }
 
 /* Animation for pulsing text */

@@ -6,6 +6,7 @@ import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { ThemeService } from '../../services/theme.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 // Import standalone components
 import { InterviewGreetingComponent } from './interview-greeting/interview-greeting.component';
@@ -75,7 +76,8 @@ export class MockInterviewComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private afAuth: AngularFireAuth,
     private themeService: ThemeService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) { }
 
   ngOnInit(): void {

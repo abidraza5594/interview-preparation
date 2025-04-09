@@ -1463,36 +1463,50 @@ Return only valid JSON in this format:
       return `Question ${i+1}: ${q}\nAnswer: ${a}`;
     }).join('\n\n');
     
+    // Count how many questions have valid answers
+    const validAnswerCount = Object.values(this.userResponses).filter(
+      answer => answer && answer !== '[SKIPPED]' && answer.length > 20
+    ).length;
+    
+    // Calculate the percentage of questions answered properly
+    const totalQuestions = this.questions.value.length;
+    const answerPercentage = Math.round((validAnswerCount / totalQuestions) * 100);
+    
     return `You are an expert technical interviewer evaluating a candidate on ${this.techStack} at a ${this.experienceLevel.value} level.
 
 Here are the questions and answers from the interview:
 
 ${qaText}
 
-IMPORTANT: Carefully analyze each answer based on:
+IMPORTANT: Analyze the candidate's performance with these criteria:
 1. Technical accuracy and depth of knowledge
-2. Completeness of the response
+2. Completeness of each response
 3. Use of examples or real-world applications
 4. Communication clarity
 5. Problem-solving approach
 
-Please provide comprehensive feedback on the candidate's responses following this exact JSON format:
+The candidate answered approximately ${answerPercentage}% of questions with meaningful responses.
+
+Please provide fair and accurate feedback following this exact JSON format:
 {
   "strengths": ["Strength 1", "Strength 2", "Strength 3"],
   "weaknesses": ["Area to improve 1", "Area to improve 2", "Area to improve 3"],
   "suggestedTopics": ["Topic to study 1", "Topic to study 2", "Topic to study 3"],
-  "overallRating": 7,
+  "overallRating": X,
   "detailedFeedback": "Detailed paragraph of feedback summarizing the overall performance"
 }
 
-Your feedback MUST reflect the actual quality of the answers:
-- If answers were brief or superficial, the rating should be lower (1-4)
-- If answers demonstrated moderate knowledge, rating should be medium (5-7)
-- Only if answers showed deep technical understanding should rating be high (8-10)
+IMPORTANT RATING INSTRUCTIONS:
+- If less than 25% of questions have meaningful answers OR if answers are mostly inadequate: rating should be 1-3
+- If 25-50% of questions have meaningful answers with moderate quality: rating should be 4-5
+- If 50-75% of questions have meaningful answers with good quality: rating should be 6-7
+- If 75-90% of questions have meaningful answers with very good quality: rating should be 8-9
+- Only if >90% of questions have comprehensive, technically accurate answers: rating should be 10
 
-The strengths and weaknesses must directly reflect what you observed in their answers.
-The suggested topics should be specific to ${this.techStack} and target their weak areas.
-The detailed feedback should be constructive and actionable.
+For skipped questions or minimal/random responses, consider these as weaknesses in the assessment.
+All feedback must be backed by evidence from the actual answers provided.
+The detailed feedback should accurately reflect the quality of answers provided.
+
 IMPORTANT: The response MUST be valid, parseable JSON with this exact structure.`;
   }
 
@@ -1635,6 +1649,38 @@ IMPORTANT: The response MUST be valid, parseable JSON with this exact structure.
     console.log(`A${currentIndex + 1}: ${answer}`);
 
     try {
+      // First check if the answer is of sufficient quality
+      const qualityCheckPrompt = `
+        You are an expert technical interviewer. Analyze if the following answer to a technical interview question is 
+        sufficient to evaluate, or if it appears to be random, gibberish, or extremely low effort.
+        
+        Question: "${this.questions.value[currentIndex].question}"
+        Answer: "${answer}"
+        
+        Determine if the answer is:
+        1. Valid - A genuine attempt to answer the question with relevant information
+        2. Invalid - Random text, gibberish, or extremely low effort (like "asdf", "hello", single words, etc.)
+        
+        ONLY respond with one word: "VALID" or "INVALID"
+      `;
+      
+      // Check answer quality
+      const qualityResult = await this.callGeminiAPI(qualityCheckPrompt);
+      const isValidAnswer = !qualityResult.includes("INVALID");
+      
+      if (!isValidAnswer) {
+        console.log('Low quality or nonsense answer detected');
+        
+        // Provide feedback about the low-quality answer
+        const lowQualityResponse = `I notice your answer doesn't seem to address the question. Please provide a genuine response to the technical question, or if you need help, you can ask for a hint or skip to the next question.`;
+        this.speak(lowQualityResponse);
+        this.chatHistory.push({ role: 'assistant', content: lowQualityResponse });
+        
+        // Don't advance to the next question automatically
+        return;
+      }
+      
+      // Continue with evaluation for valid answers
       const evaluationPrompt = `
         You are an expert technical interviewer evaluating a candidate's answer.
         
@@ -1647,12 +1693,16 @@ IMPORTANT: The response MUST be valid, parseable JSON with this exact structure.
         3. Evaluate their communication clarity and approach
         4. Consider both the strengths and weaknesses of their response
         
-        Then, provide a brief, helpful evaluation that:
-        1. Acknowledges what they got right
-        2. Gently points out any misconceptions or areas for improvement
-        3. Is encouraging and maintains a positive tone
-        4. Is approximately 2-3 sentences long
-        5. Uses English language only - no Hindi or other languages
+        Then, provide a strict and honest evaluation that:
+        1. Acknowledges what they got right, if anything
+        2. Clearly points out misconceptions or areas for improvement
+        3. Uses a rating system from 1-5 where 1 is poor and 5 is excellent
+        4. Maintains a professional tone but does not inflate ratings for poor answers
+        5. Is approximately 2-3 sentences long
+        6. Uses English language only - no Hindi or other languages
+        
+        For answers that are minimal or show little technical knowledge, be honest and rate them lower (1-2).
+        Only give ratings of 4-5 to answers that demonstrate strong technical understanding.
         
         After your evaluation, tell them you're moving to the next question, but don't include the next question text.
       `;
@@ -1725,38 +1775,51 @@ IMPORTANT: The response MUST be valid, parseable JSON with this exact structure.
 
   // New method to move to the next question
   private moveToNextQuestion(currentIndex: number): void {
-    console.log(`Moving from question index ${currentIndex} to next question`);
-
-    if (currentIndex < this.questions.value.length - 1) {
-      setTimeout(() => {
-        // Update current question index
-        const newIndex = currentIndex + 1;
-        console.log(`Setting question index to ${newIndex}`);
-        this.currentQuestionIndex.next(newIndex);
-
-        // Get the next question
-        const nextQuestion = this.questions.value[newIndex];
-        console.log('Next question:', nextQuestion.question);
-
-        // Speak the question directly
-        const response = `${nextQuestion.question}`;
-        this.speak(response);
-        this.chatHistory.push({ role: 'assistant', content: response });
-      }, 1500);
+    const questions = this.questions.value;
+    if (currentIndex < questions.length - 1) {
+      // Move to the next question
+      const newIndex = currentIndex + 1;
+      this.currentQuestionIndex.next(newIndex);
+      
+      // Speak the next question
+      const nextQuestion = questions[newIndex].question;
+      this.speak(`Next question: ${nextQuestion}`);
     } else {
-      // This was the last question
-      console.log('That was the last question, moving to feedback');
-      setTimeout(() => {
+      // This was the last question, check if feedback should be generated
+      // Only generate feedback if the interview is still active
+      if (this.interviewState.value !== 'interview_setup') {
+        // Move to feedback state
         this.interviewState.next('generating_feedback');
-
-        const response = "That was the final question. I'll now analyze your answers and provide feedback.";
+        const response = `That was the final question. I'll now analyze your answers and provide feedback.`;
         this.speak(response);
         this.chatHistory.push({ role: 'assistant', content: response });
-
+        
+        // Generate feedback after a short delay
         setTimeout(() => {
           this.generateComprehensiveAIFeedback();
         }, 2000);
-      }, 1500);
+      }
+    }
+  }
+
+  skipCurrentQuestion(): void {
+    const currentIndex = this.currentQuestionIndex.value;
+    console.log('Skipping question at index:', currentIndex);
+    
+    // Store a placeholder for skipped questions
+    this.userResponses[currentIndex] = '[SKIPPED]';
+    
+    // Check if this is the last question
+    const isLastQuestion = currentIndex === this.questions.value.length - 1;
+    
+    // Move to the next question, but only generate feedback if this is truly a skip action
+    if (isLastQuestion) {
+      // If this is the last question, just mark it as skipped but don't generate feedback yet
+      // User will need to click Submit to finish the interview
+      this.speak('Last question marked as skipped. Click Submit when you are ready to finish the interview.');
+    } else {
+      // Not the last question, proceed to the next one
+      this.moveToNextQuestion(currentIndex);
     }
   }
 
@@ -1844,56 +1907,169 @@ IMPORTANT: The response MUST be valid, parseable JSON with this exact structure.
     console.log(`Noise sensitivity set to ${level}: minConfidence=${this.minSpeechConfidence}, minLength=${this.minInterimLength}`);
   }
 
-  // Handle skipping the current question
-  skipCurrentQuestion(): void {
+  setCurrentQuestionIndex(index: number): void {
+    const questionsLength = this.questions.value.length;
+    
+    // Make sure the requested index is valid
+    if (index >= 0 && index < questionsLength) {
+      console.log(`Changing question from index ${this.currentQuestionIndex.value} to ${index}`);
+      
+      // Reset any current responses
+      this.currentUserResponse.next('');
+      this.interimUserResponse.next('');
+      
+      // Set the new question index
+      this.currentQuestionIndex.next(index);
+      
+      // Speak the new question
+      const newQuestion = this.questions.value[index].question;
+      this.speak(`New question: ${newQuestion}`);
+    } else {
+      console.error(`Invalid question index: ${index}. Must be between 0 and ${questionsLength - 1}`);
+    }
+  }
+  
+  navigateToQuestion(index: number): void {
+    const questionsLength = this.questions.value.length;
+    
+    // Make sure the requested index is valid
+    if (index >= 0 && index < questionsLength) {
+      console.log(`Navigating from question ${this.currentQuestionIndex.value} to ${index}`);
+      
+      // Reset interim response
+      this.interimUserResponse.next('');
+      
+      // Set the new question index without resetting currentUserResponse
+      this.currentQuestionIndex.next(index);
+      
+      // Speak the question
+      const question = this.questions.value[index].question;
+      this.speak(question);
+    } else {
+      console.error(`Invalid question index: ${index}. Must be between 0 and ${questionsLength - 1}`);
+    }
+  }
+  
+  storeResponseForCurrentQuestion(response: string): void {
     const currentIndex = this.currentQuestionIndex.value;
-    console.log('Service: Skipping question at index:', currentIndex);
+    console.log(`Storing response for question ${currentIndex}`);
+    
+    // Store the response but don't process it yet
+    this.userResponses[currentIndex] = response;
+  }
+  
+  getResponseForQuestion(index: number): string | null {
+    // Return the saved response for the specified question index, if any
+    return this.userResponses[index] || null;
+  }
 
-    if (currentIndex < this.questions.value.length) {
-      // Mark the question as skipped
-      this.userResponses[currentIndex] = "Question skipped";
-
-      // Instead of changing the index, we'll replace the current question with the next one
-      // while keeping the same position
-      const questions = [...this.questions.value];
-
-      // If there are remaining questions, shift them up
-      if (currentIndex < questions.length - 1) {
-        // Get a copy of the questions
-        const currentQuestion = questions[currentIndex];
-
-        // Reorder the questions so the current question moves to the end
-        // and all other questions shift up one position
-        for (let i = currentIndex; i < questions.length - 1; i++) {
-          questions[i] = questions[i + 1];
+  async fetchSingleNewQuestion(): Promise<InterviewQuestion | null> {
+    try {
+      const topic = this.selectedTech.value;
+      const level = this.experienceLevel.value;
+      
+      // Create a prompt to get a single new question from Gemini
+      const prompt = `Generate a single technical interview question about ${topic} 
+        for a ${level} level candidate. The question should be different from 
+        any I've seen before. Format your response as a JSON object with only 
+        the question text, no explanation or other text. For example:
+        {"question": "What is TypeScript and how does it differ from JavaScript?"}`;
+      
+      // Call Gemini API
+      const result = await this.callGeminiAPI(prompt);
+      
+      // Parse the response to extract the question
+      try {
+        // First try to parse the response as JSON
+        const jsonResponse = JSON.parse(result);
+        if (jsonResponse && jsonResponse.question) {
+          // Generate a random ID for the new question
+          const newId = Math.floor(Math.random() * 10000);
+          return {
+            id: newId,
+            question: jsonResponse.question,
+            category: topic
+          };
         }
-        questions[questions.length - 1] = currentQuestion;
-
-        // Update the questions list
-        this.questions.next(questions);
-
-        // Keep the same index but get the next question (which was shifted up)
-        const nextQuestion = questions[currentIndex];
-        console.log('Showing next question at same index:', nextQuestion.question);
-
-        // Speak the next question
-        const response = `Moving to the next question: ${nextQuestion.question}`;
-        this.speak(response);
-        this.chatHistory.push({ role: 'assistant', content: response });
-      } else {
-        // This was the last question, generate feedback
-        console.log('Skipped last question, generating feedback');
-        this.interviewState.next('generating_feedback');
-        const response = `That was the final question. I'll now analyze your answers and provide feedback.`;
-        this.speak(response);
-        this.chatHistory.push({ role: 'assistant', content: response });
-
-        // Generate feedback after a short delay
-        setTimeout(() => {
-          this.generateComprehensiveAIFeedback();
-        }, 2000);
+      } catch (jsonError) {
+        // If not valid JSON, try to extract the question from text
+        const questionMatch = result.match(/[\s\S]*?question"?\s*:\s*"([^"]+)"/);
+        if (questionMatch && questionMatch[1]) {
+          const newId = Math.floor(Math.random() * 10000);
+          return {
+            id: newId,
+            question: questionMatch[1],
+            category: topic
+          };
+        }
+      }
+      
+      console.error('Could not extract question from Gemini response');
+      return null;
+    } catch (error) {
+      console.error('Error fetching new question:', error);
+      return null;
+    }
+  }
+  
+  async replaceCurrentQuestion(): Promise<boolean> {
+    try {
+      // Get the new question from Gemini
+      const newQuestion = await this.fetchSingleNewQuestion();
+      
+      if (!newQuestion) {
+        console.error('Failed to get new question');
+        return false;
+      }
+      
+      // Get current questions and current index
+      const currentQuestions = [...this.questions.value];
+      const currentIndex = this.currentQuestionIndex.value;
+      
+      // Replace the current question with the new one
+      currentQuestions[currentIndex] = newQuestion;
+      
+      // Update the questions array
+      this.questions.next(currentQuestions);
+      
+      // Reset the user response for this question
+      this.userResponses[currentIndex] = '';
+      this.currentUserResponse.next('');
+      this.interimUserResponse.next('');
+      
+      // Speak the new question
+      this.speak(`New question: ${newQuestion.question}`);
+      
+      return true;
+    } catch (error) {
+      console.error('Error replacing question:', error);
+      return false;
+    }
+  }
+  
+  manualSubmitInterview(): void {
+    // First check if all questions have been answered
+    const questions = this.questions.getValue();
+    const totalQuestions = questions.length;
+    const unansweredQuestions = [];
+    
+    // Check each question for an answer
+    for (let i = 0; i < totalQuestions; i++) {
+      const response = this.getResponseForQuestion(i);
+      if (!response || response.trim() === '') {
+        unansweredQuestions.push(i + 1);
       }
     }
+    
+    // If there are unanswered questions, show warning and return
+    if (unansweredQuestions.length > 0) {
+      alert(`Please answer all questions before submitting. Questions ${unansweredQuestions.join(', ')} are unanswered.`);
+      return;
+    }
+
+    // If all questions are answered, proceed with feedback generation
+    this.updateInterviewState('generating_feedback');
+    this.generateComprehensiveAIFeedback();
   }
 
   // Method to handle question generation
