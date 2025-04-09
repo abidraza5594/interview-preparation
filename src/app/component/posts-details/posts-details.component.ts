@@ -13,6 +13,7 @@ import { AngularFirestore } from '@angular/fire/compat/firestore';
 import hljs from 'highlight.js';
 import { CategoryService } from '../../services/category.service';
 import firebase from 'firebase/compat/app';
+import { take } from 'rxjs/operators';
 
 
 @Component({
@@ -213,8 +214,20 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
     // Mark all controls in the form as touched
     this.markFormGroupTouched(this.commentForm);
     if (this.commentForm.valid) {
-      const user = this.authService.getCurrentUser();
-      if (user && this.authService.isAuthenticated()) {
+      if (!this.authService.isAuthenticated()) {
+        this.toaster.error('Please login to comment');
+        return;
+      }
+      
+      // Use Observable correctly with subscription
+      this.authService.getCurrentUser().pipe(
+        take(1)
+      ).subscribe(user => {
+        if (!user) {
+          this.toaster.error('Please login to comment');
+          return;
+        }
+        
         // User is authenticated
         let userName: string;
         if (user.displayName) {
@@ -224,6 +237,7 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
           // If display name is not available, use a default or the email
           userName = user.email ? user.email.split('@')[0] : 'Anonymous';
         }
+        
         const userFromLocalStorageString = localStorage.getItem("user");
         const userFromLocalStorage = userFromLocalStorageString ? JSON.parse(userFromLocalStorageString) : null;
         const userIMG = userFromLocalStorage && userFromLocalStorage.user && userFromLocalStorage.user.photoURL
@@ -235,19 +249,16 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
           commentCategoryId: this.commentCategoryId,
           dateTime: this.getFormattedDateTimeWithTime(),
           userName: this.loginUser.displayName || userName,
-          userId: user.uid || 'unknownUserId',
+          userId: user.uid,
           userIMG: userIMG,
           likes: 0,
           likedBy: [],
           replies: []
         };
+        
         this.commentService.saveCommentData(comment);
         this.commentForm.reset();
-      } else {
-        // User is not authenticated, show a toast or redirect to the login page
-        this.toaster.error('Please login to comment');
-        // Replace the following line with your preferred method for showing a toast or redirecting
-      }
+      });
     }
   }
   getFormattedDateTimeWithTime(): string {

@@ -10,6 +10,7 @@ import { finalize } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { QuillModule } from 'ngx-quill';
+import { take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-create-post',
@@ -157,74 +158,83 @@ export class CreatePostComponent implements OnInit {
     }
 
     this.isSubmitting = true;
-    const user = this.authService.getCurrentUser();
     
-    if (!user) {
-      this.toastr.error('You must be logged in to create a post');
-      this.isSubmitting = false;
-      return;
-    }
-
-    // Prepare tags array
-    const tagsString = this.postForm.get('tags')?.value || '';
-    const tagsArray = tagsString.split(',')
-      .map((tag: string) => tag.trim())
-      .filter((tag: string) => tag.length > 0);
-
-    // Get the selected category
-    const categoryId = this.postForm.get('category')?.value;
-    let categoryData = {
-      Category: 'Uncategorized',
-      CategoryId: categoryId || 'default'
-    };
-    
-    // Find the category object from the categories array
-    if (categoryId) {
-      const selectedCategory = this.categories.find(cat => cat.id === categoryId);
-      if (selectedCategory) {
-        categoryData = {
-          Category: selectedCategory.name || 
-                   (selectedCategory.data && selectedCategory.data.category && selectedCategory.data.category.Category) || 
-                   'Uncategorized',
-          CategoryId: categoryId
-        };
+    // Use the observable properly with subscription
+    this.authService.getCurrentUser().pipe(
+      take(1)
+    ).subscribe(user => {
+      if (!user) {
+        this.toastr.error('You must be logged in to create a post');
+        this.isSubmitting = false;
+        return;
       }
-    }
 
-    console.log('Selected category:', categoryData);
+      // Prepare tags array
+      const tagsString = this.postForm.get('tags')?.value || '';
+      const tagsArray = tagsString.split(',')
+        .map((tag: string) => tag.trim())
+        .filter((tag: string) => tag.length > 0);
 
-    // Generate a permalink from the title
-    const title = this.postForm.get('title')?.value;
-    const permalink = title
-      ? title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-$/, '')
-      : '';
+      // Get the selected category
+      const categoryId = this.postForm.get('category')?.value;
+      let categoryData = {
+        Category: 'Uncategorized',
+        CategoryId: categoryId || 'default'
+      };
+      
+      // Find the category object from the categories array
+      if (categoryId) {
+        const selectedCategory = this.categories.find(cat => cat.id === categoryId);
+        if (selectedCategory) {
+          categoryData = {
+            Category: selectedCategory.name || 
+                     (selectedCategory.data && selectedCategory.data.category && selectedCategory.data.category.Category) || 
+                     'Uncategorized',
+            CategoryId: categoryId
+          };
+        }
+      }
 
-    // Create post object
-    const post = {
-      title: this.postForm.get('title')?.value || '',
-      category: categoryData,
-      content: this.postForm.get('content')?.value || '',
-      featuredImage: this.postForm.get('featuredImage')?.value || '',
-      excerpt: this.postForm.get('excerpt')?.value || '',
-      isPublished: this.postForm.get('isPublished')?.value || false,
-      isFeatured: this.postForm.get('isFeatured')?.value || false,
-      postType: this.postForm.get('postType')?.value || 'post',
-      tags: tagsArray,
-      permalink: permalink,
-      authorId: user.uid || '',
-      authorName: user.displayName || 'Anonymous',
-      authorImage: user.photoURL || '',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      views: 0,
-      likes: 0,
-      comments: 0
-    };
+      console.log('Selected category:', categoryData);
 
-    console.log('Saving post:', post);
+      // Generate a permalink from the title
+      const title = this.postForm.get('title')?.value;
+      const permalink = title
+        ? title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-$/, '')
+        : '';
 
-    // Save the post directly without section management
-    this.saveNewPost(post);
+      // Create post object
+      const post = {
+        title: this.postForm.get('title')?.value || '',
+        category: categoryData,
+        content: this.postForm.get('content')?.value || '',
+        featuredImage: this.postForm.get('featuredImage')?.value || '',
+        excerpt: this.postForm.get('excerpt')?.value || '',
+        isPublished: this.postForm.get('isPublished')?.value || false,
+        isFeatured: this.postForm.get('isFeatured')?.value || false,
+        postType: this.postForm.get('postType')?.value || 'post',
+        tags: tagsArray,
+        permalink: permalink,
+        authorId: user.uid,
+        authorName: user.displayName || 'Anonymous',
+        authorImage: user.photoURL || '',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        views: 0,
+        likes: 0,
+        comments: 0
+      };
+
+      console.log('Saving post:', post);
+
+      // Save the post directly without section management
+      this.saveNewPost(post);
+    },
+    error => {
+      console.error('Error getting user:', error);
+      this.toastr.error('Error getting user data');
+      this.isSubmitting = false;
+    });
   }
 
   // Save the new post to Firestore

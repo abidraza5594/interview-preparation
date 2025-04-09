@@ -63,51 +63,53 @@ export class PracticeService {
     const id = this.firestore.createId();
     const timestamp = firebase.firestore.Timestamp.now();
     
-    // Get the current user directly instead of expecting an Observable
-    const user = this.authService.getCurrentUser();
-    
-    if (!user) {
-      throw new Error('User must be logged in to create a practice question');
-    }
-    
-    // Extract user properties
-    const userId = user.uid || (user.user && user.user.uid);
-    const displayName = user.displayName || (user.user && user.user.displayName) || 'Anonymous';
-    const photoURL = user.photoURL || (user.user && user.user.photoURL) || null;
-    
-    // Create a clean copy of practiceData without any undefined values
-    const cleanPracticeData: Record<string, any> = { ...practiceData };
-    
-    // Replace any undefined values with null
-    Object.keys(cleanPracticeData).forEach(key => {
-      if (cleanPracticeData[key] === undefined) {
-        cleanPracticeData[key] = null;
-      }
-    });
-    
-    const newPractice: Record<string, any> = {
-      ...cleanPracticeData,
-      id,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-      createdBy: userId,
-      createdByDisplayName: displayName,
-      createdByPhotoURL: photoURL,
-      views: 0,
-      likes: 0,
-      attempts: 0,
-      successRate: 0
-    };
-    
-    // Convert any remaining undefined values to null
-    Object.keys(newPractice).forEach(key => {
-      if (newPractice[key] === undefined) {
-        newPractice[key] = null;
-      }
-    });
-    
-    return from(this.firestore.collection('practice-questions').doc(id).set(newPractice as PracticeQuestion))
-      .pipe(map(() => id));
+    return this.authService.getCurrentUser().pipe(
+      take(1),
+      switchMap(user => {
+        if (!user) {
+          throw new Error('User must be logged in to create a practice question');
+        }
+        
+        // Extract user properties - now user is a real user object, not an Observable
+        const userId = user.uid;
+        const displayName = user.displayName || 'Anonymous';
+        const photoURL = user.photoURL || null;
+        
+        // Create a clean copy of practiceData without any undefined values
+        const cleanPracticeData: Record<string, any> = { ...practiceData };
+        
+        // Replace any undefined values with null
+        Object.keys(cleanPracticeData).forEach(key => {
+          if (cleanPracticeData[key] === undefined) {
+            cleanPracticeData[key] = null;
+          }
+        });
+        
+        const newPractice: Record<string, any> = {
+          ...cleanPracticeData,
+          id,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          createdBy: userId,
+          createdByDisplayName: displayName,
+          createdByPhotoURL: photoURL,
+          views: 0,
+          likes: 0,
+          attempts: 0,
+          successRate: 0
+        };
+        
+        // Convert any remaining undefined values to null
+        Object.keys(newPractice).forEach(key => {
+          if (newPractice[key] === undefined) {
+            newPractice[key] = null;
+          }
+        });
+        
+        return from(this.firestore.collection('practice-questions').doc(id).set(newPractice as PracticeQuestion))
+          .pipe(map(() => id));
+      })
+    );
   }
 
   // Get all practice questions
@@ -260,36 +262,53 @@ export class PracticeService {
           tap(() => {
             // If the attempt was successful, update the leaderboard
             if (isCorrect) {
-              const user = this.authService.getCurrentUser();
-              if (user) {
-                const userId = user.uid || (user.user && user.user.uid);
-                const displayName = user.displayName || (user.user && user.user.displayName) || 'Anonymous';
-                const photoURL = user.photoURL || (user.user && user.user.photoURL) || null;
-                
-                if (userId) {
-                  // Update the user's score on the leaderboard
-                  this.leaderboardService.updateUserScore(
-                    userId, 
-                    displayName, 
-                    photoURL, 
-                    question.difficulty
-                  ).subscribe();
+              // Use the user$ Observable properly
+              this.authService.getCurrentUser().pipe(
+                take(1)
+              ).subscribe(user => {
+                if (user) {
+                  const userId = user.uid;
+                  const displayName = user.displayName || 'Anonymous';
+                  const photoURL = user.photoURL || null;
                   
-                  // Add user to the solvedBy array if not already there
-                  if (!question.solvedBy || !question.solvedBy.includes(userId)) {
-                    const solvedBy = question.solvedBy || [];
-                    solvedBy.push(userId);
-                    this.firestore.collection('practice-questions').doc(id).update({
-                      solvedBy
+                  if (userId) {
+                    // Update the user's score on the leaderboard
+                    this.leaderboardService.updateUserScore(
+                      userId, 
+                      displayName, 
+                      photoURL, 
+                      question.difficulty
+                    ).subscribe();
+                    
+                    // Add user to the solvedBy array if not already there
+                    if (!question.solvedBy || !question.solvedBy.includes(userId)) {
+                      const solvedBy = question.solvedBy || [];
+                      solvedBy.push(userId);
+                      this.firestore.collection('practice-questions').doc(id).update({
+                        solvedBy
+                      });
+                    }
+                    
+                    // Add to user progress
+                    this.getUserProgressRef(userId, id).set({
+                      questionId: id,
+                      status: 'completed',
+                      lastUpdated: new Date(),
+                      questionType: question.questionType === 'multiple-choice' ? 'mcq' : 'coding'
                     });
                   }
                 }
-              }
+              });
             }
           })
         );
       })
     );
+  }
+
+  // Get reference to user progress document
+  getUserProgressRef(userId: string, questionId: string) {
+    return this.firestore.collection(`users/${userId}/progress`).doc(questionId);
   }
 
   // Search practice questions

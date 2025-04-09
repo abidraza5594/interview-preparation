@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ToastrModule } from 'ngx-toastr';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
@@ -23,9 +23,14 @@ import { AngularFireStorageModule } from '@angular/fire/compat/storage';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { LogoComponent } from './component/logo/logo.component'
 import { HttpClientModule } from '@angular/common/http';
+import { CommonModule, DatePipe } from '@angular/common';
+import { RouterModule } from '@angular/router';
 
+// Material modules
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatOptionModule } from '@angular/material/core';
 
 // New Components
 import { DashboardComponent } from './component/dashboard/dashboard.component';
@@ -38,6 +43,7 @@ import { CreatePracticeComponent } from './component/create-practice/create-prac
 import { GoogleAdComponent } from './component/google-ad/google-ad.component';
 import { MockInterviewModule } from './component/mock-interview/mock-interview/mock-interview.module';
 import { PracticeComponent } from './component/practice/practice.component';
+import { CodePlaygroundComponent } from './component/code-playground/code-playground.component';
 
 // Import Quill modules
 import { QuillModule } from 'ngx-quill';
@@ -70,6 +76,32 @@ hljs.registerLanguage('csharp', csharp);
 hljs.registerLanguage('php', php);
 hljs.registerLanguage('sql', sql);
 
+// Correctly import monaco
+import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
+import * as monaco from 'monaco-editor';
+
+// Extend window interface to allow monaco assignment
+declare global {
+  interface Window {
+    monaco: any;
+  }
+}
+
+const monacoConfig = {
+  baseUrl: 'assets/monaco', // Use correct path
+  defaultOptions: { 
+    scrollBeyondLastLine: false,
+    minimap: { enabled: false },
+    theme: 'vs-dark',
+    automaticLayout: true,
+    fontSize: 14
+  },
+  onMonacoLoad: () => {
+    console.log('Monaco Editor loaded successfully');
+    window.monaco = monaco;
+  }
+};
+
 const enviroment={
   firebase: {
      apiKey: "AIzaSyB9s3N-ytJfSrwc3DNHXOxTaQ41Y-hSqTU",
@@ -96,16 +128,18 @@ const enviroment={
     PostsDetailsComponent,
     LogoComponent,
     PrivacyPolicyComponent,
-    // New Components
+    // New Components that are NOT standalone
     DashboardComponent,
     UserManagementComponent,
     AnalyticsComponent
   ],
   imports: [
     BrowserModule,
+    CommonModule,
     FormsModule,
     ReactiveFormsModule,
     AppRoutingModule,
+    RouterModule,
     HttpClientModule,
     // Mock Interview Module
     MockInterviewModule,
@@ -116,8 +150,16 @@ const enviroment={
     AngularFireStorageModule,
     BrowserAnimationsModule,
     ToastrModule.forRoot(),
+    
+    // Material modules
     MatAutocompleteModule,
     MatInputModule,
+    MatFormFieldModule,
+    MatOptionModule,
+    
+    // Monaco editor
+    MonacoEditorModule.forRoot(monacoConfig),
+    
     // Quill rich text editor
     QuillModule.forRoot({
       modules: {
@@ -139,15 +181,22 @@ const enviroment={
         ]
       }
     }),
+    
     // Standalone components
+    GoogleAdComponent,
     ProfileComponent,
     SettingsComponent,
     CreatePostComponent,
     CreatePracticeComponent,
     PracticeComponent,
-    GoogleAdComponent
+    CodePlaygroundComponent
   ],
-  providers: [],
+  providers: [
+    DatePipe // Add DatePipe provider to fix date pipe issues
+  ],
+  schemas: [
+    CUSTOM_ELEMENTS_SCHEMA // Add this schema to fix unknown element errors
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

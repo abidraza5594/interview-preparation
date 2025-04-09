@@ -310,7 +310,7 @@
                     </div>
                   </td>
                   <td>{{ getDateFromTimestamp(post.createdAt) | date:'medium' }}</td>
-                  <td><span class="badge bg-secondary">{{ post.category }}</span></td>
+                  <td><span class="badge bg-secondary">{{ getCategoryName(post.category) }}</span></td>
                   <td>
                     <div class="btn-group">
                       <button class="btn btn-sm btn-outline-primary" title="View post">

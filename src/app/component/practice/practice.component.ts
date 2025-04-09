@@ -14,6 +14,7 @@ import javascript from 'highlight.js/lib/languages/javascript';
 import typescript from 'highlight.js/lib/languages/typescript';
 import { HighlightCodeDirective } from '../../shared/directives/highlight-code.directive';
 import { ProcessHtmlCodeDirective } from '../../shared/directives/process-html-code.directive';
+import { OnlineEditorComponent } from '../online-editor/online-editor.component';
 
 @Component({
   selector: 'app-practice',
@@ -24,7 +25,8 @@ import { ProcessHtmlCodeDirective } from '../../shared/directives/process-html-c
     FormsModule, 
     ToastrModule, 
     HighlightCodeDirective,
-    ProcessHtmlCodeDirective
+    ProcessHtmlCodeDirective,
+    OnlineEditorComponent
   ],
   providers: [ToastrService],
   standalone: true,
@@ -48,6 +50,9 @@ export class PracticeComponent implements OnInit {
   
   loading: boolean = true;
   error: string | null = null;
+  
+  selectedQuestion?: PracticeQuestion;
+  showEditor = false;
   
   constructor(
     private practiceService: PracticeService,
@@ -323,5 +328,17 @@ export class PracticeComponent implements OnInit {
   // Navigate to the practice question details
   viewPracticeQuestion(id: string): void {
     this.router.navigate(['/practice', id]);
+  }
+
+  openOnlineEditor(question: PracticeQuestion) {
+    this.selectedQuestion = question;
+    this.showEditor = true;
+    this.cdr.detectChanges();
+  }
+
+  closeEditor() {
+    this.showEditor = false;
+    this.selectedQuestion = undefined;
+    this.cdr.detectChanges();
   }
 } 

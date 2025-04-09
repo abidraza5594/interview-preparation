@@ -19,6 +19,7 @@ import 'highlight.js/styles/github.css';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { HighlightCodeDirective } from '../../shared/directives/highlight-code.directive';
 import { ProcessHtmlCodeDirective } from '../../shared/directives/process-html-code.directive';
+import { take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-practice-details',
@@ -61,6 +62,9 @@ export class PracticeDetailsComponent implements OnInit, AfterViewInit {
   testResults: { input: string, expectedOutput: string, actualOutput: string, passed: boolean }[] = [];
   isLiked: boolean = false;
   isDisliked: boolean = false;
+  selectedLanguage: 'javascript' | 'typescript' | 'python' | 'java' = 'javascript';
+  autoRun: boolean = false;
+  private autoRunTimeout: any;
 
   constructor(
     private route: ActivatedRoute,
@@ -107,6 +111,21 @@ export class PracticeDetailsComponent implements OnInit, AfterViewInit {
       } else {
         this.error = 'Practice question ID not found';
         this.cdr.detectChanges();
+      }
+    });
+
+    // Setup auto-run on code changes
+    this.codeForm.get('code')?.valueChanges.subscribe(() => {
+      if (this.autoRun) {
+        // Clear previous timeout
+        if (this.autoRunTimeout) {
+          clearTimeout(this.autoRunTimeout);
+        }
+        
+        // Set new timeout to run code after 1 second of no changes
+        this.autoRunTimeout = setTimeout(() => {
+          this.runCode();
+        }, 1000);
       }
     });
   }
@@ -269,8 +288,38 @@ export class PracticeDetailsComponent implements OnInit, AfterViewInit {
       this.isSubmitting = false;
       
       // Record the attempt with the practice service
-      if (this.practiceQuestion) {
-        this.practiceService.recordAttempt(this.practiceQuestion.id!, isCorrect).subscribe();
+      if (this.practiceQuestion && this.practiceQuestion.id) {
+        console.log('Recording MCQ attempt:', {
+          questionId: this.practiceQuestion.id,
+          isCorrect: isCorrect
+        });
+        
+        this.practiceService.recordAttempt(this.practiceQuestion.id, isCorrect).subscribe({
+          next: () => {
+            console.log('MCQ attempt recorded successfully');
+            
+            // If correct, also update user progress in Firestore directly
+            if (isCorrect) {
+              this.authService.getCurrentUser().pipe(take(1)).subscribe(user => {
+                if (user && user.uid) {
+                  // Save this progress to user's record
+                  const progressRef = this.practiceService.getUserProgressRef(user.uid, this.practiceQuestion!.id!);
+                  progressRef.set({
+                    questionId: this.practiceQuestion!.id,
+                    status: 'completed',
+                    questionType: 'mcq',
+                    lastUpdated: new Date()
+                  }).then(() => {
+                    console.log('User progress updated for MCQ');
+                  }).catch(err => {
+                    console.error('Failed to update user progress:', err);
+                  });
+                }
+              });
+            }
+          },
+          error: (err) => console.error('Error recording MCQ attempt:', err)
+        });
       }
       
       // Show celebration animation for correct answers
@@ -341,99 +390,181 @@ export class PracticeDetailsComponent implements OnInit, AfterViewInit {
     }
 
     this.isRunning = true;
+    this.error = null;
+    this.testResults = [];
     const code = this.codeForm.value.code;
     this.cdr.detectChanges();
     
     // Attempt to evaluate the code with test cases
     setTimeout(() => {
       try {
-        this.testResults = [];
         let allPassed = true;
         
         // Process test cases with actual evaluation
         if (this.practiceQuestion && this.practiceQuestion.testCases && this.practiceQuestion.testCases.length > 0) {
           for (const testCase of this.practiceQuestion.testCases) {
             try {
-              // Create evaluation context - safely with Function constructor
               const inputValue = testCase.input.trim();
               const expectedOutput = testCase.expectedOutput.trim();
               
-              // Build a sandboxed evaluation function
-              // This is a simplified approach - in production, use a server-side sandbox
               let actualOutput;
               
-              // Function to safely evaluate the code
-              // Note: This is still not 100% secure for production use
-              const evaluator = new Function('code', 'input', `
+              try {
+                // Enhanced code evaluation with better function detection and error handling
+                const evaluator = new Function('code', 'input', `
+                  try {
+                    ${code}
+                    
+                    // Try to find the function name using different patterns
+                    let functionName;
+                    const functionMatch = code.match(/function\\s+([\\w_$]+)\\s*\\(/);
+                    const arrowMatch = code.match(/(?:const|let|var)\\s+([\\w_$]+)\\s*=\\s*(?:async\\s*)?\\([^)]*\\)\\s*=>/);
+                    const classMatch = code.match(/class\\s+([\\w_$]+)\\s*{/);
+                    
+                    if (functionMatch) {
+                      functionName = functionMatch[1];
+                    } else if (arrowMatch) {
+                      functionName = arrowMatch[1];
+                    } else if (classMatch) {
+                      functionName = classMatch[1];
+                    }
+                    
+                    if (functionName) {
+                      // If input is a JSON string, try to parse it
+                      let parsedInput;
+                      try {
+                        parsedInput = JSON.parse(input);
+                      } catch {
+                        parsedInput = input;
+                      }
+                      
+                      const result = eval(functionName + "(" + JSON.stringify(parsedInput) + ")");
+                      return JSON.stringify(result);
+                    } else {
+                      // If no function is found, evaluate the entire code as an expression
+                      const result = eval(code);
+                      return JSON.stringify(result);
+                    }
+                  } catch (e) {
+                    return "Error: " + e.message;
+                  }
+                `);
+                
+                // Execute the code with input
+                actualOutput = evaluator(code, inputValue);
+                
+                // Try to parse both outputs for comparison
+                let parsedActual, parsedExpected;
                 try {
-                  ${code}
-                  // Assuming the function to test is named in the first line
-                  const functionName = code.match(/function\\s+([\\w_$]+)\\s*\\(/)[1];
-                  return eval(functionName + "(" + JSON.stringify(input) + ")");
-                } catch (e) {
-                  return "Error: " + e.message;
+                  parsedActual = JSON.parse(actualOutput);
+                } catch {
+                  parsedActual = actualOutput;
                 }
-              `);
-              
-              // Execute the code with input
-              actualOutput = String(evaluator(code, inputValue));
-              
-              // Compare with expected output (trim whitespace for more forgiving comparison)
-              const passed = actualOutput.trim() === expectedOutput;
-              allPassed = allPassed && passed;
-              
-              if (!testCase.isHidden || !passed) {
+                
+                try {
+                  parsedExpected = JSON.parse(expectedOutput);
+                } catch {
+                  parsedExpected = expectedOutput;
+                }
+                
+                // Normalize strings for comparison
+                if (typeof parsedActual === 'string' && typeof parsedExpected === 'string') {
+                  parsedActual = parsedActual.replace(/['"]/g, '').trim();
+                  parsedExpected = parsedExpected.replace(/['"]/g, '').trim();
+                }
+                
+                // Compare outputs (handles both primitive and complex types)
+                const passed = typeof parsedActual === typeof parsedExpected && 
+                             JSON.stringify(parsedActual) === JSON.stringify(parsedExpected);
+                
+                allPassed = allPassed && passed;
+                
+                // Add test result with clean output
+                this.testResults.push({
+                  input: inputValue,
+                  expectedOutput: typeof parsedExpected === 'string' ? parsedExpected : JSON.stringify(parsedExpected),
+                  actualOutput: typeof parsedActual === 'string' ? parsedActual : JSON.stringify(parsedActual),
+                  passed: passed
+                });
+              } catch (e: any) {
+                // Handle evaluation errors
                 this.testResults.push({
                   input: inputValue,
                   expectedOutput: expectedOutput,
-                  actualOutput: actualOutput,
-                  passed
+                  actualOutput: `Error: ${e.message}`,
+                  passed: false
                 });
+                allPassed = false;
               }
             } catch (e: any) {
-              console.error('Error evaluating test case:', e);
-              this.testResults.push({
-                input: testCase.input,
-                expectedOutput: testCase.expectedOutput,
-                actualOutput: `Error: ${e.message}`,
-                passed: false
-              });
+              console.error('Error processing test case:', e);
+              this.error = `Error processing test case: ${e.message}`;
               allPassed = false;
             }
           }
         } else {
-          // No test cases, consider it passed
-          allPassed = true;
+          // If no test cases, just try to execute the code
+          try {
+            const evaluator = new Function('code', `
+              try {
+                // First try to evaluate as a module/script
+                const result = eval(code);
+                return JSON.stringify(result);
+              } catch (e1) {
+                try {
+                  // If that fails, try wrapping in a function
+                  const wrappedCode = "(function() { " + code + " })()";
+                  const result = eval(wrappedCode);
+                  return JSON.stringify(result);
+                } catch (e2) {
+                  return "Error: " + (e2.message || e1.message);
+                }
+              }
+            `);
+            
+            const result = evaluator(code);
+            let parsedResult;
+            try {
+              parsedResult = JSON.parse(result);
+            } catch {
+              parsedResult = result;
+            }
+            
+            this.testResults.push({
+              input: 'N/A',
+              expectedOutput: 'N/A',
+              actualOutput: typeof parsedResult === 'string' ? parsedResult : JSON.stringify(parsedResult),
+              passed: !String(parsedResult).startsWith('Error:')
+            });
+          } catch (e: any) {
+            this.error = `Error executing code: ${e.message}`;
+          }
         }
         
-        // Record the attempt
-        if (this.practiceQuestion) {
-          this.practiceService.recordAttempt(this.practiceQuestion.id!, allPassed).subscribe();
-        }
-        
-        this.isCorrect = allPassed;
+        // Update UI state
         this.isAnswered = true;
-        this.isRunning = false;
+        this.isCorrect = allPassed;
         
         if (allPassed) {
-          this.celebrateCorrectAnswer();
-          this.toastr.success('All test cases passed! Great job!');
+          this.toastr.success('All test cases passed! 🎉');
         } else {
-          this.toastr.error('Some test cases failed. Try again!');
+          this.toastr.warning('Some test cases failed. Check the output for details.');
         }
       } catch (e: any) {
-        console.error('Error in code evaluation:', e);
+        console.error('Error running code:', e);
+        this.error = `Error running code: ${e.message}`;
+        this.toastr.error('Error running code. Check the output for details.');
+      } finally {
         this.isRunning = false;
-        this.toastr.error('Error evaluating your code. Please check syntax.');
+        this.cdr.detectChanges();
       }
-      
-      this.cdr.detectChanges();
-    }, 500);
+    }, 100);
   }
   
   resetCode(): void {
-    if (this.practiceQuestion && this.practiceQuestion.codeTemplate) {
+    if (this.practiceQuestion?.codeTemplate) {
       this.codeForm.patchValue({ code: this.practiceQuestion.codeTemplate });
+      this.error = null;
       this.testResults = [];
       this.isAnswered = false;
       this.isCorrect = false;
@@ -618,5 +749,82 @@ export class PracticeDetailsComponent implements OnInit, AfterViewInit {
         console.log('Accordion initialized');
       }
     }, 300);
+  }
+
+  // Get the version of the selected language
+  getLanguageVersion(): string {
+    const versions = {
+      javascript: 'ES2022',
+      typescript: '5.0',
+      python: '3.9',
+      java: '17'
+    };
+    return versions[this.selectedLanguage];
+  }
+
+  // Format the code using prettier
+  formatCode(): void {
+    if (!this.codeEditorRef) return;
+    
+    const editor = this.codeEditorRef.nativeElement;
+    const code = editor.value;
+    
+    try {
+      // Basic indentation formatting
+      const lines = code.split('\n');
+      let indent = 0;
+      const formattedLines = lines.map(line => {
+        const trimmedLine = line.trim();
+        
+        // Decrease indent for closing braces/brackets
+        if (trimmedLine.match(/^[}\])]/) || trimmedLine.startsWith('case ') || trimmedLine === 'default:') {
+          indent = Math.max(0, indent - 1);
+        }
+        
+        // Add indentation
+        const formattedLine = '  '.repeat(indent) + trimmedLine;
+        
+        // Increase indent for opening braces/brackets
+        if (trimmedLine.endsWith('{') || trimmedLine.endsWith('[') || trimmedLine.endsWith('(') || 
+            trimmedLine.endsWith(':') && !trimmedLine.startsWith('case ') && trimmedLine !== 'default:') {
+          indent++;
+        }
+        
+        return formattedLine;
+      });
+      
+      editor.value = formattedLines.join('\n');
+      this.codeForm.patchValue({ code: editor.value });
+    } catch (e) {
+      console.error('Error formatting code:', e);
+    }
+  }
+
+  // Handle tab key in textarea
+  handleTab(e: KeyboardEvent): void {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      
+      const editor = this.codeEditorRef.nativeElement;
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      
+      // Insert 2 spaces for tab
+      const newValue = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
+      editor.value = newValue;
+      
+      // Put cursor after the inserted tab
+      editor.selectionStart = editor.selectionEnd = start + 2;
+      
+      // Update form value
+      this.codeForm.patchValue({ code: editor.value });
+    }
+  }
+
+  // Clear the output
+  clearOutput(): void {
+    this.testResults = [];
+    this.error = null;
+    this.cdr.detectChanges();
   }
 }

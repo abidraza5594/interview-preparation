@@ -128,80 +128,104 @@
           <div *ngIf="practiceQuestion.questionType === 'coding'" class="mb-4">
             <h4 class="mb-3">Write your solution:</h4>
             <form [formGroup]="codeForm" (ngSubmit)="runCode()">
-              <div class="mb-3">
-                <div class="code-editor-container">
-                  <div class="code-editor-header bg-light p-2 border-top border-start border-end rounded-top d-flex justify-content-between">
-                    <span class="badge bg-secondary">{{ practiceQuestion.codeTemplate?.includes('function') ? 'JavaScript' : 'TypeScript' }}</span>
-                    <div>
-                      <button type="button" class="btn btn-sm btn-light" title="Reset Code" (click)="resetCode()">
-                        <i class="fas fa-undo"></i>
-                      </button>
-                    </div>
-                  </div>
-                  <textarea 
-                    #codeEditor
-                    formControlName="code" 
-                    class="form-control code-editor border-top-0 rounded-0 rounded-bottom font-monospace" 
-                    rows="15"
-                    [disabled]="isRunning"
-                    spellcheck="false"
-                    appHighlightCode
-                    [language]="practiceQuestion.codeTemplate?.includes('function') ? 'javascript' : 'typescript'"
-                  ></textarea>
-                </div>
-              </div>
-              
-              <!-- Test Cases -->
-              <div *ngIf="testResults.length > 0" class="mb-4">
-                <h5>Test Results:</h5>
-                <div class="list-group">
-                  <div *ngFor="let result of testResults" class="list-group-item" [class.list-group-item-success]="result.passed" [class.list-group-item-danger]="!result.passed">
-                    <div class="d-flex justify-content-between">
-                      <div>
-                        <strong>Input:</strong> <code>{{ result.input }}</code>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="code-editor-container">
+                    <div class="code-editor-header bg-light p-2 border-top border-start border-end rounded-top">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                          <select class="form-select form-select-sm me-2" style="width: 120px;" [(ngModel)]="selectedLanguage" [ngModelOptions]="{standalone: true}">
+                            <option value="javascript">JavaScript</option>
+                            <option value="typescript">TypeScript</option>
+                            <option value="python">Python</option>
+                            <option value="java">Java</option>
+                          </select>
+                          <span class="badge bg-secondary">{{ getLanguageVersion() }}</span>
+                        </div>
+                        <div>
+                          <button type="button" class="btn btn-sm btn-light me-2" title="Format Code" (click)="formatCode()">
+                            <i class="fas fa-indent"></i>
+                          </button>
+                          <button type="button" class="btn btn-sm btn-light" title="Reset Code" (click)="resetCode()">
+                            <i class="fas fa-undo"></i>
+                          </button>
+                        </div>
                       </div>
-                      <span class="badge" [class.bg-success]="result.passed" [class.bg-danger]="!result.passed">
-                        {{ result.passed ? 'Passed' : 'Failed' }}
-                      </span>
                     </div>
-                    <div>
-                      <strong>Expected Output:</strong> <code>{{ result.expectedOutput }}</code>
-                    </div>
-                    <div *ngIf="!result.passed">
-                      <strong>Your Output:</strong> <code>{{ result.actualOutput }}</code>
+                    <textarea 
+                      #codeEditor
+                      formControlName="code" 
+                      class="form-control code-editor border-top-0 rounded-0 rounded-bottom font-monospace" 
+                      rows="15"
+                      [disabled]="isRunning"
+                      spellcheck="false"
+                      appHighlightCode
+                      [language]="selectedLanguage"
+                      (keydown)="handleTab($event)"
+                    ></textarea>
+                  </div>
+                  <div class="mt-3 d-flex align-items-center">
+                    <button type="submit" class="btn btn-primary me-2" [disabled]="isRunning">
+                      <i class="fas fa-play me-2"></i>{{ isRunning ? 'Running...' : 'Run Code' }}
+                    </button>
+                    <div class="form-check ms-3">
+                      <input class="form-check-input" type="checkbox" [(ngModel)]="autoRun" [ngModelOptions]="{standalone: true}" id="autoRunCheck">
+                      <label class="form-check-label" for="autoRunCheck">
+                        Auto-run on changes
+                      </label>
                     </div>
                   </div>
                 </div>
-              </div>
-              
-              <div class="d-flex justify-content-between">
-                <button type="button" class="btn btn-outline-secondary" (click)="goBack()">Back</button>
-                <div>
-                  <button 
-                    *ngIf="!isAnswered || !isCorrect" 
-                    type="submit" 
-                    class="btn btn-primary" 
-                    [disabled]="codeForm.invalid || isRunning"
-                  >
-                    <span *ngIf="isRunning" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    {{ isRunning ? 'Running...' : 'Run Code' }}
-                  </button>
-                  <button 
-                    *ngIf="isAnswered" 
-                    type="button" 
-                    class="btn btn-outline-primary me-2" 
-                    (click)="resetAnswer()"
-                  >
-                    Try Again
-                  </button>
-                  <button 
-                    *ngIf="isAnswered" 
-                    type="button" 
-                    class="btn btn-info text-white" 
-                    (click)="toggleSolution()"
-                  >
-                    {{ showSolution ? 'Hide' : 'Show' }} Solution
-                  </button>
+                
+                <div class="col-md-6">
+                  <div class="output-container">
+                    <div class="output-header bg-light p-2 border-top border-start border-end rounded-top">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-info">Output</span>
+                        <button type="button" class="btn btn-sm btn-light" (click)="clearOutput()" *ngIf="testResults.length > 0 || error">
+                          <i class="fas fa-trash-alt"></i> Clear
+                        </button>
+                      </div>
+                    </div>
+                    <div class="output-content border p-3 rounded-bottom" [class.bg-light]="!isRunning">
+                      <div *ngIf="isRunning" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Running your code...</p>
+                      </div>
+                      
+                      <div *ngIf="!isRunning">
+                        <div *ngIf="testResults.length > 0">
+                          <h5 class="mb-3">Test Results:</h5>
+                          <div *ngFor="let result of testResults; let i = index" class="mb-3">
+                            <div class="test-case p-2 rounded" [ngClass]="{'bg-success bg-opacity-10': result.passed, 'bg-danger bg-opacity-10': !result.passed}">
+                              <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge" [ngClass]="result.passed ? 'bg-success' : 'bg-danger'">
+                                  {{ result.input === 'N/A' ? 'Program Output' : 'Test Case ' + (i + 1) }}
+                                </span>
+                              </div>
+                              <div class="test-details">
+                                <p class="mb-1" *ngIf="result.input !== 'N/A'"><strong>Input:</strong> <code>{{result.input}}</code></p>
+                                <p class="mb-1" *ngIf="result.expectedOutput !== 'N/A'"><strong>Expected Output:</strong> <code>{{result.expectedOutput}}</code></p>
+                                <p class="mb-0"><strong>{{ result.input === 'N/A' ? 'Output:' : 'Your Output:' }}</strong> <code>{{result.actualOutput}}</code></p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div *ngIf="error" class="alert alert-danger">
+                          <h5 class="alert-heading">Error:</h5>
+                          <pre class="mb-0">{{error}}</pre>
+                        </div>
+                        
+                        <div *ngIf="!isRunning && !error && testResults.length === 0" class="text-muted">
+                          <p class="mb-0">Write your code and click "Run Code" to see the output here.</p>
+                          <small>You can run any program, not just the test cases!</small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </form>

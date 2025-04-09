@@ -988,3 +988,44 @@ body.dark-mode footer.py-5.bg-dark {
 /* Keep the rest of the existing styles */
 
 @import './styles/custom.css';
+
+/* Code Editor Styles */
+.code-editor {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 1rem;
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  border: none;
+  border-radius: 4px;
+}
+
+.code-editor:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.5);
+}
+
+.output-container {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+}
+
+.output-container pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Modal Backdrop */
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal.show {
+  display: block;
+  background-color: rgba(0, 0, 0, 0.5);
+}

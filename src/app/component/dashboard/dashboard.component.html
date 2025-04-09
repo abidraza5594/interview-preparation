@@ -53,6 +53,21 @@
                   <p class="text-muted">Total Questions</p>
                 </div>
               </div>
+              
+              <!-- Additional stats for question types -->
+              <div class="col-md-6 text-center mt-3">
+                <div class="progress-stat border p-2 rounded">
+                  <h4>{{ data.userProgress.codingCompleted }}</h4>
+                  <p class="text-muted small mb-0">Coding Questions</p>
+                </div>
+              </div>
+              <div class="col-md-6 text-center mt-3">
+                <div class="progress-stat border p-2 rounded">
+                  <h4>{{ data.userProgress.mcqCompleted }}</h4>
+                  <p class="text-muted small mb-0">MCQ Questions</p>
+                </div>
+              </div>
+              
               <div class="col-12 mt-3">
                 <div class="progress">
                   <div 
@@ -94,7 +109,9 @@
                 <p class="mb-1 text-truncate">{{ post.content }}</p>
                 <div class="d-flex justify-content-between align-items-center">
                   <small class="text-muted">
-                    <span class="badge bg-secondary me-2">{{ post.category }}</span>
+                    <span class="badge bg-secondary me-2">
+                      {{ getCategoryName(post.category) }}
+                    </span>
                     <i class="fas fa-eye me-1"></i> {{ post.views }}
                     <i class="fas fa-heart ms-2 me-1"></i> {{ post.likes }}
                   </small>
@@ -167,7 +184,9 @@
                   </small>
                 </div>
                 <small class="text-muted">
-                  <span class="badge bg-secondary me-2">{{ post.category }}</span>
+                  <span class="badge bg-secondary me-2">
+                    {{ getCategoryName(post.category) }}
+                  </span>
                   {{ formatDate(post.createdAt) }}
                 </small>
               </a>
@@ -186,7 +205,7 @@
             </div>
             <div *ngFor="let category of data.categories" class="mb-3">
               <div class="d-flex justify-content-between mb-1">
-                <span>{{ category.name }}</span>
+                <span>{{ category.name || 'Unknown Category' }}</span>
                 <span>{{ category.count }} posts</span>
               </div>
               <div class="progress">
@@ -194,12 +213,12 @@
                   class="progress-bar" 
                   [style.width.%]="(category.count / data.categories[0].count) * 100"
                   [ngClass]="{
-                    'bg-primary': category.name === 'JavaScript',
-                    'bg-success': category.name === 'React',
-                    'bg-info': category.name === 'Angular',
-                    'bg-warning': category.name === 'Node.js',
-                    'bg-danger': category.name === 'CSS',
-                    'bg-secondary': !['JavaScript', 'React', 'Angular', 'Node.js', 'CSS'].includes(category.name)
+                    'bg-primary': ''+category.name === 'JavaScript',
+                    'bg-success': ''+category.name === 'React',
+                    'bg-info': ''+category.name === 'Angular',
+                    'bg-warning': ''+category.name === 'Node.js',
+                    'bg-danger': ''+category.name === 'CSS',
+                    'bg-secondary': !['JavaScript', 'React', 'Angular', 'Node.js', 'CSS'].includes(''+category.name)
                   }">
                 </div>
               </div>
@@ -228,6 +247,8 @@
               </a>
               <a routerLink="/user-management" class="list-group-item list-group-item-action">
                 <i class="fas fa-users me-2"></i> User Management
+                <span *ngIf="(isAdmin$ | async)" class="badge bg-success ms-1">Admin</span>
+                <span *ngIf="!(isAdmin$ | async)" class="badge bg-warning ms-1">Restricted</span>
               </a>
             </div>
           </div>

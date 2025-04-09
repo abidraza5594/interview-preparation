@@ -3,6 +3,7 @@ import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { BehaviorSubject, firstValueFrom, Observable } from 'rxjs';
 import { AuthService } from './auth.service';
 import { HttpClient } from '@angular/common/http';
+import { take } from 'rxjs/operators';
 
 export interface InterviewQuestion {
   id: number;
@@ -2235,27 +2236,30 @@ IMPORTANT: The response MUST be valid, parseable JSON with this exact structure.
 
   // Save interview results to Firestore
   private saveInterviewResults(feedback: InterviewFeedback): void {
-    const currentUser = this.authService.getCurrentUser();
-    if (currentUser && currentUser.uid) {
-      const interviewData = {
-        userId: currentUser.uid,
-        userName: this.userName,
-        timestamp: new Date(),
-        technology: this.techStack,
-        questionCount: this.questions.value.length,
-        questions: this.questions.value.map(q => q.question),
-        userResponses: this.userResponses,
-        feedback: feedback,
-        overallRating: feedback.overallRating,
-        chatHistory: this.chatHistory
-      };
+    this.authService.getCurrentUser().pipe(
+      take(1)
+    ).subscribe(currentUser => {
+      if (currentUser && currentUser.uid) {
+        const interviewData = {
+          userId: currentUser.uid,
+          userName: this.userName,
+          timestamp: new Date(),
+          technology: this.techStack,
+          questionCount: this.questions.value.length,
+          questions: this.questions.value.map(q => q.question),
+          userResponses: this.userResponses,
+          feedback: feedback,
+          overallRating: feedback.overallRating,
+          chatHistory: this.chatHistory
+        };
 
-      this.firestore.collection('interviews').add(interviewData)
-        .then(() => console.log('Interview results saved'))
-        .catch(error => console.error('Error saving interview results', error));
-    } else {
-      console.log('User not authenticated, interview results not saved');
-    }
+        this.firestore.collection('interviews').add(interviewData)
+          .then(() => console.log('Interview results saved'))
+          .catch(error => console.error('Error saving interview results', error));
+      } else {
+        console.log('User not authenticated, interview results not saved');
+      }
+    });
   }
 
   // Public method to update interview state

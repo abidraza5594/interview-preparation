@@ -4,6 +4,7 @@ import { LeaderboardService, LeaderboardEntry } from '../../services/leaderboard
 import { AuthService } from '../../services/auth.service';
 import { Observable } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
+import { take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-leaderboard',
@@ -55,30 +56,38 @@ export class LeaderboardComponent implements OnInit {
     );
 
     // Get current user's rank and entry if logged in
-    const currentUser = this.authService.getCurrentUser();
-    if (currentUser) {
-      const userId = currentUser.uid || (currentUser.user && currentUser.user.uid);
-      
-      if (userId) {
-        this.leaderboardService.getUserRanking(userId).subscribe(
-          rank => {
-            this.currentUserRank = rank;
-          },
-          error => {
-            console.error('Error loading user ranking:', error);
-          }
-        );
+    this.authService.getCurrentUser().pipe(
+      take(1)
+    ).subscribe(
+      currentUser => {
+        if (currentUser) {
+          const userId = currentUser.uid;
+          
+          if (userId) {
+            this.leaderboardService.getUserRanking(userId).subscribe(
+              rank => {
+                this.currentUserRank = rank;
+              },
+              error => {
+                console.error('Error loading user ranking:', error);
+              }
+            );
 
-        this.leaderboardService.getUserEntry(userId).subscribe(
-          entry => {
-            this.currentUserEntry = entry;
-          },
-          error => {
-            console.error('Error loading user entry:', error);
+            this.leaderboardService.getUserEntry(userId).subscribe(
+              entry => {
+                this.currentUserEntry = entry;
+              },
+              error => {
+                console.error('Error loading user entry:', error);
+              }
+            );
           }
-        );
+        }
+      },
+      error => {
+        console.error('Error getting current user:', error);
       }
-    }
+    );
   }
 
   // Get CSS class for rank

@@ -126,12 +126,23 @@
             </div>
           </div>
           <div class="card-footer">
-            <button class="btn btn-primary w-100" (click)="viewPracticeQuestion(question.id || '')">
-              Practice Now
-            </button>
+            <div class="d-flex gap-2">
+              <button class="btn btn-primary flex-grow-1" (click)="viewPracticeQuestion(question.id || '')">
+                Practice Now
+              </button>
+              <button class="btn btn-outline-primary" (click)="openOnlineEditor(question)">
+                <i class="fas fa-code"></i> Try Online
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</div> 
+</div>
+
+<app-online-editor
+  [isVisible]="showEditor"
+  [question]="selectedQuestion"
+  (close)="closeEditor()"
+></app-online-editor> 

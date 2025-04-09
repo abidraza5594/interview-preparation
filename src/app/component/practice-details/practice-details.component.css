@@ -691,3 +691,77 @@ body.dark-mode .code-content-wrapper blockquote {
   font-size: 1rem;
   color: #495057;
 }
+
+/* Output container styles */
+.output-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.output-header {
+  border-bottom: 1px solid #dee2e6;
+}
+
+.output-content {
+  flex: 1;
+  min-height: 300px;
+  max-height: 500px;
+  overflow-y: auto;
+  background-color: #fff;
+}
+
+/* Test case styles */
+.test-case {
+  border: 1px solid #dee2e6;
+  transition: all 0.2s ease-in-out;
+}
+
+.test-case:hover {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.test-details {
+  font-size: 0.9rem;
+}
+
+.test-details code {
+  background-color: #f8f9fa;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  color: #e83e8c;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* Dark mode support */
+body.dark-mode .output-content {
+  background-color: #2d2d2d;
+  color: #e0e0e0;
+}
+
+body.dark-mode .test-details code {
+  background-color: #1a1a1a;
+  color: #f8f9fa;
+}
+
+body.dark-mode .test-case {
+  border-color: #444;
+}
+
+/* Loading spinner styles */
+.spinner-border {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* Error message styles */
+.alert-danger pre {
+  background-color: rgba(0,0,0,0.05);
+  padding: 0.5rem;
+  border-radius: 3px;
+  margin-top: 0.5rem;
+}
+
+body.dark-mode .alert-danger pre {
+  background-color: rgba(255,255,255,0.05);
+}

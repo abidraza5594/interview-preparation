@@ -5,11 +5,19 @@ import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { NavigationExtras, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable, from, of, take, switchMap, tap } from 'rxjs';
 import Swal from 'sweetalert2';
 import { GoogleAuthProvider, GithubAuthProvider, FacebookAuthProvider, user} from '@angular/fire/auth'
+import { map, catchError } from 'rxjs/operators';
 
-
+export interface User {
+  uid: string;
+  email: string;
+  displayName?: string;
+  photoURL?: string;
+  role?: string;
+  isActive?: boolean;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -17,19 +25,37 @@ import { GoogleAuthProvider, GithubAuthProvider, FacebookAuthProvider, user} fro
 export class AuthService {
   loggedIn: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   isLoggedInGuard: boolean = false;
+  user$: Observable<User | null>;
 
   constructor(
     private afAuth: AngularFireAuth,
     private toaster: ToastrService,
     private router: Router,
     private afs: AngularFirestore
-    
   ) {
     // Check initial authentication state
     this.afAuth.authState.subscribe(user => {
       this.loggedIn.next(!!user); // Update loggedIn state
       this.isLoggedInGuard = !!user; // Update isLoggedInGuard state
     });
+
+    this.user$ = this.afAuth.authState.pipe(
+      switchMap(user => {
+        if (user) {
+          return this.afs.doc<User>(`users/${user.uid}`).valueChanges().pipe(
+            map(userData => ({ 
+              uid: user.uid, 
+              email: user.email || '', 
+              displayName: user.displayName || '',
+              photoURL: user.photoURL || '',
+              ...userData 
+            } as User))
+          );
+        } else {
+          return of(null);
+        }
+      })
+    );
   }
 
   async signup(name: string, email: string, password: string) {
@@ -91,7 +117,28 @@ export class AuthService {
 
   loadUser() {
     this.afAuth.authState.subscribe(user => {
-      localStorage.setItem('user', JSON.stringify(user));
+      if (user) {
+        // Get the full user object from Firestore
+        this.afs.doc(`users/${user.uid}`).valueChanges().subscribe(
+          (firestoreUser: any) => {
+            // Merge Firebase Auth user with Firestore user data
+            const fullUser = {
+              ...user.toJSON(),
+              ...firestoreUser
+            };
+            
+            console.log('Loaded user with complete profile:', fullUser);
+            localStorage.setItem('user', JSON.stringify(fullUser));
+          },
+          error => {
+            console.error('Error loading user data from Firestore:', error);
+            // Still store basic user info if Firestore data fails
+            localStorage.setItem('user', JSON.stringify(user));
+          }
+        );
+      } else {
+        localStorage.removeItem('user');
+      }
     });
   }
 
@@ -107,26 +154,28 @@ export class AuthService {
   }
 
   isAuthenticated(): BehaviorSubject<boolean> {
-    return this.loggedIn;
-  }
-
-  getCurrentUser(): any {
-    // First try to get the user from localStorage
-    const userString = localStorage.getItem('user');
-    if (userString) {
+    // Check token and update loggedIn status properly
+    const token = localStorage.getItem('token');
+    const storedUserString = localStorage.getItem('user');
+    
+    // Sync the isLoggedInGuard state with actual logged in state
+    if (token && storedUserString) {
       try {
-        const user = JSON.parse(userString);
-        // Return the user object if it exists
-        if (user) {
-          return user;
+        const storedUserObject = JSON.parse(storedUserString);
+        if (storedUserObject) {
+          this.loggedIn.next(true);
+          this.isLoggedInGuard = true;
         }
       } catch (e) {
         console.error('Error parsing user data:', e);
       }
     }
     
-    // If no user in localStorage, return null
-    return null;
+    return this.loggedIn;
+  }
+
+  getCurrentUser(): Observable<User | null> {
+    return this.user$;
   }
 
   loginSweetAlert(frontend: any): void {
@@ -267,5 +316,113 @@ export class AuthService {
         this.toaster.error('Error sending password reset email: ' + error.message);
         throw error;
       });
+  }
+
+  /**
+   * Check if current user has admin role
+   * @returns Observable<boolean> True if user is admin
+   */
+  isAdmin(): Observable<boolean> {
+    return this.user$.pipe(
+      map(user => {
+        if (!user) return false;
+        
+        // Check role with case insensitivity
+        const userRole = user.role || '';
+        
+        // Log for debugging
+        console.log('Role check:', { 
+          uid: user.uid, 
+          userRole, 
+          email: user.email,
+          roleType: typeof userRole
+        });
+        
+        // Robust role checking
+        if (typeof userRole === 'string') {
+          // String comparison with lowercase
+          return userRole.toLowerCase() === 'admin';
+        } else if (userRole && typeof userRole === 'object') {
+          // Handle case if role is somehow stored as object
+          return String(userRole).toLowerCase() === 'admin';
+        }
+          
+        return false;
+      }),
+      catchError(error => {
+        console.error('Error checking admin status:', error);
+        return of(false);
+      })
+    );
+  }
+  
+  /**
+   * Update user role in Firestore
+   * @param uid User ID
+   * @param role New role
+   * @returns Observable indicating success
+   */
+  updateUserRole(uid: string, role: string): Observable<void> {
+    console.log(`Updating user ${uid} role to ${role}`);
+    return from(this.afs.doc(`users/${uid}`).update({ role })).pipe(
+      tap(() => console.log(`Updated user ${uid} role to ${role}`)),
+      catchError(error => {
+        console.error('Error updating user role:', error);
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Set current user as admin directly (for emergencies/debugging)
+   * @returns Observable<boolean> Success status
+   */
+  setCurrentUserAsAdmin(): Observable<boolean> {
+    return this.user$.pipe(
+      take(1),
+      switchMap(user => {
+        if (!user || !user.uid) {
+          console.error('No user logged in');
+          return of(false);
+        }
+        
+        const userId = user.uid;
+        console.log('Setting admin role for user:', userId);
+        
+        // First check in the console for debugging
+        console.log('Current user state before update:', user);
+        
+        return from(this.afs.doc(`users/${userId}`).update({ 
+          role: 'admin',
+          isAdmin: true // Add extra field for redundancy
+        })).pipe(
+          map(() => {
+            console.log('Admin role set successfully for', userId);
+            return true;
+          }),
+          catchError(error => {
+            console.error('Error setting admin role:', error);
+            
+            // Try to create the document if it doesn't exist (set instead of update)
+            return from(this.afs.doc(`users/${userId}`).set({
+              role: 'admin',
+              isAdmin: true,
+              email: user.email,
+              displayName: user.displayName,
+              photoURL: user.photoURL
+            }, { merge: true })).pipe(
+              map(() => {
+                console.log('Admin role set with merge for', userId);
+                return true;
+              }),
+              catchError(err => {
+                console.error('Final error setting admin role:', err);
+                return of(false);
+              })
+            );
+          })
+        );
+      })
+    );
   }
 }

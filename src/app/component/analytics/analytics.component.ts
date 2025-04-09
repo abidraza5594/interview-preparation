@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { ToastrService } from 'ngx-toastr';
 import { Observable, combineLatest, of } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { map, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { AuthService } from '../../services/auth.service';
 
 interface AnalyticsData {
   totalUsers: number;
@@ -20,11 +21,12 @@ interface AnalyticsData {
 interface Post {
   id: string;
   title: string;
-  category: string;
+  category: any;
   createdAt: any;
   views: number;
   likes: number;
   comments: number;
+  createdBy?: string;
 }
 
 interface User {
@@ -47,7 +49,8 @@ interface CategoryData {
 @Component({
   selector: 'app-analytics',
   templateUrl: './analytics.component.html',
-  styleUrls: ['./analytics.component.css']
+  styleUrls: ['./analytics.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AnalyticsComponent implements OnInit {
   analyticsData$: Observable<AnalyticsData>;
@@ -72,7 +75,9 @@ export class AnalyticsComponent implements OnInit {
   constructor(
     private firestore: AngularFirestore,
     private auth: AngularFireAuth,
-    private toastr: ToastrService
+    private authService: AuthService,
+    private toastr: ToastrService,
+    private cdr: ChangeDetectorRef
   ) {
     this.analyticsData$ = of(null).pipe(
       switchMap(() => this.getAnalyticsData())
@@ -86,22 +91,34 @@ export class AnalyticsComponent implements OnInit {
       } else {
         this.loading = false;
         this.toastr.error('You must be logged in to access analytics');
+        this.cdr.markForCheck();
       }
     });
   }
   
   checkAdminStatus(uid: string): void {
-    this.firestore.doc(`users/${uid}`).valueChanges().subscribe((userData: any) => {
-      this.isAdmin = userData?.role === 'admin';
+    // Use the improved auth service
+    this.authService.isAdmin().subscribe(isAdmin => {
+      this.isAdmin = isAdmin;
+      console.log('Admin status check:', { uid, isAdmin });
       
       if (!this.isAdmin) {
         this.toastr.error('You do not have permission to access analytics');
       } else {
+        this.toastr.success('Admin access granted');
         // Load post-specific analytics if user is admin
         this.loadPostAnalytics();
       }
       
       this.loading = false;
+      this.cdr.markForCheck();
+    },
+    // Handle errors in the subscription
+    (error) => {
+      console.error('Error checking admin status:', error);
+      this.loading = false;
+      this.toastr.error('Error checking admin permissions');
+      this.cdr.markForCheck();
     });
   }
   
@@ -117,7 +134,8 @@ export class AnalyticsComponent implements OnInit {
           createdAt: data.createdAt,
           views: data.views || 0,
           likes: data.likes || 0,
-          comments: data.comments || 0
+          comments: data.comments || 0,
+          createdBy: data.createdBy
         } as Post;
       }))
     ).subscribe(posts => {
@@ -290,7 +308,8 @@ export class AnalyticsComponent implements OnInit {
           createdAt: data.createdAt,
           views: data.views || 0,
           likes: data.likes || 0,
-          comments: data.comments || 0
+          comments: data.comments || 0,
+          createdBy: data.createdBy
         } as Post;
       })),
       map(posts => posts.filter(post => {
@@ -305,7 +324,16 @@ export class AnalyticsComponent implements OnInit {
       map(actions => actions.map(a => {
         const data = a.payload.doc.data() as Omit<User, 'uid'>;
         const uid = a.payload.doc.id;
-        return { uid, ...data };
+        
+        // Process the data to ensure timestamps are properly handled
+        return { 
+          uid, 
+          ...data,
+          // Ensure createdAt is properly captured, default to now if missing
+          createdAt: data.createdAt || new Date(),
+          // Ensure lastLogin is properly captured
+          lastLogin: data.lastLogin || null
+        };
       })),
       map(users => users.filter(user => {
         if (this.timeRange === 'all') return true;
@@ -329,19 +357,28 @@ export class AnalyticsComponent implements OnInit {
         
         // Calculate active users (users who have posts)
         const postsByUser = posts.reduce((acc, post) => {
-          const userId = post.id?.split('_')[0] || '';
-          acc[userId] = (acc[userId] || 0) + 1;
+          // Use the createdBy field if available, otherwise try to extract from id
+          const userId = post.createdBy || post.id?.split('_')[0] || '';
+          if (userId) {
+            acc[userId] = (acc[userId] || 0) + 1;
+          }
           return acc;
         }, {} as Record<string, number>);
         
-        const activeUsers = Object.keys(postsByUser).length;
-        const avgPostsPerUser = activeUsers > 0 ? totalPosts / activeUsers : 0;
+        // Count users who have at least one post
+        const activeUsers = Object.keys(postsByUser).length || 0;
+        
+        // If we have posts but no active users detected, assume at least one active user
+        const effectiveActiveUsers = (totalPosts > 0 && activeUsers === 0) ? 1 : activeUsers;
+        
+        const avgPostsPerUser = effectiveActiveUsers > 0 ? totalPosts / effectiveActiveUsers : 0;
         
         // Calculate category distribution
         const categoryCounts: Record<string, number> = {};
         posts.forEach(post => {
           if (post.category) {
-            categoryCounts[post.category] = (categoryCounts[post.category] || 0) + 1;
+            const categoryName = this.getCategoryName(post.category);
+            categoryCounts[categoryName] = (categoryCounts[categoryName] || 0) + 1;
           }
         });
         
@@ -399,7 +436,7 @@ export class AnalyticsComponent implements OnInit {
           totalComments,
           newPosts,
           newUsers,
-          activeUsers,
+          activeUsers: effectiveActiveUsers,
           avgPostsPerUser,
           categoryData,
           userActivity,
@@ -494,31 +531,65 @@ export class AnalyticsComponent implements OnInit {
   getDateFromTimestamp(timestamp: any): Date | null {
     if (!timestamp) return null;
     
-    // Handle Firestore Timestamp objects
-    if (timestamp && typeof timestamp.toDate === 'function') {
-      return timestamp.toDate();
-    }
-    
-    // Handle timestamp objects with seconds and nanoseconds
-    if (timestamp && timestamp.seconds !== undefined) {
-      return new Date(timestamp.seconds * 1000);
-    }
-    
-    // Handle Date objects
-    if (timestamp instanceof Date) {
-      return timestamp;
-    }
-    
-    // Handle numeric timestamps
-    if (typeof timestamp === 'number') {
-      return new Date(timestamp);
-    }
-    
-    // Handle string timestamps
-    if (typeof timestamp === 'string') {
-      return new Date(timestamp);
+    try {
+      // Handle Firestore Timestamp objects
+      if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+        return timestamp.toDate();
+      }
+      
+      // Handle ISO date strings
+      if (typeof timestamp === 'string') {
+        return new Date(timestamp);
+      }
+      
+      // Handle numeric timestamps
+      if (typeof timestamp === 'number') {
+        return new Date(timestamp);
+      }
+      
+      // Handle Date objects
+      if (timestamp instanceof Date) {
+        return timestamp;
+      }
+    } catch (error) {
+      console.error('Error parsing timestamp:', error);
     }
     
     return null;
+  }
+
+  /**
+   * Safely extract category name from various types of category data
+   */
+  getCategoryName(category: any): string {
+    if (!category) return 'Uncategorized';
+    
+    // Handle string categories
+    if (typeof category === 'string') {
+      return category;
+    }
+    
+    // Handle object categories
+    if (typeof category === 'object') {
+      if (category.name) {
+        return category.name;
+      } else if (category.Category) {
+        return category.Category;
+      } else if (category.categoryName) {
+        return category.categoryName;
+      } else if (category.id) {
+        return category.id;
+      } else {
+        try {
+          const str = JSON.stringify(category);
+          return str !== '[object Object]' ? str : 'Uncategorized';
+        } catch (e) {
+          return 'Uncategorized';
+        }
+      }
+    }
+    
+    // Fallback
+    return String(category);
   }
 } 
