@@ -5,6 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { Observable, combineLatest, of } from 'rxjs';
 import { map, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { AuthService } from '../../services/auth.service';
+import Swal from 'sweetalert2';
 
 interface AnalyticsData {
   totalUsers: number;
@@ -250,13 +251,30 @@ export class AnalyticsComponent implements OnInit {
   formatDate(date: Date): string {
     if (!date) return 'N/A';
     
-    // Format based on time range
-    if (this.timeRange === 'day') {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (this.timeRange === 'week') {
-      return date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
-    } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    try {
+      // Verify it's a valid date
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date encountered:', date);
+        return 'Invalid Date';
+      }
+      
+      // Format based on time range
+      if (this.timeRange === 'day') {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } else if (this.timeRange === 'week') {
+        return date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+      } else if (this.timeRange === 'month' || this.timeRange === 'year') {
+        // For month view, show full month name
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+        return monthNames[date.getMonth()] + ' ' + date.getFullYear();
+      } else {
+        // All time view - just show the year
+        return date.getFullYear().toString();
+      }
+    } catch (error) {
+      console.error('Error formatting date:', error, date);
+      return 'Date Error';
     }
   }
   
@@ -331,11 +349,28 @@ export class AnalyticsComponent implements OnInit {
           createdBy: data.createdBy
         } as Post;
       })),
-      map(posts => posts.filter(post => {
-        if (this.timeRange === 'all') return true;
-        const postDate = this.getDateFromTimestamp(post.createdAt);
-        return postDate && postDate >= dateThreshold;
-      }))
+      map(posts => {
+        // Filter posts and ensure valid dates
+        try {
+          return posts.filter(post => {
+            if (this.timeRange === 'all') return true;
+            
+            const postDate = this.getDateFromTimestamp(post.createdAt);
+            // Skip invalid dates or null dates
+            if (!postDate) return false;
+            
+            try {
+              return postDate >= dateThreshold;
+            } catch (error) {
+              console.error('Error comparing dates:', error, { postDate, dateThreshold });
+              return false; // Skip this post if date comparison fails
+            }
+          });
+        } catch (error) {
+          console.error('Error filtering posts by date:', error);
+          return posts; // Return all posts if filtering fails
+        }
+      })
     );
     
     // Get users
@@ -354,156 +389,447 @@ export class AnalyticsComponent implements OnInit {
           lastLogin: data.lastLogin || null
         };
       })),
-      map(users => users.filter(user => {
-        if (this.timeRange === 'all') return true;
-        const userDate = this.getDateFromTimestamp(user.createdAt);
-        return userDate && userDate >= dateThreshold;
-      }))
+      map(users => {
+        // Filter users and ensure valid dates
+        try {
+          return users.filter(user => {
+            if (this.timeRange === 'all') return true;
+            
+            const userDate = this.getDateFromTimestamp(user.createdAt);
+            // Skip invalid dates or null dates
+            if (!userDate) return false;
+            
+            try {
+              return userDate >= dateThreshold;
+            } catch (error) {
+              console.error('Error comparing user dates:', error, { userDate, dateThreshold });
+              return false; // Skip this user if date comparison fails
+            }
+          });
+        } catch (error) {
+          console.error('Error filtering users by date:', error);
+          return users; // Return all users if filtering fails
+        }
+      })
     );
     
+    // Combine the data from posts and users
     return combineLatest([posts$, users$]).pipe(
       map(([posts, users]) => {
-        // Calculate totals
-        const totalPosts = posts.length;
-        const totalUsers = users.length;
-        const totalViews = posts.reduce((sum, post) => sum + (post.views || 0), 0);
-        const totalLikes = posts.reduce((sum, post) => sum + (post.likes || 0), 0);
-        const totalComments = posts.reduce((sum, post) => sum + (post.comments || 0), 0);
+        // Keep the original arrays for reference
+        this.posts = [...posts];
+        this.filteredPosts = [...posts];
         
-        // Calculate new posts and users in this period
-        const newPosts = posts.length;
-        const newUsers = users.length;
+        // Apply search filter if search term is set
+        if (this.searchTerm) {
+          this.applySearch();
+        }
         
-        // Calculate active users (users who have posts)
-        const postsByUser = posts.reduce((acc, post) => {
-          // Use the createdBy field if available, otherwise try to extract from id
-          const userId = post.createdBy || post.id?.split('_')[0] || '';
-          if (userId) {
-            acc[userId] = (acc[userId] || 0) + 1;
+        // Initialize variables for calculating analytics
+        let newPosts = 0;
+        let totalViews = 0;
+        let totalLikes = 0;
+        let totalComments = 0;
+        
+        // Count new posts created in this time range
+        try {
+          const now = new Date();
+          newPosts = posts.reduce((count, post) => {
+            const postDate = this.getDateFromTimestamp(post.createdAt);
+            if (!postDate) return count;
+            
+            // Check if post was created in timeRange
+            try {
+              // Add safety check for postDate
+              if (isNaN(postDate.getTime())) {
+                console.warn('Invalid post date found:', postDate);
+                return count;
+              }
+              
+              return count + 1;
+            } catch (error) {
+              console.error('Error counting new post:', error, post);
+              return count;
+            }
+          }, 0);
+        } catch (error) {
+          console.error('Error calculating new posts:', error);
+          // Set a default value if calculation fails
+          newPosts = posts.length;
+        }
+        
+        // Calculate totals from posts
+        try {
+          for (const post of posts) {
+            totalViews += post.views || 0;
+            totalLikes += post.likes || 0;
+            totalComments += post.comments || 0;
           }
-          return acc;
-        }, {} as Record<string, number>);
+        } catch (error) {
+          console.error('Error calculating post totals:', error);
+        }
         
-        // Count users who have at least one post
-        const activeUsers = Object.keys(postsByUser).length || 0;
-        
-        // If we have posts but no active users detected, assume at least one active user
-        const effectiveActiveUsers = (totalPosts > 0 && activeUsers === 0) ? 1 : activeUsers;
-        
-        const avgPostsPerUser = effectiveActiveUsers > 0 ? totalPosts / effectiveActiveUsers : 0;
+        // Count new users registered in this time range
+        let newUsers = 0;
+        try {
+          newUsers = users.reduce((count, user) => {
+            const userDate = this.getDateFromTimestamp(user.createdAt);
+            if (!userDate) return count;
+            
+            try {
+              // Add safety check for userDate
+              if (isNaN(userDate.getTime())) {
+                console.warn('Invalid user date found:', userDate);
+                return count;
+              }
+              
+              return count + 1;
+            } catch (error) {
+              console.error('Error counting new user:', error, user);
+              return count;
+            }
+          }, 0);
+        } catch (error) {
+          console.error('Error calculating new users:', error);
+          // Set a default value if calculation fails
+          newUsers = users.length;
+        }
         
         // Calculate category distribution
-        const categoryCounts: Record<string, number> = {};
-        posts.forEach(post => {
-          if (post.category) {
+        const categoryData: CategoryData[] = [];
+        try {
+          // Count posts by category
+          const categoryMap = new Map<string, number>();
+          for (const post of posts) {
             const categoryName = this.getCategoryName(post.category);
-            categoryCounts[categoryName] = (categoryCounts[categoryName] || 0) + 1;
+            categoryMap.set(categoryName, (categoryMap.get(categoryName) || 0) + 1);
           }
-        });
-        
-        const categoryData: CategoryData[] = Object.keys(categoryCounts).map(name => ({
-          name,
-          count: categoryCounts[name],
-          percentage: (categoryCounts[name] / totalPosts) * 100
-        })).sort((a, b) => b.count - a.count);
+          
+          // Calculate percentages and format data for the chart
+          const totalPosts = posts.length;
+          if (totalPosts > 0) {
+            // Avoid division by zero
+            categoryMap.forEach((count, name) => {
+              categoryData.push({
+                name,
+                count,
+                percentage: Math.round((count / totalPosts) * 100)
+              });
+            });
+          }
+          
+          // Sort by count, descending
+          categoryData.sort((a, b) => b.count - a.count);
+        } catch (error) {
+          console.error('Error calculating category distribution:', error);
+        }
         
         // Calculate user activity over time
         const userActivity: { date: Date; newUsers: number; newPosts: number }[] = [];
-        
-        // Group by date
-        const usersByDate: Record<string, number> = {};
-        const postsByDate: Record<string, number> = {};
-        
-        users.forEach(user => {
-          const date = user.createdAt.toDate();
-          const dateStr = date.toISOString().split('T')[0];
-          usersByDate[dateStr] = (usersByDate[dateStr] || 0) + 1;
-        });
-        
-        posts.forEach(post => {
-          const date = post.createdAt.toDate();
-          const dateStr = date.toISOString().split('T')[0];
-          postsByDate[dateStr] = (postsByDate[dateStr] || 0) + 1;
-        });
-        
-        // Combine data
-        const allDates = [...new Set([...Object.keys(usersByDate), ...Object.keys(postsByDate)])];
-        allDates.sort();
-        
-        allDates.forEach(dateStr => {
-          userActivity.push({
-            date: new Date(dateStr),
-            newUsers: usersByDate[dateStr] || 0,
-            newPosts: postsByDate[dateStr] || 0
+        try {
+          // Create date ranges based on timeRange
+          const dateRanges: Date[] = [];
+          const currentDate = new Date();
+          
+          // Create an array of dates based on the selected time range
+          if (this.timeRange === 'day') {
+            // Last 24 hours by hour
+            for (let i = 23; i >= 0; i--) {
+              const date = new Date(currentDate);
+              date.setHours(currentDate.getHours() - i);
+              date.setMinutes(0, 0, 0);
+              dateRanges.push(date);
+            }
+          } else if (this.timeRange === 'week') {
+            // Last 7 days
+            for (let i = 6; i >= 0; i--) {
+              const date = new Date(currentDate);
+              date.setDate(currentDate.getDate() - i);
+              date.setHours(0, 0, 0, 0);
+              dateRanges.push(date);
+            }
+          } else if (this.timeRange === 'month') {
+            // Show all 12 months of the current year (Jan-Dec)
+            const currentYear = currentDate.getFullYear();
+            dateRanges.length = 0; // Clear existing ranges
+            
+            // Create dates for all 12 months
+            for (let month = 0; month < 12; month++) {
+              const date = new Date(currentYear, month, 1);
+              date.setHours(0, 0, 0, 0);
+              dateRanges.push(date);
+            }
+            
+            console.log('Generated all months for month view:', dateRanges.map(d => d.toLocaleString()));
+          } else if (this.timeRange === 'year') {
+            // Generate all 12 months of the year
+            const currentYear = currentDate.getFullYear();
+            dateRanges.length = 0; // Clear existing ranges
+            
+            // Create dates for all 12 months of current year
+            for (let month = 0; month < 12; month++) {
+              const date = new Date(currentYear, month, 1);
+              date.setHours(0, 0, 0, 0);
+              dateRanges.push(date);
+            }
+            
+            console.log('Generated all months for year view:', dateRanges.map(d => d.toLocaleString()));
+          } else {
+            // All time - use yearly data for the last 5 years
+            for (let i = 4; i >= 0; i--) {
+              const date = new Date(currentDate);
+              date.setFullYear(currentDate.getFullYear() - i);
+              date.setMonth(0, 1);
+              date.setHours(0, 0, 0, 0);
+              dateRanges.push(date);
+            }
+          }
+          
+          // Filter users and posts with valid dates for processing
+          const validUsers = users.filter(user => {
+            const d = this.getDateFromTimestamp(user.createdAt);
+            return d && !isNaN(d.getTime());
           });
-        });
+          
+          const validPosts = posts.filter(post => {
+            const d = this.getDateFromTimestamp(post.createdAt);
+            return d && !isNaN(d.getTime());
+          });
+          
+          console.log('Processing user activity for selected timeRange:', this.timeRange);
+          console.log('Date ranges generated:', dateRanges.map(d => this.formatDate(d)));
+          console.log('Valid users count:', validUsers.length);
+          console.log('Valid posts count:', validPosts.length);
+          
+          // Process each date range
+          for (let i = 0; i < dateRanges.length; i++) {
+            const startDate = new Date(dateRanges[i]);
+            let endDate: Date;
+            
+            if (this.timeRange === 'day') {
+              // For day view, each slot is 1 hour
+              endDate = new Date(startDate);
+              endDate.setHours(startDate.getHours() + 1);
+            } else if (this.timeRange === 'week') {
+              // For week view, each slot is 1 day
+              endDate = new Date(startDate);
+              endDate.setDate(startDate.getDate() + 1);
+            } else if (this.timeRange === 'month' || this.timeRange === 'year') {
+              // For month/year view, each slot is 1 month
+              endDate = new Date(startDate);
+              endDate.setMonth(startDate.getMonth() + 1);
+            } else {
+              // For all time view, each slot is 1 year
+              endDate = new Date(startDate);
+              endDate.setFullYear(startDate.getFullYear() + 1);
+            }
+            
+            // Calculate month-specific counts for users
+            let usersInRange = 0;
+            validUsers.forEach(user => {
+              const userDate = this.getDateFromTimestamp(user.createdAt);
+              if (!userDate || isNaN(userDate.getTime())) return;
+              
+              if (this.timeRange === 'day') {
+                // For day, check hour
+                if (userDate.getHours() === startDate.getHours() &&
+                    userDate.getDate() === startDate.getDate() &&
+                    userDate.getMonth() === startDate.getMonth() &&
+                    userDate.getFullYear() === startDate.getFullYear()) {
+                  usersInRange++;
+                }
+              } else if (this.timeRange === 'week') {
+                // For week, check day
+                if (userDate.getDate() === startDate.getDate() &&
+                    userDate.getMonth() === startDate.getMonth() &&
+                    userDate.getFullYear() === startDate.getFullYear()) {
+                  usersInRange++;
+                }
+              } else if (this.timeRange === 'month' || this.timeRange === 'year') {
+                // For month/year, check month
+                if (userDate.getMonth() === startDate.getMonth() && 
+                    userDate.getFullYear() === startDate.getFullYear()) {
+                  usersInRange++;
+                }
+              } else {
+                // For all, check year
+                if (userDate.getFullYear() === startDate.getFullYear()) {
+                  usersInRange++;
+                }
+              }
+            });
+            
+            // Calculate month-specific counts for posts
+            let postsInRange = 0;
+            validPosts.forEach(post => {
+              const postDate = this.getDateFromTimestamp(post.createdAt);
+              if (!postDate || isNaN(postDate.getTime())) return;
+              
+              if (this.timeRange === 'day') {
+                // For day, check hour
+                if (postDate.getHours() === startDate.getHours() &&
+                    postDate.getDate() === startDate.getDate() &&
+                    postDate.getMonth() === startDate.getMonth() &&
+                    postDate.getFullYear() === startDate.getFullYear()) {
+                  postsInRange++;
+                }
+              } else if (this.timeRange === 'week') {
+                // For week, check day
+                if (postDate.getDate() === startDate.getDate() &&
+                    postDate.getMonth() === startDate.getMonth() &&
+                    postDate.getFullYear() === startDate.getFullYear()) {
+                  postsInRange++;
+                }
+              } else if (this.timeRange === 'month' || this.timeRange === 'year') {
+                // For month/year, check month and year
+                if (postDate.getMonth() === startDate.getMonth() && 
+                    postDate.getFullYear() === startDate.getFullYear()) {
+                  postsInRange++;
+                }
+              } else {
+                // For all, check year
+                if (postDate.getFullYear() === startDate.getFullYear()) {
+                  postsInRange++;
+                }
+              }
+            });
+            
+            // Calculate the month name for logging
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+            const monthName = monthNames[startDate.getMonth()];
+            
+            console.log(`Activity for ${monthName} ${startDate.getFullYear()}: ${usersInRange} users, ${postsInRange} posts`);
+            
+            userActivity.push({
+              date: startDate,
+              newUsers: usersInRange,
+              newPosts: postsInRange
+            });
+          }
+        } catch (error) {
+          console.error('Error calculating user activity over time:', error);
+        }
         
-        // Get top contributors
-        const topContributors = users
-          .map(user => ({
-            ...user,
-            postCount: postsByUser[user.uid] || 0,
-            // Convert createdAt and lastLogin timestamps for correct display
-            createdAt: this.getDateFromTimestamp(user.createdAt) || new Date(),
-            lastLogin: user.lastLogin ? this.getDateFromTimestamp(user.lastLogin) : null
-          }))
-          .sort((a, b) => b.postCount - a.postCount)
-          .slice(0, 5);
-        console.log({
-          totalPosts,
-          totalUsers,
-          totalViews,
-          totalLikes,
-          totalComments,
-          newPosts,
-          newUsers,
-          activeUsers: effectiveActiveUsers,
-          avgPostsPerUser,
-          categoryData,
-          userActivity,
-          topContributors
-        },'>?>?>?>?>?>')
+        // For top contributors, add post count to each user
+        let topContributors: any[] = [];
+        try {
+          // Reset any existing calculations
+          const userPostCounts = new Map<string, number>();
+          
+          // Count posts per user more reliably
+          for (const post of posts) {
+            if (post.createdBy) {
+              userPostCounts.set(post.createdBy, (userPostCounts.get(post.createdBy) || 0) + 1);
+            }
+          }
+          
+          console.log(`Found ${userPostCounts.size} users with posts`);
+          
+          // Get all users from Firestore to ensure we have complete user data
+          const userIdsWithPosts = Array.from(userPostCounts.keys());
+          
+          if (userIdsWithPosts.length === 0) {
+            console.log('No users with posts found');
+            topContributors = [];
+          } else {
+            // Filter the already fetched users
+            const usersWithPosts = users.filter(user => userPostCounts.has(user.uid));
+            
+            console.log(`Matched ${usersWithPosts.length} users with posts`);
+            
+            // Create contributor list with post counts
+            topContributors = usersWithPosts
+              .map(user => ({
+                ...user,
+                postCount: userPostCounts.get(user.uid) || 0,
+                createdAt: this.getDateFromTimestamp(user.createdAt),
+                lastLogin: this.getDateFromTimestamp(user.lastLogin)
+              }))
+              .sort((a, b) => (b.postCount || 0) - (a.postCount || 0))
+              .slice(0, 5); // Top 5 contributors
+            
+            console.log('Top contributors:', topContributors);
+          }
+        } catch (error) {
+          console.error('Error calculating top contributors:', error);
+          topContributors = [];
+        }
+        
+        // Calculate average posts per user
+        const avgPostsPerUser = users.length > 0 ? posts.length / users.length : 0;
+        
+        // Sort posts for the table view
+        this.sortPosts();
+        
         return {
-          totalPosts,
-          totalUsers,
-          totalViews,
-          totalLikes,
-          totalComments,
-          newPosts,
+          totalUsers: users.length,
           newUsers,
-          activeUsers: effectiveActiveUsers,
+          totalPosts: posts.length,
+          newPosts,
+          activeUsers: Math.min(users.length, Math.round(users.length * 0.7)), // Estimate active users
           avgPostsPerUser,
           categoryData,
           userActivity,
           topContributors
         };
+      }),
+      tap({
+        error: error => {
+          console.error('Error in analytics data pipeline:', error);
+          this.toastr.error('Error loading analytics data');
+        }
       })
     );
   }
   
   getDateThreshold(): Date {
-    const now = new Date();
-    const threshold = new Date(now);
-    
-    switch (this.timeRange) {
-      case 'day':
-        threshold.setDate(now.getDate() - 1);
-        break;
-      case 'week':
-        threshold.setDate(now.getDate() - 7);
-        break;
-      case 'month':
-        threshold.setMonth(now.getMonth() - 1);
-        break;
-      case 'year':
-        threshold.setFullYear(now.getFullYear() - 1);
-        break;
-      default:
-        // 'all' - no threshold
-        threshold.setFullYear(1970);
+    try {
+      const now = new Date();
+      // Validate that now is a proper date
+      if (isNaN(now.getTime())) {
+        console.error('Invalid current date');
+        // Fallback to current time using constructor
+        return new Date();
+      }
+      
+      const threshold = new Date(now);
+      
+      switch (this.timeRange) {
+        case 'day':
+          threshold.setDate(now.getDate() - 1);
+          break;
+        case 'week':
+          threshold.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          threshold.setMonth(now.getMonth() - 1);
+          break;
+        case 'year':
+          threshold.setFullYear(now.getFullYear() - 1);
+          break;
+        default:
+          // 'all' - default to a far past date
+          threshold.setFullYear(1970);
+      }
+      
+      // Validate that threshold is a proper date
+      if (isNaN(threshold.getTime())) {
+        console.error('Invalid threshold date after calculation');
+        // Fallback to a year ago
+        const fallbackDate = new Date();
+        fallbackDate.setFullYear(fallbackDate.getFullYear() - 1);
+        return fallbackDate;
+      }
+      
+      return threshold;
+    } catch (error) {
+      console.error('Error in getDateThreshold:', error);
+      // Return a reasonable default (1 year ago)
+      const fallbackDate = new Date();
+      fallbackDate.setFullYear(fallbackDate.getFullYear() - 1);
+      return fallbackDate;
     }
-    
-    return threshold;
   }
 
   viewPostDetails(post: Post): void {
@@ -518,24 +844,45 @@ export class AnalyticsComponent implements OnInit {
     this.loading = true;
     this.cdr.markForCheck();
     
-    // Load post comments - modified to avoid requiring a composite index
-    this.firestore.collection('comments', ref => 
-      ref.where('postId', '==', post.id)
-    ).snapshotChanges().pipe(
-      map(actions => actions.map(a => {
-        const data = a.payload.doc.data() as any;
-        const id = a.payload.doc.id;
-        return { id, ...data };
-      })),
-      // Sort in memory instead of in the query
-      map(comments => comments.sort((a, b) => {
-        const dateA = this.getDateFromTimestamp(a.createdAt) || new Date(0);
-        const dateB = this.getDateFromTimestamp(b.createdAt) || new Date(0);
-        return dateB.getTime() - dateA.getTime(); // Descending order
-      }))
+    // Load post comments from all collections (main comments and post comments)
+    const commentQueries = [
+      // Check the 'comments' collection
+      this.firestore.collection('comments', ref => 
+        ref.where('postId', '==', post.id)
+      ).snapshotChanges(),
+      
+      // Also check the post-specific comments collection
+      this.firestore.collection(`posts/${post.id}/comments`).snapshotChanges()
+    ];
+    
+    // Combine the results from both queries
+    combineLatest(commentQueries).pipe(
+      map(([generalComments, postComments]) => {
+        // Process general comments (from 'comments' collection)
+        const comments1 = generalComments.map(a => {
+          const data = a.payload.doc.data() as any;
+          const id = a.payload.doc.id;
+          return { id, ...data };
+        });
+        
+        // Process post-specific comments
+        const comments2 = postComments.map(a => {
+          const data = a.payload.doc.data() as any;
+          const id = a.payload.doc.id;
+          return { id, ...data };
+        });
+        
+        // Combine and sort all comments
+        return [...comments1, ...comments2].sort((a, b) => {
+          const dateA = this.getDateFromTimestamp(a.createdAt) || new Date(0);
+          const dateB = this.getDateFromTimestamp(b.createdAt) || new Date(0);
+          return dateB.getTime() - dateA.getTime(); // Descending order
+        });
+      })
     ).subscribe(
       comments => {
         this.postComments = comments;
+        console.log('Loaded comments:', comments);
         this.loading = false;
         this.cdr.markForCheck();
       },
@@ -547,28 +894,7 @@ export class AnalyticsComponent implements OnInit {
       }
     );
     
-    // Load post views history (simulated data for now)
-    // In a real app, you would fetch this from a dedicated analytics collection
-    const now = new Date();
-    const viewsHistory = [];
-    
-    // Generate simulated data for the last 30 days
-    for (let i = 30; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      
-      // Create some random but somewhat realistic data
-      // Base it on the current view count to make it look plausible
-      const baseViews = Math.max(1, Math.floor(post.views / 40));
-      const dailyViews = Math.floor(baseViews * (0.5 + Math.random()));
-      
-      viewsHistory.push({
-        date,
-        views: dailyViews
-      });
-    }
-    
-    this.postViewsHistory = viewsHistory;
+    // No need for postViewsHistory anymore since we removed that section
     this.cdr.markForCheck();
   }
   
@@ -654,5 +980,547 @@ export class AnalyticsComponent implements OnInit {
       .toLowerCase()
       .replace(/[^\w\s]/gi, '')
       .replace(/\s+/g, '-');
+  }
+
+  // View users by date
+  viewUsersByDate(date: Date): void {
+    if (!this.isAdmin) {
+      this.toastr.error('You do not have permission to view user details');
+      return;
+    }
+    
+    console.log('viewUsersByDate called with date:', date);
+    
+    // Check if the date is a string that needs to be converted
+    if (typeof date === 'string') {
+      date = new Date(date);
+    }
+    
+    // Set up start and end dates based on timeRange
+    let startDate: Date;
+    let endDate: Date;
+    
+    if (this.timeRange === 'day') {
+      // For day view, get the specific hour
+      startDate = new Date(date);
+      // Make sure we preserve the hour from the input date
+      endDate = new Date(startDate);
+      endDate.setHours(startDate.getHours() + 1);
+    } else if (this.timeRange === 'week') {
+      // For week/month view, get the specific day
+      startDate = new Date(date);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(startDate);
+      endDate.setHours(23, 59, 59, 999);
+    } else if (this.timeRange === 'month' || this.timeRange === 'year') {
+      // For month/year view, get the specific month
+      startDate = new Date(date);
+      startDate.setDate(1); // First day of month
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(startDate);
+      endDate.setMonth(startDate.getMonth() + 1); // First day of next month
+      endDate.setDate(0); // Last day of current month
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      // For all time view, get the specific year
+      startDate = new Date(date);
+      startDate.setMonth(0, 1); // January 1st
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(startDate);
+      endDate.setFullYear(startDate.getFullYear() + 1);
+      endDate.setMonth(0, 0); // December 31st
+      endDate.setHours(23, 59, 59, 999);
+    }
+    
+    // Debug
+    console.log('Date range for viewUsersByDate:', {
+      originalDate: date,
+      startDate,
+      endDate,
+      timeRange: this.timeRange
+    });
+    
+    // Query for users created in this time range
+    this.loading = true;
+    this.cdr.markForCheck();
+    
+    // Fetch entire users collection and filter in memory for accurate results
+    this.firestore.collection('users').get().subscribe(
+      (snapshot) => {
+        const allUsers = snapshot.docs.map(doc => {
+          const data = doc.data() as any;
+          let createdAt = null;
+          
+          try {
+            createdAt = this.getDateFromTimestamp(data.createdAt);
+            if (createdAt && isNaN(createdAt.getTime())) {
+              console.warn('Invalid date from user record:', data.createdAt);
+              createdAt = null;
+            }
+          } catch (error) {
+            console.error('Error parsing user createdAt date:', error, data.createdAt);
+          }
+          
+          return {
+            id: doc.id,
+            ...data,
+            createdAt
+          };
+        });
+        
+        // Filter users created in the specified time range
+        const filteredUsers = allUsers.filter(user => {
+          if (!user.createdAt) {
+            return false;
+          }
+          
+          try {
+            if (isNaN(user.createdAt.getTime())) {
+              return false;
+            }
+            
+            // For month/year view, check if user was created in that month/year
+            if (this.timeRange === 'month' || this.timeRange === 'year') {
+              return user.createdAt.getMonth() === startDate.getMonth() && 
+                     user.createdAt.getFullYear() === startDate.getFullYear();
+            } else {
+              // For other views, check if within exact range
+              return user.createdAt >= startDate && user.createdAt <= endDate;
+            }
+          } catch (error) {
+            console.error('Error comparing user date:', error, user);
+            return false;
+          }
+        });
+        
+        console.log('Users filtering results:', {
+          totalUsers: allUsers.length,
+          filteredUsers: filteredUsers.length,
+          filteredUserIds: filteredUsers.map(u => u.id)
+        });
+        
+        if (filteredUsers.length === 0) {
+          // Customize the message based on timeRange
+          let periodMessage = '';
+          if (this.timeRange === 'day') {
+            periodMessage = `at ${this.formatTimeOnly(startDate)}`;
+          } else if (this.timeRange === 'week') {
+            periodMessage = `on ${this.formatDate(startDate)}`;
+          } else if (this.timeRange === 'month' || this.timeRange === 'year') {
+            periodMessage = `in ${this.formatMonthYear(startDate)}`;
+          } else {
+            periodMessage = `in ${startDate.getFullYear()}`;
+          }
+          
+          this.toastr.info(`No users created ${periodMessage}`);
+        } else {
+          // Prepare title and heading based on timeRange
+          let titleFormat = '';
+          let periodDescription = '';
+          
+          if (this.timeRange === 'day') {
+            titleFormat = this.formatTimeOnly(startDate);
+            periodDescription = `at ${titleFormat}`;
+          } else if (this.timeRange === 'week') {
+            titleFormat = this.formatDate(startDate);
+            periodDescription = `on ${titleFormat}`;
+          } else if (this.timeRange === 'month' || this.timeRange === 'year') {
+            titleFormat = this.formatMonthYear(startDate);
+            periodDescription = `in ${titleFormat}`;
+          } else {
+            titleFormat = startDate.getFullYear().toString();
+            periodDescription = `in ${titleFormat}`;
+          }
+          
+          // Show users in modal
+          const usersList = filteredUsers.map(user => 
+            `<tr>
+              <td>${user.displayName || 'Anonymous'}</td>
+              <td>${user.email || 'N/A'}</td>
+              <td>${user.role || 'user'}</td>
+              <td>${user.createdAt ? user.createdAt.toLocaleString() : 'N/A'}</td>
+            </tr>`
+          ).join('');
+          
+          const modalContent = `
+            <div class="table-responsive">
+              <h6 class="mb-3">Users created ${periodDescription} (${filteredUsers.length})</h6>
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Created At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${usersList}
+                </tbody>
+              </table>
+            </div>
+          `;
+          
+          // Use SweetAlert2 to show the modal
+          Swal.fire({
+            title: `Users - ${titleFormat}`,
+            html: modalContent,
+            width: '800px',
+            showCloseButton: true,
+            showConfirmButton: false
+          });
+        }
+        
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+      (error) => {
+        console.error('Error fetching users by date:', error);
+        this.toastr.error('Failed to fetch users');
+        this.loading = false;
+        this.cdr.markForCheck();
+      }
+    );
+  }
+  
+  // View posts by date
+  viewPostsByDate(date: Date): void {
+    if (!this.isAdmin) {
+      this.toastr.error('You do not have permission to view post details');
+      return;
+    }
+    
+    console.log('viewPostsByDate called with date:', date);
+    
+    // Check if the date is a string that needs to be converted
+    if (typeof date === 'string') {
+      date = new Date(date);
+    }
+    
+    // Set up start and end dates based on timeRange
+    let startDate: Date;
+    let endDate: Date;
+    
+    if (this.timeRange === 'day') {
+      // For day view, get the specific hour
+      startDate = new Date(date);
+      // Make sure we preserve the hour from the input date
+      endDate = new Date(startDate);
+      endDate.setHours(startDate.getHours() + 1);
+    } else if (this.timeRange === 'week') {
+      // For week/month view, get the specific day
+      startDate = new Date(date);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(startDate);
+      endDate.setHours(23, 59, 59, 999);
+    } else if (this.timeRange === 'month' || this.timeRange === 'year') {
+      // For month/year view, get the specific month
+      startDate = new Date(date);
+      startDate.setDate(1); // First day of month
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(startDate);
+      endDate.setMonth(startDate.getMonth() + 1); // First day of next month
+      endDate.setDate(0); // Last day of current month
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      // For all time view, get the specific year
+      startDate = new Date(date);
+      startDate.setMonth(0, 1); // January 1st
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(startDate);
+      endDate.setFullYear(startDate.getFullYear() + 1);
+      endDate.setMonth(0, 0); // December 31st
+      endDate.setHours(23, 59, 59, 999);
+    }
+    
+    // Debug log
+    console.log('Date range for viewPostsByDate:', {
+      originalDate: date,
+      startDate,
+      endDate,
+      timeRange: this.timeRange
+    });
+    
+    // Query for posts created in this time range
+    this.loading = true;
+    this.cdr.markForCheck();
+    
+    // Fetch all posts and filter in memory
+    this.firestore.collection('posts').get().subscribe(
+      (snapshot) => {
+        const allPosts = snapshot.docs.map(doc => {
+          const data = doc.data() as any;
+          let createdAt = null;
+          
+          try {
+            createdAt = this.getDateFromTimestamp(data.createdAt);
+            if (createdAt && isNaN(createdAt.getTime())) {
+              console.warn('Invalid date from post record:', data.createdAt);
+              createdAt = null;
+            }
+          } catch (error) {
+            console.error('Error parsing post createdAt date:', error, data.createdAt);
+          }
+          
+          return {
+            id: doc.id,
+            title: data.title || 'Untitled',
+            category: data.category || 'Uncategorized',
+            views: data.views || 0,
+            likes: data.likes || 0,
+            comments: data.comments || 0,
+            createdAt,
+            createdBy: data.createdBy || 'Unknown'
+          };
+        });
+        
+        // Filter posts for the specific time range
+        const filteredPosts = allPosts.filter(post => {
+          if (!post.createdAt) {
+            return false;
+          }
+          
+          try {
+            if (isNaN(post.createdAt.getTime())) {
+              return false;
+            }
+            
+            // For month/year view, check if post was created in that month/year
+            if (this.timeRange === 'month' || this.timeRange === 'year') {
+              return post.createdAt.getMonth() === startDate.getMonth() && 
+                     post.createdAt.getFullYear() === startDate.getFullYear();
+            } else {
+              // For other views, check if within exact range
+              return post.createdAt >= startDate && post.createdAt <= endDate;
+            }
+          } catch (error) {
+            console.error('Error comparing post date:', error, post);
+            return false;
+          }
+        });
+        
+        console.log('Posts filtering results:', {
+          totalPosts: allPosts.length,
+          filteredPosts: filteredPosts.length,
+          filteredPostIds: filteredPosts.map(p => p.id)
+        });
+        
+        if (filteredPosts.length === 0) {
+          // Customize the message based on timeRange
+          let periodMessage = '';
+          if (this.timeRange === 'day') {
+            periodMessage = `at ${this.formatTimeOnly(startDate)}`;
+          } else if (this.timeRange === 'week') {
+            periodMessage = `on ${this.formatDate(startDate)}`;
+          } else if (this.timeRange === 'month' || this.timeRange === 'year') {
+            periodMessage = `in ${this.formatMonthYear(startDate)}`;
+          } else {
+            periodMessage = `in ${startDate.getFullYear()}`;
+          }
+          
+          this.toastr.info(`No posts created ${periodMessage}`);
+        } else {
+          // Prepare title and heading based on timeRange
+          let titleFormat = '';
+          let periodDescription = '';
+          
+          if (this.timeRange === 'day') {
+            titleFormat = this.formatTimeOnly(startDate);
+            periodDescription = `at ${titleFormat}`;
+          } else if (this.timeRange === 'week') {
+            titleFormat = this.formatDate(startDate);
+            periodDescription = `on ${titleFormat}`;
+          } else if (this.timeRange === 'month' || this.timeRange === 'year') {
+            titleFormat = this.formatMonthYear(startDate);
+            periodDescription = `in ${titleFormat}`;
+          } else {
+            titleFormat = startDate.getFullYear().toString();
+            periodDescription = `in ${titleFormat}`;
+          }
+          
+          // Show posts in modal
+          const postsList = filteredPosts.map(post => 
+            `<tr>
+              <td>${post.title}</td>
+              <td>${this.getCategoryName(post.category)}</td>
+              <td>${post.views}</td>
+              <td>${post.likes}</td>
+              <td>${post.comments}</td>
+              <td>
+                <a href="/${this.createPermalink(post.title)}-${post.id}" target="_blank" class="btn btn-sm btn-outline-primary">
+                  <i class="fas fa-eye"></i> View
+                </a>
+              </td>
+            </tr>`
+          ).join('');
+          
+          const modalContent = `
+            <div class="table-responsive">
+              <h6 class="mb-3">Posts created ${periodDescription} (${filteredPosts.length})</h6>
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Views</th>
+                    <th>Likes</th>
+                    <th>Comments</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${postsList}
+                </tbody>
+              </table>
+            </div>
+          `;
+          
+          // Use SweetAlert2 to show the modal
+          Swal.fire({
+            title: `Posts - ${titleFormat}`,
+            html: modalContent,
+            width: '800px',
+            showCloseButton: true,
+            showConfirmButton: false
+          });
+        }
+        
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+      (error) => {
+        console.error('Error fetching posts by date:', error);
+        this.toastr.error('Failed to fetch posts');
+        this.loading = false;
+        this.cdr.markForCheck();
+      }
+    );
+  }
+
+  // View posts by category
+  viewPostsByCategory(categoryName: string): void {
+    if (!this.isAdmin) {
+      this.toastr.error('You do not have permission to view post details');
+      return;
+    }
+    
+    this.loading = true;
+    this.cdr.markForCheck();
+    
+    // Fetch all posts
+    this.firestore.collection('posts').get().subscribe(
+      (snapshot) => {
+        const allPosts = snapshot.docs.map(doc => {
+          const data = doc.data() as any;
+          const createdAt = this.getDateFromTimestamp(data.createdAt);
+          return {
+            id: doc.id,
+            title: data.title || 'Untitled',
+            category: data.category || 'Uncategorized',
+            views: data.views || 0,
+            likes: data.likes || 0,
+            comments: data.comments || 0,
+            createdAt,
+            createdBy: data.createdBy || 'Unknown'
+          };
+        });
+        
+        // Filter posts by category
+        const filteredPosts = allPosts.filter(post => {
+          const postCategoryName = this.getCategoryName(post.category);
+          return postCategoryName === categoryName;
+        });
+        
+        console.log('Category posts filtering:', {
+          categoryName,
+          totalPosts: allPosts.length,
+          filteredPosts: filteredPosts.length
+        });
+        
+        if (filteredPosts.length === 0) {
+          this.toastr.info(`No posts found in category: ${categoryName}`);
+          this.loading = false;
+          this.cdr.markForCheck();
+          return;
+        }
+        
+        // Create posts table
+        const postsList = filteredPosts.map(post => 
+          `<tr>
+            <td>${post.title}</td>
+            <td>${post.views}</td>
+            <td>${post.likes}</td>
+            <td>${post.comments}</td>
+            <td>${this.getDateFromTimestamp(post.createdAt)?.toLocaleDateString() || 'N/A'}</td>
+            <td>
+              <a href="/${this.createPermalink(post.title)}-${post.id}" target="_blank" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-eye"></i> View
+              </a>
+            </td>
+          </tr>`
+        ).join('');
+        
+        const modalContent = `
+          <div class="table-responsive">
+            <h6 class="mb-3">${filteredPosts.length} posts in "${categoryName}" category</h6>
+            <table class="table table-bordered table-hover">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Views</th>
+                  <th>Likes</th>
+                  <th>Comments</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${postsList}
+              </tbody>
+            </table>
+          </div>
+        `;
+        
+        // Use SweetAlert2 to show the modal
+        Swal.fire({
+          title: `${categoryName} Posts`,
+          html: modalContent,
+          width: '900px',
+          showCloseButton: true,
+          showConfirmButton: false
+        });
+        
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+      (error) => {
+        console.error('Error fetching posts for category:', error);
+        this.toastr.error('Failed to fetch posts for category');
+        this.loading = false;
+        this.cdr.markForCheck();
+      }
+    );
+  }
+
+  // Helper method to format just time portion
+  formatTimeOnly(date: Date): string {
+    if (!date) return 'N/A';
+    
+    try {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (error) {
+      return 'Invalid Time';
+    }
+  }
+  
+  // Helper method to format month and year
+  formatMonthYear(date: Date): string {
+    if (!date) return 'N/A';
+    
+    try {
+      return date.toLocaleDateString([], { month: 'long', year: 'numeric' });
+    } catch (error) {
+      return 'Invalid Date';
+    }
   }
 } 

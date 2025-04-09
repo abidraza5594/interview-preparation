@@ -209,7 +209,7 @@
                   <tbody>
                     <tr *ngFor="let blog of blogs.slice(0, 5)">
                       <td>{{ blog.title }}</td>
-                      <td>{{ blog.category }}</td>
+                      <td>{{ blog?.category?.Category }}</td>
                       <td>{{ blog.createdAt?.toDate() | date:'short' }}</td>
                       <td>
                         <button class="btn btn-sm btn-outline-primary me-1" (click)="openBlogModal(blog)">
@@ -246,7 +246,7 @@
                       <td>{{ question.title }}</td>
                       <td>{{ question.category }}</td>
                       <td>
-                        <span class="badge" [ngClass]="{
+                        <span style="color: black;" class="badge" [ngClass]="{
                           'bg-success': question.difficulty === 'easy',
                           'bg-warning': question.difficulty === 'medium',
                           'bg-danger': question.difficulty === 'hard'

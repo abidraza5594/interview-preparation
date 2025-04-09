@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { ToastrService } from 'ngx-toastr';
-import { map } from 'rxjs';
+import { map, combineLatest } from 'rxjs';
 import firebase from 'firebase/compat/app';
 
 @Injectable({
@@ -40,15 +40,36 @@ export class CommentsService {
   }
 
   loadComment(postID:any){  
-    return this.afs.collection("comment",ref=>ref.where('commentCategoryId','==',postID)).snapshotChanges().pipe( 
-      map(actions =>{
-        return actions.map(a=>{
-          const data = a.payload.doc.data();
-          const id = a.payload.doc.id;  
-          return {id,data}  
-        })
+    // Get comments from both the global comments collection and the post's comments subcollection
+    // First, get comments from the main collection
+    const mainComments$ = this.afs.collection("comment", ref => 
+      ref.where('commentCategoryId', '==', postID)
+    ).snapshotChanges().pipe(
+      map(actions => actions.map(a => {
+        const data = a.payload.doc.data();
+        const id = a.payload.doc.id;
+        return {id, data}
+      }))
+    );
+    
+    // Second, get comments from the post's subcollection
+    const postComments$ = this.afs.collection(`posts/${postID}/comments`).snapshotChanges().pipe(
+      map(actions => actions.map(a => {
+        const data = a.payload.doc.data();
+        const id = a.payload.doc.id;
+        return {id, data}
+      }))
+    );
+    
+    // Combine both observables
+    return combineLatest([mainComments$, postComments$]).pipe(
+      map(([comments1, comments2]) => {
+        console.log('Main comments:', comments1);
+        console.log('Post comments:', comments2);
+        // Return combined array of comments
+        return [...comments1, ...comments2];
       })
-    )
+    );
   }
 
   saveContactUS(commentData:any){

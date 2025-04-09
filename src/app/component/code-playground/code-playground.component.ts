@@ -369,9 +369,9 @@ const isValidLanguage = (lang: string): lang is Language => {
                   <option value="typescript">TypeScript</option>
                   <option value="python">Python</option>
                 </select>
-                <button class="btn btn-outline-secondary me-2" (click)="loadTemplate()">
+                <!-- <button class="btn btn-outline-secondary me-2" (click)="loadTemplate()">
                   <span class="me-1">📄</span> Reset to Template
-                </button>
+                </button> -->
               </div>
               <div>
                 <button class="btn btn-outline-primary me-2" (click)="formatCode()">

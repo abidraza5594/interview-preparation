@@ -1,4 +1,5 @@
 /* styles.css */
+@import './styles/custom.css';
 
 /* Bootstrap */
 @import url('https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css');
@@ -986,8 +987,6 @@ body.dark-mode footer.py-5.bg-dark {
 }
 
 /* Keep the rest of the existing styles */
-
-@import './styles/custom.css';
 
 /* Code Editor Styles */
 .code-editor {

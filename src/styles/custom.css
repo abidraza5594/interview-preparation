@@ -76,7 +76,7 @@ body.dark-mode .mini-header-left .theme-match-marquee .marquee-separator {
   position: relative;
   overflow: hidden;
   box-shadow: 0 8px 20px rgba(32, 54, 86, 0.3);
-  max-height: 350px !important;
+  max-height: 608px !important; /* Increased from 350px to 608px */
 }
 
 .featured-post-lg .thumb::after {
@@ -94,7 +94,7 @@ body.dark-mode .mini-header-left .theme-match-marquee .marquee-separator {
 .featured-post-lg .thumb .inner {
   background-size: cover;
   background-position: center center;
-  height: 350px !important; /* Reduced from 533px */
+  height: 608px !important; /* Increased from 350px to 608px to match container */
   transition: all 0.3s ease-in-out;
   transform: scale(1);
 }
@@ -122,6 +122,6 @@ body.dark-mode .mini-header-left .theme-match-marquee .marquee-separator {
 /* 4. Loading placeholder to match new size */
 .loading-placeholder .thumb {
   background-color: #ddd;
-  height: 350px !important; 
+  height: 608px !important; /* Increased from 350px to 608px to match container */
   margin-top: 10px;
 } 

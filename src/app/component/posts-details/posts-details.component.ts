@@ -786,9 +786,10 @@ export class PostsDetailsComponent implements OnInit, AfterViewChecked, AfterVie
   // Load comments for post
   loadCommentsForPost(postId: string): void {
     this.commentService.loadComment(postId).subscribe((val: Array<any>) => {
+      console.log('Loaded comments for post:', val);
       this.commentArray = val;
       this.updateLikeStatus();
-      this.changeDetectorRef.markForCheck();
+      this.changeDetectorRef.detectChanges(); // Force change detection
     });
   }
 

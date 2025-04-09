@@ -9,11 +9,16 @@ interface Post {
   id?: string;
   title: string;
   content: string;
-  category: string;
+  category: {
+    Category?: string;
+    CategoryId?: string;
+    [key: string]: any;
+  } | string;
   createdAt: any;
   createdBy: string;
   likes: number;
   views: number;
+  Category:string
 }
 
 interface Question {
@@ -90,7 +95,7 @@ export class DashboardComponent implements OnInit {
       ref.orderBy('createdAt', 'desc').limit(5)
     ).snapshotChanges().pipe(
       map(actions => actions.map(a => {
-        const data = a.payload.doc.data() as Post;
+        const data = a.payload.doc.data() as any;
         const id = a.payload.doc.id;
         return { id, ...data };
       }))
@@ -146,18 +151,19 @@ export class DashboardComponent implements OnInit {
         // Calculate categories from posts
         const categoryCounts: { [key: string]: number } = {};
         recentPosts.concat(popularPosts).forEach(post => {
-          if (post.category) {
+          if (Object.keys(post.category).length > 0) {
             // Handle different types of category data
-            let categoryName = post.category;
+            let categoryName = post?.category?.Category;
+            console.log(categoryName,'categoryName')
             
             // If category is an object with id and name properties
-            if (typeof post.category === 'object' && post.category !== null) {
+            if (typeof post?.category?.Category === 'object' && post?.category?.Category !== null) {
               // Try to get the name from the category object
               const categoryObj = post.category as any;
-              if (categoryObj.name) {
-                categoryName = categoryObj.name;
-              } else if (categoryObj.id) {
-                categoryName = categoryObj.id;
+              if (categoryObj.Category) {
+                categoryName = categoryObj.Category;
+              } else if (categoryObj.CategoryId) {
+                categoryName = categoryObj.CategoryId;
               } else if (categoryObj.toString) {
                 categoryName = categoryObj.toString();
               }

@@ -12,6 +12,7 @@ import { AdminGuard } from './services/admin.guard';
 // New Components
 import { DashboardComponent } from './component/dashboard/dashboard.component';
 import { PracticeComponent } from './component/practice/practice.component';
+import { PracticeDetailsComponent } from './component/practice-details/practice-details.component';
 import { UserManagementComponent } from './component/user-management/user-management.component';
 import { AnalyticsComponent } from './component/analytics/analytics.component';
 import { ProfileComponent } from './component/profile/profile.component';
@@ -19,10 +20,11 @@ import { SettingsComponent } from './component/settings/settings.component';
 import { CreatePostComponent } from './component/create-post/create-post.component';
 import { CreatePracticeComponent } from './component/create-practice/create-practice.component';
 import { LeaderboardComponent } from './component/leaderboard/leaderboard.component';
-import { PracticeDetailsComponent } from './component/practice-details/practice-details.component';
 import { CodePlaygroundComponent } from './component/code-playground/code-playground.component';
 import { AdminFixerComponent } from './component/user-management/admin-fixer.component';
 import { AdminCheckComponent } from './component/user-management/admin-check.component';
+import { MockInterviewComponent } from './component/mock-interview/mock-interview.component';
+import { CategoryPostsComponent } from './component/category-posts/category-posts.component';
 
 const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -34,7 +36,7 @@ const routes: Routes = [
   // New Routes - These must come BEFORE the wildcard route
   { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
   { path: 'practice', component: PracticeComponent },
-  { path: 'practice/:id', loadComponent: () => import('./component/practice-details/practice-details.component').then(m => m.PracticeDetailsComponent) },
+  { path: 'practice/:id', component: PracticeDetailsComponent },
   { path: 'playground', component: CodePlaygroundComponent },
   { path: 'user-management', component: UserManagementComponent, canActivate: [AuthGuard, AdminGuard] },
   { path: 'analytics', component: AnalyticsComponent, canActivate: [AuthGuard, AdminGuard] },
@@ -43,12 +45,12 @@ const routes: Routes = [
   { path: 'create-post', component: CreatePostComponent, canActivate: [AuthGuard, AdminGuard] },
   { path: 'create-practice', component: CreatePracticeComponent, canActivate: [AuthGuard, AdminGuard] },
   { path: 'leaderboard', component: LeaderboardComponent },
-  { path: 'mock-interview', loadComponent: () => import('./component/mock-interview/mock-interview.component').then(m => m.MockInterviewComponent) },
+  { path: 'mock-interview', component: MockInterviewComponent },
   { path: 'admin-fix', component: AdminFixerComponent, canActivate: [AuthGuard] },
   { path: 'admin-check', component: AdminCheckComponent },
   
   // Category route
-  { path: 'category/:id', loadComponent: () => import('./component/category-posts/category-posts.component').then(m => m.CategoryPostsComponent) },
+  { path: 'category/:id', component: CategoryPostsComponent },
   
   // Wildcard route should be LAST
   { path: ':id', component: PostsDetailsComponent},

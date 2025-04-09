@@ -43,7 +43,10 @@ import { CreatePracticeComponent } from './component/create-practice/create-prac
 import { GoogleAdComponent } from './component/google-ad/google-ad.component';
 import { MockInterviewModule } from './component/mock-interview/mock-interview/mock-interview.module';
 import { PracticeComponent } from './component/practice/practice.component';
+import { PracticeDetailsComponent } from './component/practice-details/practice-details.component';
 import { CodePlaygroundComponent } from './component/code-playground/code-playground.component';
+import { MockInterviewComponent } from './component/mock-interview/mock-interview.component';
+import { CategoryPostsComponent } from './component/category-posts/category-posts.component';
 
 // Import Quill modules
 import { QuillModule } from 'ngx-quill';
@@ -189,7 +192,10 @@ const enviroment={
     CreatePostComponent,
     CreatePracticeComponent,
     PracticeComponent,
-    CodePlaygroundComponent
+    PracticeDetailsComponent,
+    CodePlaygroundComponent,
+    MockInterviewComponent,
+    CategoryPostsComponent
   ],
   providers: [
     DatePipe // Add DatePipe provider to fix date pipe issues

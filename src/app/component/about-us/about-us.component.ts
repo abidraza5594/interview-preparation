@@ -5,7 +5,7 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-about-us',
   templateUrl: './about-us.component.html',
-  styleUrl: './about-us.component.css'
+  styleUrls: ['./about-us.component.css']
 })
 export class AboutUsComponent implements OnInit, OnDestroy {
   isDarkMode = false;

@@ -210,17 +210,19 @@ export class ProfileComponent implements OnInit {
           const id = a.payload.doc.id;
           return { id, ...data };
         });
+        console.log(this.blogs,'>?>?>?>?>?')
       });
   }
   
   loadPracticeQuestions(): void {
-    this.firestore.collection('questions', ref => ref.orderBy('createdAt', 'desc')).snapshotChanges()
+    this.firestore.collection('practice_problems', ref => ref.orderBy('createdAt', 'desc')).snapshotChanges()
       .subscribe(actions => {
         this.practiceQuestions = actions.map(a => {
           const data = a.payload.doc.data() as any;
           const id = a.payload.doc.id;
           return { id, ...data };
         });
+        console.log(this.practiceQuestions,'practiceQuestions')
       });
   }
   

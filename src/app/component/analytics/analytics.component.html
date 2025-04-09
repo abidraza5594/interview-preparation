@@ -131,7 +131,13 @@
               </div>
               <div *ngFor="let category of data.categoryData" class="mb-3">
                 <div class="d-flex justify-content-between mb-1">
-                  <span>{{ category.name }}</span>
+                  <span>
+                    <a href="javascript:void(0)" 
+                       class="text-decoration-none fw-medium" 
+                       (click)="viewPostsByCategory(category.name)">
+                      {{ category.name }}
+                    </a>
+                  </span>
                   <span>{{ category.count }} posts</span>
                 </div>
                 <div class="progress">
@@ -173,8 +179,24 @@
                 <tbody>
                   <tr *ngFor="let activity of data.userActivity">
                     <td>{{ formatDate(activity.date) }}</td>
-                    <td>{{ activity.newUsers }}</td>
-                    <td>{{ activity.newPosts }}</td>
+                    <td>
+                      <a *ngIf="activity.newUsers > 0" 
+                         href="javascript:void(0)" 
+                         class="btn btn-sm btn-link text-primary p-0" 
+                         (click)="viewUsersByDate(activity.date)">
+                        {{ activity.newUsers }}
+                      </a>
+                      <span *ngIf="activity.newUsers === 0">0</span>
+                    </td>
+                    <td>
+                      <a *ngIf="activity.newPosts > 0" 
+                         href="javascript:void(0)" 
+                         class="btn btn-sm btn-link text-primary p-0"
+                         (click)="viewPostsByDate(activity.date)">
+                        {{ activity.newPosts }}
+                      </a>
+                      <span *ngIf="activity.newPosts === 0">0</span>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -397,39 +419,6 @@
               </div>
             </div>
             
-            <!-- Views over time -->
-            <div class="card mb-4">
-              <div class="card-header">
-                <h5 class="mb-0">Views Over Time</h5>
-              </div>
-              <div class="card-body">
-                <div class="table-responsive">
-                  <table class="table table-sm">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Views</th>
-                        <th>Trend</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let day of postViewsHistory; let i = index">
-                        <td>{{ day.date | date:'mediumDate' }}</td>
-                        <td>{{ day.views }}</td>
-                        <td>
-                          <div class="progress" style="height: 6px; width: 100px;">
-                            <div class="progress-bar bg-info" 
-                                 [style.width.%]="(day.views / (getMaxDailyViews() || 1)) * 100">
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            
             <!-- Recent comments -->
             <div class="card mb-4">
               <div class="card-header">
@@ -439,21 +428,22 @@
                 <div *ngIf="postComments.length === 0" class="text-center py-4">
                   <p class="text-muted">No comments on this post yet.</p>
                 </div>
-                <div *ngFor="let comment of postComments" class="mb-3 p-3 border-bottom">
+                <div *ngFor="let comment of postComments" class="mb-3 p-3 border-bottom bg-light rounded">
                   <div class="d-flex justify-content-between align-items-center mb-2">
                     <div class="d-flex align-items-center">
-                      <div class="avatar-placeholder me-2" *ngIf="!comment.photoURL">
-                        {{ comment.displayName?.charAt(0) || 'A' }}
+                      <div class="avatar-placeholder me-2 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                           style="width: 40px; height: 40px;" *ngIf="!comment.photoURL">
+                        {{ comment.displayName?.charAt(0) || comment.userName?.charAt(0) || 'A' }}
                       </div>
                       <img *ngIf="comment.photoURL" [src]="comment.photoURL" 
-                           class="rounded-circle me-2" width="32" height="32" alt="User avatar">
+                           class="rounded-circle me-2" width="40" height="40" alt="User avatar">
                       <div>
-                        <div class="fw-bold">{{ comment.displayName || 'Anonymous' }}</div>
+                        <div class="fw-bold">{{ comment.displayName || comment.userName || 'Anonymous' }}</div>
                         <small class="text-muted">{{ getDateFromTimestamp(comment.createdAt) | date:'medium' }}</small>
                       </div>
                     </div>
                   </div>
-                  <p class="mb-0">{{ comment.content }}</p>
+                  <p class="mb-0 p-2">{{ comment.content || comment.comment }}</p>
                 </div>
               </div>
             </div>
