@@ -167,6 +167,7 @@ export class InterviewSetupComponent implements OnInit, OnDestroy {
   }
   
   selectQuestionCount(count: number): void {
+    this.selectedQuestionCount = count;
     // Simulate the user saying this count
     this.mockInterviewService.processManualInput(count.toString());
     
