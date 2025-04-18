@@ -65,10 +65,10 @@
                                     <i class="fas fa-user-circle me-2"></i>Portfolio
                                 </a>
                             </li>
-                            <li *ngIf="serverUrl?.length" class="nav-item">
-                                <a [href]="serverUrl" class="dropdown-item" target="_blank">
+                            <li  class="nav-item">
+                                <a [href]="'http://192.168.29.27:8000'" class="dropdown-item" target="_blank">
                                     <i class="fas fa-robot me-2"></i>Use AI in Interview
-                                </a>
+                                </a>                                
                             </li>
                             <li *ngIf="isShowLogOut && isAdmin" class="nav-item">
                                 <a routerLink="/analytics" class="dropdown-item">

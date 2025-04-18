@@ -42,20 +42,31 @@
   'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
   })(window,document,'script','dataLayer','GTM-5GPT7M33');</script>
   <!-- End Google Tag Manager -->
-  
-  <!-- Monaco Editor Loader -->
-  <script src="assets/monaco/min/vs/loader.js"></script>
+
+  <!-- Monaco Editor Loader - Deferred to avoid blocking page load -->
   <script>
-    // Load Monaco
-    window.require = { paths: { 'vs': 'assets/monaco/min/vs' } };
-    // Use a different approach to load Monaco that avoids AMD conflicts with Bootstrap
-    window.onload = function() {
-      if (window.require) {
+    // Define a function to load Monaco
+    function loadMonaco() {
+      // Create and append the loader script
+      var loaderScript = document.createElement('script');
+      loaderScript.src = 'assets/monaco/min/vs/loader.js';
+      loaderScript.onload = function() {
+        // Configure AMD loader for Monaco
+        window.require = { paths: { 'vs': 'assets/monaco/min/vs' } };
+        // Load the editor
         window.require(['vs/editor/editor.main'], function() {
           console.log('Monaco editor loaded successfully');
+          // Make monaco available globally
+          if (window.monaco) {
+            window.monacoInstance = window.monaco;
+          }
         });
-      }
-    };
+      };
+      document.body.appendChild(loaderScript);
+    }
+
+    // Load Monaco after page is fully loaded
+    window.addEventListener('load', loadMonaco);
   </script>
 </head>
   <body>

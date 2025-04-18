@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "buildCommand": "node vercel-build.js",
+  "outputDirectory": "dist/interview",
+  "installCommand": "npm install",
+  "framework": "angular",
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ],
+  "build": {
+    "env": {
+      "NPM_FLAGS": "--legacy-peer-deps"
+    }
+  }
+}

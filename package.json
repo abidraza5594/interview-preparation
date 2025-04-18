@@ -5,6 +5,8 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:vercel": "ng build --configuration production && npm run copy-monaco",
+    "copy-monaco": "mkdir -p dist/interview/assets/monaco && cp -r node_modules/monaco-editor/min dist/interview/assets/monaco/",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "analytics:optimize": "ng build --configuration production --optimization=true --aot"
@@ -32,6 +34,7 @@
     "express": "^4.18.2",
     "firebase": "^10.7.1",
     "highlight.js": "^11.11.1",
+    "monaco-editor": "^0.45.0",
     "ngx-monaco-editor-v2": "^19.0.2",
     "ngx-quill": "^21.0.0",
     "ngx-toastr": "^18.0.0",
