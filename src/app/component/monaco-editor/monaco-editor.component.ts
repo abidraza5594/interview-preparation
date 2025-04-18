@@ -59,27 +59,38 @@ export class MonacoEditorComponent implements OnInit, OnDestroy {
           return;
         }
 
-        // Create editor
-        this.editor = monaco.editor.create(this.editorContainer.nativeElement, {
-          value: this.value,
-          language: this.language,
-          theme: 'vs-dark',
-          ...this.options
-        });
-
-        // Set up change event
-        this.editor.onDidChangeModelContent(() => {
-          const value = this.editor.getValue();
-          this.ngZone.run(() => {
-            this.codeChange.emit(value);
+        try {
+          // Create editor
+          this.editor = monaco.editor.create(this.editorContainer.nativeElement, {
+            value: this.value,
+            language: this.language,
+            theme: 'vs-dark',
+            automaticLayout: true,
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            fontSize: 14,
+            ...this.options
           });
-        });
 
-        // Notify that editor is mounted
-        this.ngZone.run(() => {
-          this.editorMounted.emit(this.editor);
-        });
+          // Set up change event
+          this.editor.onDidChangeModelContent(() => {
+            const value = this.editor.getValue();
+            this.ngZone.run(() => {
+              this.codeChange.emit(value);
+            });
+          });
+
+          // Notify that editor is mounted
+          this.ngZone.run(() => {
+            console.log('Monaco editor mounted successfully');
+            this.editorMounted.emit(this.editor);
+          });
+        } catch (error) {
+          console.error('Error initializing Monaco editor:', error);
+        }
       });
+    }).catch(error => {
+      console.error('Failed to load Monaco editor:', error);
     });
   }
 

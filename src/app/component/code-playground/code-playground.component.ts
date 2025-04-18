@@ -204,23 +204,25 @@ export class CodePlaygroundComponent implements OnInit, OnDestroy {
     this.editor = editor;
     console.log('Editor mounted successfully');
 
-    // Configure editor for smooth typing and to prevent cursor jumping
-    editor.updateOptions({
-      scrollBeyondLastLine: false,
-      fixedOverflowWidgets: true,
-      automaticLayout: true,
-      revealHorizontalRightPadding: 30,
-      scrollbar: {
-        alwaysConsumeMouseWheel: false
-      },
-      renderWhitespace: 'none',
-      renderControlCharacters: false
-    });
+    if (editor) {
+      // Configure editor for smooth typing and to prevent cursor jumping
+      editor.updateOptions({
+        scrollBeyondLastLine: false,
+        fixedOverflowWidgets: true,
+        automaticLayout: true,
+        revealHorizontalRightPadding: 30,
+        scrollbar: {
+          alwaysConsumeMouseWheel: false
+        },
+        renderWhitespace: 'none',
+        renderControlCharacters: false
+      });
 
-    // Initial load of template only once after editor is ready
-    setTimeout(() => {
-      this.loadTemplate();
-    }, 100);
+      // Initial load of template only once after editor is ready
+      setTimeout(() => {
+        this.loadTemplate();
+      }, 100);
+    }
   }
 
   @HostListener('document:keydown', ['$event'])
