@@ -294,7 +294,7 @@ export class AnalyticsComponent implements OnInit {
       this.getDateFromTimestamp(post.createdAt)?.toISOString() || '',
       post.views,
       post.likes,
-      post.comments
+      post.comments 
     ]);
     
     // Combine header and rows
