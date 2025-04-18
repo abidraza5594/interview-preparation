@@ -15,7 +15,7 @@ import { NavbarComponent } from './component/navbar/navbar.component';
 import { AboutUsComponent } from './component/about-us/about-us.component';
 import { PostsDetailsComponent } from './component/posts-details/posts-details.component';
 import { PrivacyPolicyComponent } from './component/privacy-policy/privacy-policy.component';
-// firese base 
+// firese base
 import {AngularFireModule,} from "@angular/fire/compat"
 import { AngularFirestoreModule } from '@angular/fire/compat/firestore';
 import { AngularFireAuthModule } from '@angular/fire/compat/auth';
@@ -79,8 +79,7 @@ hljs.registerLanguage('csharp', csharp);
 hljs.registerLanguage('php', php);
 hljs.registerLanguage('sql', sql);
 
-// Correctly import monaco
-import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
+// Import monaco directly
 import * as monaco from 'monaco-editor';
 
 // Extend window interface to allow monaco assignment
@@ -89,21 +88,6 @@ declare global {
     monaco: any;
   }
 }
-
-const monacoConfig = {
-  baseUrl: 'assets/monaco', // Use correct path
-  defaultOptions: { 
-    scrollBeyondLastLine: false,
-    minimap: { enabled: false },
-    theme: 'vs-dark',
-    automaticLayout: true,
-    fontSize: 14
-  },
-  onMonacoLoad: () => {
-    console.log('Monaco Editor loaded successfully');
-    window.monaco = monaco;
-  }
-};
 
 const enviroment={
   firebase: {
@@ -146,23 +130,22 @@ const enviroment={
     HttpClientModule,
     // Mock Interview Module
     MockInterviewModule,
-    // fire base 
+    // fire base
     AngularFireModule.initializeApp(enviroment.firebase),
     AngularFirestoreModule,
     AngularFireAuthModule,
     AngularFireStorageModule,
     BrowserAnimationsModule,
     ToastrModule.forRoot(),
-    
+
     // Material modules
     MatAutocompleteModule,
     MatInputModule,
     MatFormFieldModule,
     MatOptionModule,
-    
-    // Monaco editor
-    MonacoEditorModule.forRoot(monacoConfig),
-    
+
+    // Monaco editor is now imported directly
+
     // Quill rich text editor
     QuillModule.forRoot({
       modules: {
@@ -184,7 +167,7 @@ const enviroment={
         ]
       }
     }),
-    
+
     // Standalone components
     GoogleAdComponent,
     ProfileComponent,

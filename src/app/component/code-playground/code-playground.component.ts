@@ -1,14 +1,12 @@
-import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, NgZone, CUSTOM_ELEMENTS_SCHEMA, ViewChild, ElementRef, OnDestroy, Input, Output, EventEmitter, AfterViewInit, HostListener } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, NgZone, CUSTOM_ELEMENTS_SCHEMA, ViewChild, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MonacoEditorComponent } from '../monaco-editor/monaco-editor.component';
 
-// Completely fix Monaco worker errors - this is a definitive solution
-// Must be defined before importing Monaco
+// Configure Monaco environment
 if (typeof window !== 'undefined') {
   (window as any).MonacoEnvironment = {
-    // Fix for "Cannot read properties of undefined (reading 'toUrl')" error
     getWorker: function() {
-      // Create our own noop worker that does nothing
       return new Worker(
         URL.createObjectURL(
           new Blob(
@@ -21,26 +19,13 @@ if (typeof window !== 'undefined') {
   };
 }
 
-// Import Monaco after environment setup
-import * as monaco from 'monaco-editor';
-
-// Don't try to configure TypeScript features since we're using a noop worker
-// This would cause additional errors
-// try {
-//   if (monaco.languages.typescript) {
-//     monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-//       noLib: true,
-//       allowNonTsExtensions: true
-//     });
-//     monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-//       noLib: true,
-//       allowNonTsExtensions: true
-//     });
-//     console.log('Monaco TypeScript configuration completed');
-//   }
-// } catch (e) {
-//   console.warn('Could not configure Monaco TypeScript options', e);
-// }
+// Import monaco dynamically to avoid errors
+let monaco: any;
+if (typeof window !== 'undefined') {
+  import('monaco-editor').then(m => {
+    monaco = m;
+  });
+}
 
 type Language = 'javascript' | 'typescript' | 'python';
 
@@ -54,291 +39,6 @@ interface EditorOptions {
   minimap: { enabled: boolean };
   scrollBeyondLastLine: boolean;
   fontSize: number;
-}
-
-@Component({
-  selector: 'app-monaco-editor',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div [ngStyle]="{ height: '100%', width: '100%' }">
-      <div #editorContainer style="width:100%; height:100%; min-height:500px; border:1px solid #ccc;"></div>
-    </div>
-  `
-})
-export class MonacoEditorComponent implements AfterViewInit, OnDestroy {
-  @ViewChild('editorContainer', { static: true }) editorContainer!: ElementRef;
-  private _editor: monaco.editor.IStandaloneCodeEditor | null = null;
-  private _language = 'javascript';
-  private _value = '';
-  private _options: EditorOptions = {
-    minimap: { enabled: false },
-    scrollBeyondLastLine: false,
-    fontSize: 14
-  };
-  
-  constructor(private ngZone: NgZone) {}
-  
-  ngAfterViewInit() {
-    // Delay initialization slightly to ensure DOM is ready
-    setTimeout(() => {
-      this.initEditor();
-    }, 100);
-  }
-  
-  ngOnDestroy() {
-    if (this._editor) {
-      this._editor.dispose();
-    }
-  }
-  
-  private initEditor() {
-    this.ngZone.runOutsideAngular(() => {
-      if (!this.editorContainer || !this.editorContainer.nativeElement) {
-        console.error('Editor container not found');
-        return;
-      }
-      
-      try {
-        // Check if monaco is available
-        if (!monaco || !monaco.editor) {
-          console.error('Monaco editor not loaded correctly');
-          return;
-        }
-        
-        // Create model once
-        const model = monaco.editor.createModel(
-          this._value || '// Type your code here',
-          this._language
-        );
-        
-        // Create editor with basic configuration
-        this._editor = monaco.editor.create(this.editorContainer.nativeElement, {
-          model: model, // Use the created model
-          theme: 'vs-dark',
-          automaticLayout: true,
-          minimap: { enabled: false },
-          scrollBeyondLastLine: false,
-          fontSize: 14,
-          lineNumbers: 'on',
-          wordWrap: 'on',
-          folding: true,
-          autoClosingBrackets: 'always',
-          tabCompletion: 'on',
-          mouseWheelZoom: true,
-          quickSuggestions: true,
-          fixedOverflowWidgets: true, // Fixes suggestion widget position
-          
-          // Prevent cursor from jumping
-          revealHorizontalRightPadding: 30,
-          scrollbar: {
-            alwaysConsumeMouseWheel: false,
-            vertical: 'visible',
-            horizontal: 'visible'
-          },
-          
-          // Focus related options
-          autoIndent: 'advanced',
-          cursorBlinking: 'smooth',
-          cursorSmoothCaretAnimation: 'on',
-          
-          // Fix backspace behavior
-          useTabStops: true,
-          lineDecorationsWidth: 0,
-          renderLineHighlight: 'all',
-          guides: {
-            indentation: true
-          },
-          renderFinalNewline: 'on',
-          emptySelectionClipboard: true,
-          autoClosingDelete: 'always',
-          links: true
-        });
-        
-        if (this._editor) {
-          // Important: Handle editor content changes
-          this._editor.onDidChangeModelContent(() => {
-            if (this._editor) {
-              // Capture value changes but don't trigger further operations
-              this._value = this._editor.getValue();
-              this.ngZone.run(() => {
-                this.codeChange.emit(this._value);
-              });
-            }
-          });
-          
-          // Handle keyboard events directly for better control
-          const editorDomNode = this._editor.getDomNode();
-          if (editorDomNode) {
-            editorDomNode.addEventListener('keydown', (e) => {
-              // Prevent event bubbling
-              e.stopPropagation();
-              
-              // Handle select all (Ctrl+A) followed by Backspace/Delete
-              if ((e.key === 'Backspace' || e.key === 'Delete') && this._editor) {
-                const selection = this._editor.getSelection();
-                const model = this._editor.getModel();
-                
-                if (selection && model) {
-                  // Check if entire document is selected (or almost entirely selected)
-                  const lineCount = model.getLineCount();
-                  const lastLineLength = model.getLineLength(lineCount);
-                  
-                  if (selection.startLineNumber === 1 && selection.startColumn === 1 &&
-                      (selection.endLineNumber === lineCount || selection.endLineNumber === lineCount - 1) &&
-                      (selection.endColumn >= lastLineLength)) {
-                    
-                    // This is a "select all" or almost all selection, handle it ourselves
-                    e.preventDefault();
-                    
-                    // Replace entire content with empty string
-                    model.setValue('');
-                    
-                    // Set cursor at beginning
-                    this._editor.setPosition({ lineNumber: 1, column: 1 });
-                    
-                    return;
-                  }
-                }
-                
-                // Special handling for backspace key at beginning of line
-                if (e.key === 'Backspace') {
-                  const position = this._editor.getPosition();
-                  
-                  // Only handle if no selection and we're at beginning of line
-                  if (position && model && 
-                      (selection === null || selection.isEmpty()) && 
-                      position.column === 1 && position.lineNumber > 1) {
-                    // Don't let Monaco's default handler run
-                    e.preventDefault();
-                    
-                    // Get the previous line content
-                    const previousLineNumber = position.lineNumber - 1;
-                    const previousLine = model.getLineContent(previousLineNumber);
-                    const previousLineLength = previousLine.length;
-                    
-                    // Create an edit operation to delete the line break
-                    this._editor.executeEdits('backspace-handler', [
-                      {
-                        range: new monaco.Range(
-                          previousLineNumber, previousLineLength + 1,
-                          position.lineNumber, 1
-                        ),
-                        text: ''
-                      }
-                    ]);
-                    
-                    // Move cursor to end of merged line
-                    this._editor.setPosition({
-                      lineNumber: previousLineNumber,
-                      column: previousLineLength + 1
-                    });
-                  }
-                }
-              }
-              
-              // Handle Ctrl+A to ensure proper selection
-              if (e.key === 'a' && (e.ctrlKey || e.metaKey) && this._editor) {
-                e.preventDefault();
-                const model = this._editor.getModel();
-                if (model) {
-                  const lineCount = model.getLineCount();
-                  const lastLineLength = model.getLineLength(lineCount);
-                  
-                  // Create a selection that covers the entire document
-                  this._editor.setSelection(new monaco.Selection(
-                    1, 1, lineCount, lastLineLength + 1
-                  ));
-                }
-              }
-            });
-          }
-          
-          this.ngZone.run(() => {
-            console.log('Monaco editor mounted successfully');
-            this.editorMounted.emit(this._editor!);
-          });
-        }
-      } catch (error) {
-        console.error('Error initializing Monaco editor:', error);
-      }
-    });
-  }
-  
-  // Focus the editor
-  focus() {
-    if (this._editor) {
-      this._editor.focus();
-    }
-  }
-  
-  // Getter and setter for editor
-  get editor(): monaco.editor.IStandaloneCodeEditor | null {
-    return this._editor;
-  }
-  
-  // Language input
-  @Input()
-  set language(value: string) {
-    this._language = value;
-    if (this._editor) {
-      const model = this._editor.getModel();
-      if (model) {
-        monaco.editor.setModelLanguage(model, value);
-      }
-    }
-  }
-  get language(): string {
-    return this._language;
-  }
-  
-  // Value input
-  @Input()
-  set value(value: string) {
-    // Only update if changed to prevent cursor jumping
-    if (this._value !== value) {
-      this._value = value;
-      if (this._editor) {
-        // Save cursor and scroll state
-        const position = this._editor.getPosition();
-        const scrollTop = this._editor.getScrollTop();
-        const scrollLeft = this._editor.getScrollLeft();
-        
-        // Update model value
-        const model = this._editor.getModel();
-        if (model) {
-          // Use model setValue instead of editor setValue
-          model.setValue(value);
-        }
-        
-        // Restore cursor and scroll state
-        if (position) {
-          this._editor.setPosition(position);
-        }
-        this._editor.setScrollTop(scrollTop);
-        this._editor.setScrollLeft(scrollLeft);
-      }
-    }
-  }
-  get value(): string {
-    return this._value;
-  }
-  
-  // Options input
-  @Input()
-  set options(options: EditorOptions) {
-    this._options = options;
-    if (this._editor) {
-      this._editor.updateOptions(options);
-    }
-  }
-  get options(): EditorOptions {
-    return this._options;
-  }
-  
-  // Output events
-  @Output() codeChange = new EventEmitter<string>();
-  @Output() editorMounted = new EventEmitter<monaco.editor.IStandaloneCodeEditor>();
 }
 
 const isValidLanguage = (lang: string): lang is Language => {
@@ -426,7 +126,7 @@ const isValidLanguage = (lang: string): lang is Language => {
     :host {
       display: block;
     }
-    
+
     .editor-container {
       height: 500px;
       overflow: hidden;
@@ -434,7 +134,7 @@ const isValidLanguage = (lang: string): lang is Language => {
       border-radius: 4px;
       position: relative;
     }
-    
+
     .output-container {
       background-color: #f8f9fa;
       border: 1px solid #dee2e6;
@@ -442,7 +142,7 @@ const isValidLanguage = (lang: string): lang is Language => {
       height: 520px;
       overflow-y: auto;
     }
-    
+
     .output-container pre {
       font-family: 'Consolas', 'Monaco', monospace;
       font-size: 14px;
@@ -456,8 +156,8 @@ const isValidLanguage = (lang: string): lang is Language => {
 })
 export class CodePlaygroundComponent implements OnInit, OnDestroy {
   @ViewChild('monacoEditor') monacoEditor!: MonacoEditorComponent;
-  
-  private editor?: monaco.editor.IStandaloneCodeEditor;
+
+  private editor?: any;
   private initialLoadComplete = false;
   private _isLoadingTemplate = false;
   code = '';
@@ -494,16 +194,16 @@ export class CodePlaygroundComponent implements OnInit, OnDestroy {
       console.log('Editor disposed');
     }
   }
-  
+
   handleEditorChange(newValue: string): void {
     this.code = newValue;
     this.cdr.markForCheck();
   }
 
-  handleEditorDidMount(editor: monaco.editor.IStandaloneCodeEditor): void {
+  handleEditorDidMount(editor: any): void {
     this.editor = editor;
     console.log('Editor mounted successfully');
-    
+
     // Configure editor for smooth typing and to prevent cursor jumping
     editor.updateOptions({
       scrollBeyondLastLine: false,
@@ -516,7 +216,7 @@ export class CodePlaygroundComponent implements OnInit, OnDestroy {
       renderWhitespace: 'none',
       renderControlCharacters: false
     });
-    
+
     // Initial load of template only once after editor is ready
     setTimeout(() => {
       this.loadTemplate();
@@ -536,20 +236,20 @@ export class CodePlaygroundComponent implements OnInit, OnDestroy {
       console.error('Editor not initialized or invalid language selected');
       return;
     }
-    
+
     try {
       // Save current cursor position and scroll position before running code
       const position = this.editor.getPosition();
       const scrollTop = this.editor.getScrollTop();
       const scrollLeft = this.editor.getScrollLeft();
-      
+
       // Get the current code from the model directly
       const model = this.editor.getModel();
       if (!model) return;
-      
+
       const code = model.getValue();
       console.log(`Running ${this.selectedLanguage} code:`, code);
-      
+
       // Simple evaluation for JavaScript/TypeScript
       if (this.selectedLanguage === 'javascript' || this.selectedLanguage === 'typescript') {
         try {
@@ -558,52 +258,52 @@ export class CodePlaygroundComponent implements OnInit, OnDestroy {
             // Capture console output
             const originalConsole = { ...console };
             let outputLines: string[] = [];
-            
+
             // Override console methods
             console.log = (...args) => {
-              const output = args.map(arg => 
+              const output = args.map(arg =>
                 typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
               ).join(' ');
               outputLines.push(output);
               originalConsole.log(...args);
             };
-            
+
             console.error = (...args) => {
-              const output = args.map(arg => 
+              const output = args.map(arg =>
                 typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
               ).join(' ');
               outputLines.push(`Error: ${output}`);
               originalConsole.error(...args);
             };
-            
+
             console.warn = (...args) => {
-              const output = args.map(arg => 
+              const output = args.map(arg =>
                 typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
               ).join(' ');
               outputLines.push(`Warning: ${output}`);
               originalConsole.warn(...args);
             };
-            
+
             console.info = (...args) => {
-              const output = args.map(arg => 
+              const output = args.map(arg =>
                 typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
               ).join(' ');
               outputLines.push(`Info: ${output}`);
               originalConsole.info(...args);
             };
-            
+
             try {
               // Execute code safely with Function constructor
               // This approach is safer than eval
               const executeCode = new Function(code);
               const result = executeCode();
-              
+
               // Restore console
               console.log = originalConsole.log;
               console.error = originalConsole.error;
               console.warn = originalConsole.warn;
               console.info = originalConsole.info;
-              
+
               // Return output and result
               return {
                 output: outputLines.join('\n'),
@@ -615,21 +315,21 @@ export class CodePlaygroundComponent implements OnInit, OnDestroy {
               console.error = originalConsole.error;
               console.warn = originalConsole.warn;
               console.info = originalConsole.info;
-              
+
               throw e;
             }
           };
-          
+
           // Run the sandbox
           const { output, result } = sandbox();
-          
+
           // Combine output with result if available
           this.output = output;
           if (result !== undefined && !output.includes(String(result))) {
             this.output += this.output ? '\n\n' : '';
             this.output += `Return value: ${typeof result === 'object' ? JSON.stringify(result, null, 2) : result}`;
           }
-          
+
           if (!this.output.trim()) {
             this.output = '// Code executed successfully with no output';
           }
@@ -640,10 +340,10 @@ export class CodePlaygroundComponent implements OnInit, OnDestroy {
       } else if (this.selectedLanguage === 'python') {
         this.output = "Python execution would require a server-side interpreter.\n\nThis is a client-side playground only. In a real implementation, we would send this code to a backend service that runs Python code securely and returns the output.";
       }
-      
+
       // Force change detection to update the UI
       this.cdr.detectChanges();
-      
+
       // Restore cursor position and scroll position after running code
       if (position) {
         this.editor.setPosition(position);
@@ -658,13 +358,13 @@ export class CodePlaygroundComponent implements OnInit, OnDestroy {
 
   formatCode(): void {
     if (!this.editor) return;
-    
+
     try {
       // Save cursor position and scroll state
       const position = this.editor.getPosition();
       const scrollTop = this.editor.getScrollTop();
       const scrollLeft = this.editor.getScrollLeft();
-      
+
       // Get the action and run it
       const action = this.editor.getAction('editor.action.formatDocument');
       if (action) {
@@ -679,20 +379,20 @@ export class CodePlaygroundComponent implements OnInit, OnDestroy {
               const newLineNumber = Math.min(position.lineNumber, lineCount);
               const lineLength = model.getLineMaxColumn(newLineNumber);
               const newColumn = Math.min(position.column, lineLength);
-              
-              this.editor?.setPosition({ 
-                lineNumber: newLineNumber, 
-                column: newColumn 
+
+              this.editor?.setPosition({
+                lineNumber: newLineNumber,
+                column: newColumn
               });
             } else {
               this.editor?.setPosition(position);
             }
           }
-          
+
           // Restore scroll state
           this.editor?.setScrollTop(scrollTop);
           this.editor?.setScrollLeft(scrollLeft);
-          
+
           // Make sure code state is updated
           if (this.editor) {
             this.code = this.editor.getValue();
@@ -738,25 +438,25 @@ export class CodePlaygroundComponent implements OnInit, OnDestroy {
 
   loadTemplate(): void {
     console.log('Load template button clicked for language:', this.selectedLanguage);
-    
+
     // Prevent multiple rapid clicks
     if (this._isLoadingTemplate) {
       console.log('Already loading template, ignoring duplicate call');
       return;
     }
-    
+
     this._isLoadingTemplate = true;
-    
+
     try {
       const templateCode = this.templates[this.selectedLanguage];
       console.log('Template code retrieved, length:', templateCode.length);
-      
+
       if (this.editor) {
         // Store current viewport state
         const position = this.editor.getPosition();
         const scrollTop = this.editor.getScrollTop();
         const scrollLeft = this.editor.getScrollLeft();
-        
+
         // Use model setValue instead of editor setValue
         const model = this.editor.getModel();
         if (model) {
@@ -766,7 +466,7 @@ export class CodePlaygroundComponent implements OnInit, OnDestroy {
         } else {
           console.error('Model not available');
         }
-        
+
         // Set position to end of document only on initial load
         if (!this.initialLoadComplete) {
           const lineCount = model?.getLineCount() || 1;
@@ -778,18 +478,18 @@ export class CodePlaygroundComponent implements OnInit, OnDestroy {
           console.log('Restoring cursor position:', position);
           this.editor.setPosition(position);
         }
-        
+
         // Restore scroll state
         this.editor.setScrollTop(scrollTop);
         this.editor.setScrollLeft(scrollLeft);
       } else {
         console.error('Editor not available for loading template');
       }
-      
+
       // Update component state
       this.code = templateCode;
       this.output = '';
-      
+
       // Force change detection with detectChanges
       this.cdr.detectChanges();
       console.log('Template loaded successfully');
@@ -802,28 +502,31 @@ export class CodePlaygroundComponent implements OnInit, OnDestroy {
 
   onLanguageChange(): void {
     if (!this.editor) return;
-    
+
     // Store current state before language change
     const position = this.editor.getPosition();
     const scrollTop = this.editor.getScrollTop();
     const scrollLeft = this.editor.getScrollLeft();
-    
+
     // Get the model first
     const model = this.editor.getModel();
     if (model) {
       // Change language on the existing model
-      monaco.editor.setModelLanguage(model, this.selectedLanguage);
-      
+      // Use the editor instance to change the language
+      if (this.editor && monaco) {
+        monaco.editor.setModelLanguage(model, this.selectedLanguage);
+      }
+
       // Load template content only after changing language
       const templateCode = this.templates[this.selectedLanguage];
-      
+
       // Update the model content using setValue on the model
       model.setValue(templateCode);
-      
+
       // Update component state
       this.code = templateCode;
       this.output = '';
-      
+
       // Restore cursor position and scroll state
       if (position && this.initialLoadComplete) {
         // Ensure position is valid for new content
@@ -831,24 +534,24 @@ export class CodePlaygroundComponent implements OnInit, OnDestroy {
         const newLineNumber = Math.min(position.lineNumber, lineCount);
         const lineLength = model.getLineMaxColumn(newLineNumber);
         const newColumn = Math.min(position.column, lineLength);
-        
-        this.editor.setPosition({ 
-          lineNumber: newLineNumber, 
-          column: newColumn 
+
+        this.editor.setPosition({
+          lineNumber: newLineNumber,
+          column: newColumn
         });
       } else {
         // If it's initial load, place cursor at end
-        this.editor.setPosition({ 
-          lineNumber: model.getLineCount(), 
-          column: 1 
+        this.editor.setPosition({
+          lineNumber: model.getLineCount(),
+          column: 1
         });
         this.initialLoadComplete = true;
       }
-      
+
       // Restore scroll state
       this.editor.setScrollTop(scrollTop);
       this.editor.setScrollLeft(scrollLeft);
-      
+
       this.cdr.markForCheck();
     }
   }
@@ -877,4 +580,4 @@ export class CodePlaygroundComponent implements OnInit, OnDestroy {
       console.error('Error during complete reset:', error);
     }
   }
-} 
+}
