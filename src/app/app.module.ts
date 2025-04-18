@@ -48,8 +48,8 @@ import { CodePlaygroundComponent } from './component/code-playground/code-playgr
 import { MockInterviewComponent } from './component/mock-interview/mock-interview.component';
 import { CategoryPostsComponent } from './component/category-posts/category-posts.component';
 
-// Import Quill modules
-import { QuillModule } from 'ngx-quill';
+// Import our mock Quill module instead of the real one
+import { QuillModule } from './mock-quill.module';
 
 // Import highlight.js styles
 import 'highlight.js/styles/vs2015.css';

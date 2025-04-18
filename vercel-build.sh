@@ -2,11 +2,11 @@
 
 # Install dependencies
 echo "Installing dependencies..."
-npm install --legacy-peer-deps
+npm install --legacy-peer-deps --force
 
-# Build the application
+# Build the application with increased memory allocation
 echo "Building the application..."
-npm run build
+NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
 # Create the output directory if it doesn't exist
 mkdir -p dist/interview

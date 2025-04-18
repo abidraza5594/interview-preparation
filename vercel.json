@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "framework": "angular",
   "buildCommand": "chmod +x vercel-build.sh && ./vercel-build.sh",
   "outputDirectory": "dist/interview"
 }
