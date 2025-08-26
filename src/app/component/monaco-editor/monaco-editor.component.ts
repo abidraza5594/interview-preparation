@@ -50,48 +50,49 @@ export class MonacoEditorComponent implements OnInit, OnDestroy {
   private initMonaco(): void {
     if (typeof window === 'undefined') return;
 
-    // Load Monaco dynamically
-    import('monaco-editor').then(monaco => {
-      this._monaco = monaco;
-      this.ngZone.runOutsideAngular(() => {
-        if (!this.editorContainer || !this.editorContainer.nativeElement) {
-          console.error('Editor container not found');
-          return;
-        }
+    // Load Monaco dynamically - temporarily commented out for build
+    console.log('Monaco editor temporarily disabled for build');
+    // import('monaco-editor').then(monaco => {
+    //   this._monaco = monaco;
+    //   this.ngZone.runOutsideAngular(() => {
+    //     if (!this.editorContainer || !this.editorContainer.nativeElement) {
+    //       console.error('Editor container not found');
+    //       return;
+    //     }
 
-        try {
-          // Create editor
-          this.editor = monaco.editor.create(this.editorContainer.nativeElement, {
-            value: this.value,
-            language: this.language,
-            theme: 'vs-dark',
-            automaticLayout: true,
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            fontSize: 14,
-            ...this.options
-          });
+    //     try {
+    //       // Create editor
+    //       this.editor = monaco.editor.create(this.editorContainer.nativeElement, {
+    //         value: this.value,
+    //         language: this.language,
+    //         theme: 'vs-dark',
+    //         automaticLayout: true,
+    //         minimap: { enabled: false },
+    //         scrollBeyondLastLine: false,
+    //         fontSize: 14,
+    //         ...this.options
+    //       });
 
-          // Set up change event
-          this.editor.onDidChangeModelContent(() => {
-            const value = this.editor.getValue();
-            this.ngZone.run(() => {
-              this.codeChange.emit(value);
-            });
-          });
+    //       // Set up change event
+    //       this.editor.onDidChangeModelContent(() => {
+    //         const value = this.editor.getValue();
+    //         this.ngZone.run(() => {
+    //           this.codeChange.emit(value);
+    //         });
+    //       });
 
-          // Notify that editor is mounted
-          this.ngZone.run(() => {
-            console.log('Monaco editor mounted successfully');
-            this.editorMounted.emit(this.editor);
-          });
-        } catch (error) {
-          console.error('Error initializing Monaco editor:', error);
-        }
-      });
-    }).catch(error => {
-      console.error('Failed to load Monaco editor:', error);
-    });
+    //       // Notify that editor is mounted
+    //       this.ngZone.run(() => {
+    //         console.log('Monaco editor mounted successfully');
+    //         this.editorMounted.emit(this.editor);
+    //       });
+    //     } catch (error) {
+    //       console.error('Error initializing Monaco editor:', error);
+    //     }
+    //   });
+    // }).catch(error => {
+    //   console.error('Failed to load Monaco editor:', error);
+    // });
   }
 
   // Method to get the editor instance

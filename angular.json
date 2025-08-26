@@ -25,12 +25,7 @@
               "src/favicon.ico",
               "src/assets",
               "src/_redirects",
-              "src/ads.txt",
-              {
-                "glob": "**/*",
-                "input": "node_modules/monaco-editor",
-                "output": "assets/monaco-editor/"
-              }
+              "src/ads.txt"
             ],
             "styles": [
               "@angular/material/prebuilt-themes/indigo-pink.css",
@@ -38,7 +33,6 @@
             ],
             "scripts": [],
             "allowedCommonJsDependencies": [
-              "monaco-editor",
               "@monaco-editor/react"
             ]
           },
@@ -94,12 +88,7 @@
             "tsConfig": "tsconfig.spec.json",
             "assets": [
               "src/favicon.ico",
-              "src/assets",
-              {
-                "glob": "**/*",
-                "input": "node_modules/monaco-editor",
-                "output": "assets/monaco-editor/"
-              }
+              "src/assets"
             ],
             "styles": [
               "@angular/material/prebuilt-themes/indigo-pink.css",

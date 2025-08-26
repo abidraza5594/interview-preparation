@@ -19,13 +19,13 @@ if (typeof window !== 'undefined') {
   };
 }
 
-// Import monaco dynamically to avoid errors
+// Import monaco dynamically to avoid errors - temporarily commented out for build
 let monaco: any;
-if (typeof window !== 'undefined') {
-  import('monaco-editor').then(m => {
-    monaco = m;
-  });
-}
+// if (typeof window !== 'undefined') {
+//   import('monaco-editor').then(m => {
+//     monaco = m;
+//   });
+// }
 
 type Language = 'javascript' | 'typescript' | 'python';
 

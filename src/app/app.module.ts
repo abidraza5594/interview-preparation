@@ -79,8 +79,8 @@ hljs.registerLanguage('csharp', csharp);
 hljs.registerLanguage('php', php);
 hljs.registerLanguage('sql', sql);
 
-// Import monaco directly
-import * as monaco from 'monaco-editor';
+// Import monaco directly - temporarily commented out for build
+// import * as monaco from 'monaco-editor';
 
 // Extend window interface to allow monaco assignment
 declare global {
