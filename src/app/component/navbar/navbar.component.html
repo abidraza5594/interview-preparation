@@ -244,7 +244,7 @@
             <h3 class="mb-4 mt-0">Press ESC to close</h3>
         </div>
 
-        <form class="d-flex search-form" (ngSubmit)="onSubmit()">
+        <form class="d-flex search-form" (ngSubmit)="onSubmit(); $event.preventDefault()">
             <input type="text" placeholder="Search and press enter ..." aria-label="Search" class="form-control me-2"
                 [formControl]="searchControl" [matAutocomplete]="auto">
             <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onOptionSelected($event)">

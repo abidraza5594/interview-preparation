@@ -304,31 +304,38 @@ export class NavbarComponent implements OnInit {
     }
   }
 
-  onSubmit() {
+  onSubmit(event?: Event) {
+    if (event) {
+      event.preventDefault();
+    }
+
     const searchValue = this.searchControl.value || '';
     if (searchValue.trim()) {
       const selectedPost = this.allPost.find(
         post => post.data.title.toLowerCase() === searchValue.toLowerCase()
       );
-      
+
       if (selectedPost) {
         this.router.navigate(['/post', selectedPost.id]);
         this.toggleSearchPopup(); // Close popup after search
+        this.searchControl.setValue(''); // Clear search field
       } else {
         // Handle case when no exact match is found
         // Either show a message or search for partial matches
         const partialMatches = this.allPost.filter(
           post => post.data.title.toLowerCase().includes(searchValue.toLowerCase())
         );
-        
+
         if (partialMatches.length > 0) {
           this.router.navigate(['/post', partialMatches[0].id]);
           this.toggleSearchPopup(); // Close popup after search
+          this.searchControl.setValue(''); // Clear search field
+        } else {
+          // Show message that no results found
+          console.log('No search results found for:', searchValue);
+          // You can add a toast notification here if needed
         }
       }
-      
-      // Clear search field after submitting
-      this.searchControl.setValue('');
     }
   }
 
