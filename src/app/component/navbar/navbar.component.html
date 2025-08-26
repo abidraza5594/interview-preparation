@@ -44,13 +44,13 @@
 <header class="header-default" [ngClass]="{'header-hidden': isNavbarHidden}">
     <nav class="navbar navbar-expand-lg">
         <div class="container-xl">
-            <!-- logo  -->
-            <app-logo></app-logo>
-
-            <!-- mobile menu toggle -->
+            <!-- mobile menu toggle - moved to complete left -->
             <button class="burger-menu icon-button d-lg-none" (click)="toggleCanvasMenu()">
                 <span class="burger-icon"></span>
             </button>
+
+            <!-- logo  -->
+            <app-logo></app-logo>
 
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav mr-auto">

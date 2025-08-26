@@ -57,6 +57,29 @@ body.dark-mode .header-default {
   padding: 0 1rem;
 }
 
+/* Mobile layout - hamburger on left, search on right */
+@media (max-width: 991px) {
+  .navbar .container-xl {
+    justify-content: space-between;
+  }
+
+  .burger-menu.d-lg-none {
+    order: -1;
+    margin-right: auto;
+  }
+
+  app-logo {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .header-right {
+    order: 1;
+    margin-left: auto;
+  }
+}
+
 .navbar {
   padding: 0.5rem 0;
   display: flex;
@@ -154,6 +177,29 @@ body.dark-mode .navbar-nav .nav-link {
 
   .burger-menu.d-lg-none {
     display: flex !important;
+  }
+
+  /* Ensure search icon is visible on mobile */
+  .header-buttons {
+    display: flex !important;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .search.icon-button {
+    display: flex !important;
+    width: 35px;
+    height: 35px;
+  }
+
+  .search.icon-button i {
+    font-size: 14px;
+  }
+
+  /* Hamburger menu styling for mobile */
+  .burger-menu {
+    width: 35px;
+    height: 35px;
   }
 }
 
@@ -312,6 +358,12 @@ body.dark-mode .social-icons a {
   color: #333;
   transition: all 0.2s ease;
   cursor: pointer;
+  flex-shrink: 0;
+}
+
+.icon-button i {
+  font-size: 16px;
+  line-height: 1;
 }
 
 body.dark-mode .icon-button {
@@ -328,6 +380,33 @@ body.dark-mode .icon-button {
 
 body.dark-mode .icon-button:hover {
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Burger Icon Styling */
+.burger-icon {
+  width: 18px;
+  height: 2px;
+  background-color: currentColor;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.burger-icon::before,
+.burger-icon::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 2px;
+  background-color: currentColor;
+  transition: all 0.3s ease;
+}
+
+.burger-icon::before {
+  top: -6px;
+}
+
+.burger-icon::after {
+  top: 6px;
 }
 
 .theme-toggle i {
