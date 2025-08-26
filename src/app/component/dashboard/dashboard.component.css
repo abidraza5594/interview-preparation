@@ -109,28 +109,58 @@
   font-weight: 600;
 }
 
-/* Responsive adjustments */
+/* Enhanced Responsive Design */
+@media (max-width: 1200px) {
+  .dashboard-container {
+    padding: 1.8rem 1rem;
+  }
+
+  .progress-stat .display-4 {
+    font-size: 2.2rem;
+  }
+}
+
 @media (max-width: 992px) {
   .dashboard-container {
     padding: 1.5rem 1rem;
   }
-}
 
-@media (max-width: 768px) {
-  .dashboard-title {
-    font-size: 1.75rem;
+  .card {
+    margin-bottom: 1.5rem;
   }
-  
-  .dashboard-subtitle {
-    font-size: 1rem;
-  }
-  
+
   .progress-stat .display-4 {
     font-size: 2rem;
   }
-  
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 1.2rem 0.8rem;
+  }
+
+  .dashboard-title {
+    font-size: 1.75rem;
+  }
+
+  .dashboard-subtitle {
+    font-size: 1rem;
+  }
+
+  .progress-stat .display-4 {
+    font-size: 1.8rem;
+  }
+
   .card-header h5 {
     font-size: 1.1rem;
+  }
+
+  .card-header {
+    padding: 0.8rem 1rem;
+  }
+
+  .list-group-item {
+    padding: 0.8rem 1rem;
   }
 }
 
@@ -138,8 +168,181 @@
   .dashboard-container {
     padding: 1rem 0.5rem;
   }
-  
+
   .dashboard-title {
     font-size: 1.5rem;
   }
-} 
+
+  .dashboard-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .progress-stat .display-4 {
+    font-size: 1.6rem;
+  }
+
+  .card-header {
+    padding: 0.7rem 0.8rem;
+  }
+
+  .card-header h5 {
+    font-size: 1rem;
+  }
+
+  .list-group-item {
+    padding: 0.7rem 0.8rem;
+  }
+
+  .badge {
+    font-size: 0.7em;
+    padding: 0.25em 0.5em;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-container {
+    padding: 0.8rem 0.3rem;
+  }
+
+  .dashboard-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .dashboard-title {
+    font-size: 1.3rem;
+  }
+
+  .dashboard-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .progress-stat .display-4 {
+    font-size: 1.4rem;
+  }
+
+  .card {
+    margin-bottom: 1rem;
+  }
+
+  .card-header {
+    padding: 0.6rem 0.7rem;
+  }
+
+  .list-group-item {
+    padding: 0.6rem 0.7rem;
+  }
+
+  .avatar-placeholder {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .dashboard-container {
+    padding: 0.5rem 0.2rem;
+  }
+
+  .dashboard-title {
+    font-size: 1.2rem;
+  }
+
+  .dashboard-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .progress-stat .display-4 {
+    font-size: 1.2rem;
+  }
+
+  .card-header h5 {
+    font-size: 0.9rem;
+  }
+
+  .list-group-item h6 {
+    font-size: 0.9rem;
+  }
+
+  .badge {
+    font-size: 0.65em;
+  }
+}
+
+/* Dark Mode Styles */
+body.dark-mode .dashboard-container {
+  background-color: #121212 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .dashboard-title {
+  color: #ffffff !important;
+}
+
+body.dark-mode .dashboard-subtitle {
+  color: #b0b0b0 !important;
+}
+
+body.dark-mode .card {
+  background-color: #1e1e1e !important;
+  border-color: #333 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .card-header {
+  background-color: #2d2d2d !important;
+  border-bottom-color: #444 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .card-header h5 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .progress-stat .display-4 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .progress {
+  background-color: #333 !important;
+}
+
+body.dark-mode .list-group-item {
+  background-color: transparent !important;
+  border-color: #444 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .list-group-item:hover {
+  background-color: rgba(110, 114, 252, 0.1) !important;
+}
+
+body.dark-mode .list-group-item h6 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .avatar-placeholder {
+  background-color: #444 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .badge {
+  background-color: #444 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .badge.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+body.dark-mode .badge.bg-success {
+  background-color: var(--success) !important;
+}
+
+body.dark-mode .badge.bg-warning {
+  background-color: var(--warning) !important;
+}
+
+body.dark-mode .badge.bg-danger {
+  background-color: var(--danger) !important;
+}

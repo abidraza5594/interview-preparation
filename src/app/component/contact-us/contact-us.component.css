@@ -248,3 +248,271 @@ textarea:focus {
   97% {transform: translateY(-8rem) scale(0.33, 0.5);}
   100% {transform: translateY(-8rem) scale(0.3, 0.5);}
 }
+
+/* ========== ENHANCED RESPONSIVE DESIGN ========== */
+
+/* Extra Small Devices (320px and down) */
+@media (max-width: 320px) {
+  .wrapper {
+    width: 95%;
+    max-width: 280px;
+    margin: 1rem auto;
+  }
+
+  .letter {
+    width: 95%;
+    max-width: 260px;
+  }
+
+  .side {
+    height: 10rem;
+  }
+
+  .side:nth-of-type(1) {
+    padding: 1rem 1rem 0;
+  }
+
+  .side.side:nth-of-type(2) {
+    padding: 1rem;
+  }
+
+  input {
+    width: 100%;
+    font-size: 0.9rem;
+    margin-bottom: 0.8rem;
+  }
+
+  textarea {
+    height: 6rem;
+    font-size: 0.9rem;
+  }
+
+  button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+    width: 100%;
+  }
+
+  small {
+    font-size: 0.7rem;
+    padding: 0.8rem 0;
+  }
+
+  .envelope.front {
+    width: 8rem;
+    height: 5rem;
+  }
+
+  .envelope.back {
+    width: 8rem;
+    height: 8rem;
+  }
+}
+
+/* Small Devices (480px and down) */
+@media (max-width: 480px) {
+  .wrapper {
+    width: 90%;
+    max-width: 320px;
+    margin: 1.5rem auto;
+  }
+
+  .letter {
+    width: 90%;
+    max-width: 300px;
+  }
+
+  .side {
+    height: 11rem;
+  }
+
+  .side:nth-of-type(1) {
+    padding: 1.2rem 1.2rem 0;
+  }
+
+  .side.side:nth-of-type(2) {
+    padding: 1.2rem;
+  }
+
+  input {
+    width: 100%;
+    font-size: 0.95rem;
+    margin-bottom: 0.9rem;
+  }
+
+  textarea {
+    height: 6.5rem;
+    font-size: 0.95rem;
+  }
+
+  button {
+    padding: 0.45rem 0.9rem;
+    font-size: 0.95rem;
+    width: 100%;
+  }
+
+  .envelope.front {
+    width: 9rem;
+    height: 5.5rem;
+  }
+
+  .envelope.back {
+    width: 9rem;
+    height: 9rem;
+  }
+}
+
+/* Medium Devices (768px and down) */
+@media (max-width: 768px) {
+  .wrapper {
+    width: 85%;
+    max-width: 400px;
+    margin: 2rem auto;
+  }
+
+  .letter {
+    width: 85%;
+    max-width: 380px;
+  }
+
+  .side {
+    height: 11.5rem;
+  }
+
+  .side:nth-of-type(1) {
+    padding: 1.5rem 1.5rem 0;
+  }
+
+  .side.side:nth-of-type(2) {
+    padding: 1.5rem;
+  }
+
+  input {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  textarea {
+    height: 7rem;
+  }
+
+  button {
+    width: 100%;
+  }
+}
+
+/* Large Devices (992px and down) */
+@media (max-width: 992px) {
+  .wrapper {
+    width: 80%;
+    max-width: 500px;
+    margin: 2rem auto;
+  }
+
+  .letter {
+    width: 80%;
+    max-width: 480px;
+  }
+}
+
+/* Desktop adjustments */
+@media (min-width: 1200px) {
+  .wrapper {
+    width: 35rem;
+    max-width: 600px;
+  }
+
+  .letter {
+    width: 30rem;
+    max-width: 550px;
+  }
+}
+
+/* ========== ENHANCED DARK MODE STYLES ========== */
+
+/* Global dark mode text fixes */
+body.dark-mode .wrapper {
+  background-color: #1e1e1e !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .side {
+  background-color: #2d2d2d !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .side h1 {
+  color: #ffffff !important;
+}
+
+body.dark-mode textarea,
+body.dark-mode input {
+  color: #ffffff !important;
+  background-color: transparent !important;
+}
+
+body.dark-mode textarea::placeholder,
+body.dark-mode input::placeholder {
+  color: #909090 !important;
+}
+
+body.dark-mode button {
+  background-color: var(--secondary-color) !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode button:hover,
+body.dark-mode button:focus {
+  background-color: var(--light-secondary-color) !important;
+}
+
+body.dark-mode .error-message {
+  color: #ff6b6b !important;
+}
+
+body.dark-mode small {
+  color: #b0b0b0 !important;
+}
+
+body.dark-mode .result-message {
+  color: #ffffff !important;
+}
+
+/* Dark mode envelope colors */
+body.dark-mode .envelope.front::before,
+body.dark-mode .envelope.front::after,
+body.dark-mode .envelope.back::before {
+  background-color: var(--secondary-color) !important;
+}
+
+/* Dark mode sent state */
+body.dark-mode .sent button {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: #b0b0b0 !important;
+}
+
+/* Ensure proper contrast for all text elements */
+body.dark-mode * {
+  color: inherit;
+}
+
+body.dark-mode .wrapper * {
+  color: #ffffff;
+}
+
+body.dark-mode .side * {
+  color: #ffffff;
+}
+
+/* Form validation in dark mode */
+body.dark-mode input[type=text]:invalid,
+body.dark-mode input[type=email]:invalid {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='24'><rect fill='rgba(255, 107, 107, 0.5)' x='0' y='23' width='10' height='1'/></svg>") !important;
+}
+
+/* Focus states in dark mode */
+body.dark-mode input[type=text]:focus,
+body.dark-mode input[type=email]:focus,
+body.dark-mode textarea:focus {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='24'><rect fill='rgba(138, 180, 248, 0.5)' x='0' y='23' width='10' height='1'/></svg>") !important;
+}

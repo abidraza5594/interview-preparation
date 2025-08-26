@@ -1,18 +1,207 @@
+/* About Us Component Styles */
+.about-us-container {
+  padding: 2rem 0;
+}
+
+.about-us-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.about-us-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.about-us-text {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  margin-bottom: 2rem;
+  color: var(--text-primary);
+}
+
+.social-links-container {
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.social-links-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+}
+
+.social-links {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .social-link {
-    width: 30px;
-    height: 30px;
-    border: 1px solid #ddd;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #666;
-    border-radius: 50%;
-    transition: all 0.3s;
+  width: 45px;
+  height: 45px;
+  border: 2px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  font-size: 1.2rem;
+  text-decoration: none;
+}
+
+.social-link:hover,
+.social-link:focus {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #ffffff;
+  text-decoration: none;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(110, 114, 252, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .about-us-title {
+    font-size: 2rem;
+  }
+
+  .about-us-text {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .social-links-title {
+    font-size: 1.3rem;
+  }
+
+  .social-link {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .social-links {
+    gap: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-us-container {
+    padding: 1.5rem 0;
+  }
+
+  .about-us-content {
+    padding: 0 0.5rem;
+  }
+
+  .about-us-title {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .about-us-text {
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .social-links-container {
+    margin-top: 2rem;
+  }
+
+  .social-links-title {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+  }
+
+  .social-link {
+    width: 35px;
+    height: 35px;
     font-size: 0.9rem;
   }
-  .social-link:hover,
-  .social-link:focus {
-    background: #ddd;
-    text-decoration: none;
-    color: #555;
+
+  .social-links {
+    gap: 0.6rem;
   }
+}
+
+@media (max-width: 320px) {
+  .about-us-title {
+    font-size: 1.6rem;
+  }
+
+  .about-us-text {
+    font-size: 0.9rem;
+  }
+
+  .social-link {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Dark Mode Styles */
+body.dark-mode .about-us-title,
+body.dark-mode .about-us-text,
+body.dark-mode .social-links-title {
+  color: #ffffff !important;
+}
+
+body.dark-mode .social-link {
+  border-color: #444;
+  color: #b0b0b0;
+  background-color: transparent;
+}
+
+body.dark-mode .social-link:hover,
+body.dark-mode .social-link:focus {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #ffffff;
+}
+
+/* Additional content styling */
+.about-section {
+  margin-bottom: 3rem;
+}
+
+.about-section h3 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.about-section p {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.about-section ul {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.about-section li {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+/* Dark mode for additional content */
+body.dark-mode .about-section h3,
+body.dark-mode .about-section p,
+body.dark-mode .about-section li {
+  color: #ffffff !important;
+}

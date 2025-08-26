@@ -36,14 +36,14 @@
   --transition-slow: #{$transition-slow};
 }
 
-// Dark Theme
+// Enhanced Dark Theme with Better Text Visibility
 [data-theme="dark"] {
   // Colors
   --primary-color: #{lighten($primary-color, 10%)};
   --secondary-color: #{lighten($secondary-color, 10%)};
   --accent-color: #{lighten($accent-color, 10%)};
   --background-color: #{$dark-mode};
-  --text-color: #{lighten($text-color, 80%)};
+  --text-color: #ffffff;
   --border-color: #{lighten($dark-mode, 20%)};
 
   // Typography
@@ -63,6 +63,14 @@
 
   // Border
   --border-radius: #{$border-radius};
+
+  // Enhanced text colors for dark mode
+  --heading-color: #ffffff;
+  --text-primary: #ffffff;
+  --text-secondary: #e0e0e0;
+  --text-muted: #b0b0b0;
+  --link-color: #8ab4f8;
+  --link-hover-color: #aecbfa;
 
   // Box Shadows
   --box-shadow: #{darken($box-shadow, 20%)};

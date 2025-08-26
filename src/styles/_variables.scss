@@ -23,10 +23,18 @@ $spacing-md: $spacing-unit * 3;
 $spacing-lg: $spacing-unit * 4;
 $spacing-xl: $spacing-unit * 5;
 
-// Breakpoints
-$mobile-breakpoint: 768px;
-$tablet-breakpoint: 1024px;
-$desktop-breakpoint: 1200px;
+// Enhanced Breakpoints for Complete Responsive Design
+$xs-breakpoint: 320px;   // Extra small devices (small phones)
+$sm-breakpoint: 480px;   // Small devices (phones)
+$md-breakpoint: 768px;   // Medium devices (tablets)
+$lg-breakpoint: 1024px;  // Large devices (small laptops)
+$xl-breakpoint: 1200px;  // Extra large devices (laptops/desktops)
+$xxl-breakpoint: 1440px; // Extra extra large devices (large desktops)
+
+// Legacy breakpoints for backward compatibility
+$mobile-breakpoint: $md-breakpoint;
+$tablet-breakpoint: $lg-breakpoint;
+$desktop-breakpoint: $xl-breakpoint;
 
 // Border
 $border-radius: 5px;

@@ -115,30 +115,187 @@
     /* Dark mode variables will be set by the theme service */
 }
 
-/* Dark theme variables */
+/* Enhanced Dark theme variables for better text visibility */
 [data-theme="dark"] {
     --bg-light: #1e1e1e;
     --bg-dark: #121212;
     --bg-light-rgb: 30, 30, 30;
     --bg-dark-rgb: 18, 18, 18;
-    --text-color: #e0e0e0;
-    --text-color-dark: #e0e0e0;
-    --text-primary: #e0e0e0;
-    --text-secondary: #b0b0b0;
-    --text-muted: #909090;
+    --text-color: #ffffff;
+    --text-color-dark: #ffffff;
+    --text-primary: #ffffff;
+    --text-secondary: #e0e0e0;
+    --text-muted: #b0b0b0;
     --border-color: #333;
     --card-bg: #1e1e1e;
     --card-header-bg: #2d2d2d;
     --input-bg: #2d2d2d;
-    --input-text: #e0e0e0;
+    --input-text: #ffffff;
     --input-border: #444;
     --btn-primary-bg: #1976d2;
     --btn-primary-text: #ffffff;
     --btn-secondary-bg: #2d2d2d;
-    --btn-secondary-text: #e0e0e0;
+    --btn-secondary-text: #ffffff;
     --code-bg: #2d2d2d;
-    --code-text: #e0e0e0;
+    --code-text: #ffffff;
     --shadow-color: rgba(0, 0, 0, 0.3);
+
+    /* Additional text color variables for comprehensive coverage */
+    --heading-color: #ffffff;
+    --link-color: #8ab4f8;
+    --link-hover-color: #aecbfa;
+    --meta-text-color: #b0b0b0;
+    --placeholder-color: #909090;
+}
+
+/* Comprehensive Dark Mode Text Visibility Fixes */
+body.dark-mode,
+[data-theme="dark"] {
+    color: #ffffff !important;
+}
+
+/* Global text elements in dark mode */
+body.dark-mode *,
+[data-theme="dark"] * {
+    color: inherit;
+}
+
+/* Headings in dark mode */
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6,
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6 {
+    color: #ffffff !important;
+}
+
+/* Paragraphs and text content in dark mode */
+body.dark-mode p,
+body.dark-mode span,
+body.dark-mode div,
+body.dark-mode label,
+body.dark-mode li,
+[data-theme="dark"] p,
+[data-theme="dark"] span,
+[data-theme="dark"] div,
+[data-theme="dark"] label,
+[data-theme="dark"] li {
+    color: #ffffff !important;
+}
+
+/* Links in dark mode */
+body.dark-mode a,
+[data-theme="dark"] a {
+    color: #8ab4f8 !important;
+}
+
+body.dark-mode a:hover,
+body.dark-mode a:focus,
+[data-theme="dark"] a:hover,
+[data-theme="dark"] a:focus {
+    color: #aecbfa !important;
+}
+
+/* Form elements in dark mode */
+body.dark-mode input,
+body.dark-mode textarea,
+body.dark-mode select,
+body.dark-mode option,
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select,
+[data-theme="dark"] option {
+    color: #ffffff !important;
+    background-color: #2d2d2d !important;
+    border-color: #444 !important;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder,
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+    color: #909090 !important;
+}
+
+/* Table elements in dark mode */
+body.dark-mode table,
+body.dark-mode th,
+body.dark-mode td,
+[data-theme="dark"] table,
+[data-theme="dark"] th,
+[data-theme="dark"] td {
+    color: #ffffff !important;
+    border-color: #444 !important;
+}
+
+/* Card and panel content in dark mode */
+body.dark-mode .card,
+body.dark-mode .panel,
+body.dark-mode .widget,
+[data-theme="dark"] .card,
+[data-theme="dark"] .panel,
+[data-theme="dark"] .widget {
+    background-color: #1e1e1e !important;
+    color: #ffffff !important;
+    border-color: #333 !important;
+}
+
+/* Meta information and small text in dark mode */
+body.dark-mode .meta,
+body.dark-mode .text-muted,
+body.dark-mode .small,
+body.dark-mode small,
+[data-theme="dark"] .meta,
+[data-theme="dark"] .text-muted,
+[data-theme="dark"] .small,
+[data-theme="dark"] small {
+    color: #b0b0b0 !important;
+}
+
+/* Button text in dark mode */
+body.dark-mode .btn,
+[data-theme="dark"] .btn {
+    color: #ffffff !important;
+}
+
+body.dark-mode .btn-outline,
+body.dark-mode .btn-secondary,
+[data-theme="dark"] .btn-outline,
+[data-theme="dark"] .btn-secondary {
+    color: #ffffff !important;
+    border-color: #444 !important;
+}
+
+/* Navigation elements in dark mode */
+body.dark-mode .nav-link,
+body.dark-mode .navbar-nav .nav-link,
+[data-theme="dark"] .nav-link,
+[data-theme="dark"] .navbar-nav .nav-link {
+    color: #ffffff !important;
+}
+
+/* Dropdown and menu items in dark mode */
+body.dark-mode .dropdown-item,
+body.dark-mode .menu-item,
+[data-theme="dark"] .dropdown-item,
+[data-theme="dark"] .menu-item {
+    color: #ffffff !important;
+    background-color: transparent !important;
+}
+
+body.dark-mode .dropdown-item:hover,
+body.dark-mode .dropdown-item:focus,
+[data-theme="dark"] .dropdown-item:hover,
+[data-theme="dark"] .dropdown-item:focus {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
 }
 
 body {

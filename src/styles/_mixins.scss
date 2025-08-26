@@ -1,4 +1,66 @@
-// Responsive Mixins
+// Enhanced Responsive Mixins for Complete Responsive Design
+@mixin xs {
+  @media (max-width: $xs-breakpoint) {
+    @content;
+  }
+}
+
+@mixin sm {
+  @media (min-width: $xs-breakpoint + 1) and (max-width: $sm-breakpoint) {
+    @content;
+  }
+}
+
+@mixin md {
+  @media (min-width: $sm-breakpoint + 1) and (max-width: $md-breakpoint) {
+    @content;
+  }
+}
+
+@mixin lg {
+  @media (min-width: $md-breakpoint + 1) and (max-width: $lg-breakpoint) {
+    @content;
+  }
+}
+
+@mixin xl {
+  @media (min-width: $lg-breakpoint + 1) and (max-width: $xl-breakpoint) {
+    @content;
+  }
+}
+
+@mixin xxl {
+  @media (min-width: $xl-breakpoint + 1) {
+    @content;
+  }
+}
+
+// Mobile-first responsive mixins
+@mixin mobile-up {
+  @media (min-width: $xs-breakpoint) {
+    @content;
+  }
+}
+
+@mixin tablet-up {
+  @media (min-width: $md-breakpoint) {
+    @content;
+  }
+}
+
+@mixin desktop-up {
+  @media (min-width: $lg-breakpoint) {
+    @content;
+  }
+}
+
+@mixin large-desktop-up {
+  @media (min-width: $xl-breakpoint) {
+    @content;
+  }
+}
+
+// Legacy mixins for backward compatibility
 @mixin mobile {
   @media (max-width: $mobile-breakpoint) {
     @content;

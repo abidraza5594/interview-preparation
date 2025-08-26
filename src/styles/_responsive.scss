@@ -1,20 +1,77 @@
-// Tablet Styles
-@include tablet {
-  // Typography
+// Extra Small Devices (320px and down)
+@include xs {
   html {
-    font-size: 15px;
+    font-size: 12px;
   }
 
-  h1 { font-size: 1.8em; }
-  h2 { font-size: 1.4em; }
+  h1 { font-size: 1.4em; }
+  h2 { font-size: 1.2em; }
+  h3 { font-size: 1em; }
+  h4 { font-size: 0.9em; }
+
+  .container {
+    max-width: 100%;
+    padding: 0 $spacing-xs;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+    gap: $spacing-xs;
+  }
+
+  .btn {
+    width: 100%;
+    padding: $spacing-xs;
+    font-size: 0.8rem;
+  }
+
+  .card {
+    padding: $spacing-xs;
+    margin-bottom: $spacing-xs;
+  }
+}
+
+// Small Devices (480px and down)
+@include sm {
+  html {
+    font-size: 13px;
+  }
+
+  h1 { font-size: 1.5em; }
+  h2 { font-size: 1.3em; }
   h3 { font-size: 1.1em; }
 
-  // Layout
   .container {
-    max-width: 90%;
+    max-width: 100%;
+    padding: 0 $spacing-sm;
   }
 
-  // Grid
+  .grid {
+    grid-template-columns: 1fr;
+    gap: $spacing-sm;
+  }
+
+  .btn {
+    padding: $spacing-xs $spacing-sm;
+    font-size: 0.85rem;
+  }
+}
+
+// Medium Devices (Tablets - 768px and down)
+@include md {
+  html {
+    font-size: 14px;
+  }
+
+  h1 { font-size: 1.6em; }
+  h2 { font-size: 1.4em; }
+  h3 { font-size: 1.2em; }
+
+  .container {
+    max-width: 95%;
+    padding: 0 $spacing-sm;
+  }
+
   .grid {
     &.grid-3,
     &.grid-4 {
@@ -22,34 +79,50 @@
     }
   }
 
-  // Navigation
-  .nav-menu {
-    gap: $spacing-sm;
-  }
-
-  // Forms
-  .form-group {
-    margin-bottom: $spacing-sm;
-  }
-
-  // Buttons
   .btn {
     padding: $spacing-xs $spacing-sm;
     font-size: 0.9rem;
   }
 
-  // Cards
   .card {
     padding: $spacing-sm;
   }
+}
 
-  // Footer
+// Large Devices (Small Laptops - 1024px and down)
+@include lg {
+  html {
+    font-size: 15px;
+  }
+
+  h1 { font-size: 1.8em; }
+  h2 { font-size: 1.5em; }
+  h3 { font-size: 1.3em; }
+
+  .container {
+    max-width: 90%;
+  }
+
+  .grid {
+    &.grid-4 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .nav-menu {
+    gap: $spacing-sm;
+  }
+
+  .form-group {
+    margin-bottom: $spacing-sm;
+  }
+
   .footer-content {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-// Mobile Styles
+// Legacy Mobile Styles (for backward compatibility)
 @include mobile {
   // Typography
   html {
@@ -280,4 +353,60 @@
     margin: 0;
     padding: 0;
   }
-} 
+}
+
+// Responsive Utilities
+// Display utilities for different screen sizes
+.d-xs-none { @include xs { display: none !important; } }
+.d-sm-none { @include sm { display: none !important; } }
+.d-md-none { @include md { display: none !important; } }
+.d-lg-none { @include lg { display: none !important; } }
+.d-xl-none { @include xl { display: none !important; } }
+
+.d-xs-block { @include xs { display: block !important; } }
+.d-sm-block { @include sm { display: block !important; } }
+.d-md-block { @include md { display: block !important; } }
+.d-lg-block { @include lg { display: block !important; } }
+.d-xl-block { @include xl { display: block !important; } }
+
+.d-xs-flex { @include xs { display: flex !important; } }
+.d-sm-flex { @include sm { display: flex !important; } }
+.d-md-flex { @include md { display: flex !important; } }
+.d-lg-flex { @include lg { display: flex !important; } }
+.d-xl-flex { @include xl { display: flex !important; } }
+
+// Text alignment utilities
+.text-xs-left { @include xs { text-align: left !important; } }
+.text-sm-left { @include sm { text-align: left !important; } }
+.text-md-left { @include md { text-align: left !important; } }
+.text-lg-left { @include lg { text-align: left !important; } }
+.text-xl-left { @include xl { text-align: left !important; } }
+
+.text-xs-center { @include xs { text-align: center !important; } }
+.text-sm-center { @include sm { text-align: center !important; } }
+.text-md-center { @include md { text-align: center !important; } }
+.text-lg-center { @include lg { text-align: center !important; } }
+.text-xl-center { @include xl { text-align: center !important; } }
+
+.text-xs-right { @include xs { text-align: right !important; } }
+.text-sm-right { @include sm { text-align: right !important; } }
+.text-md-right { @include md { text-align: right !important; } }
+.text-lg-right { @include lg { text-align: right !important; } }
+.text-xl-right { @include xl { text-align: right !important; } }
+
+// Spacing utilities for different screen sizes
+@each $size in (xs, sm, md, lg, xl) {
+  @each $prop in (margin, padding) {
+    @each $side in (top, right, bottom, left) {
+      @for $i from 0 through 5 {
+        .#{str-slice($prop, 1, 1)}#{str-slice($side, 1, 1)}-#{$size}-#{$i} {
+          @if $size == xs { @include xs { #{$prop}-#{$side}: #{$i * $spacing-xs} !important; } }
+          @if $size == sm { @include sm { #{$prop}-#{$side}: #{$i * $spacing-xs} !important; } }
+          @if $size == md { @include md { #{$prop}-#{$side}: #{$i * $spacing-xs} !important; } }
+          @if $size == lg { @include lg { #{$prop}-#{$side}: #{$i * $spacing-xs} !important; } }
+          @if $size == xl { @include xl { #{$prop}-#{$side}: #{$i * $spacing-xs} !important; } }
+        }
+      }
+    }
+  }
+}

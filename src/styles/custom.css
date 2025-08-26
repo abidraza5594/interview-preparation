@@ -124,4 +124,205 @@ body.dark-mode .mini-header-left .theme-match-marquee .marquee-separator {
   background-color: #ddd;
   height: 608px !important; /* Increased from 350px to 608px to match container */
   margin-top: 10px;
-} 
+}
+
+/* ========== COMPREHENSIVE RESPONSIVE DESIGN ENHANCEMENTS ========== */
+
+/* Global responsive container adjustments */
+@media (max-width: 320px) {
+  .container,
+  .container-fluid,
+  .container-xl {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .row {
+    margin-left: -5px;
+    margin-right: -5px;
+  }
+
+  .col,
+  [class*="col-"] {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container,
+  .container-fluid,
+  .container-xl {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+
+  .row {
+    margin-left: -8px;
+    margin-right: -8px;
+  }
+
+  .col,
+  [class*="col-"] {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+/* Enhanced responsive images */
+@media (max-width: 768px) {
+  .featured-post-lg .thumb .inner {
+    height: 400px !important;
+  }
+
+  .post.post-list-sm.square .thumb {
+    max-width: 80px !important;
+  }
+
+  .post.post-list-sm.square .thumb .inner {
+    height: 80px !important;
+    width: 80px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .featured-post-lg .thumb .inner {
+    height: 300px !important;
+  }
+
+  .post.post-list-sm.square .thumb {
+    max-width: 70px !important;
+  }
+
+  .post.post-list-sm.square .thumb .inner {
+    height: 70px !important;
+    width: 70px !important;
+  }
+}
+
+@media (max-width: 320px) {
+  .featured-post-lg .thumb .inner {
+    height: 250px !important;
+  }
+
+  .post.post-list-sm.square .thumb {
+    max-width: 60px !important;
+  }
+
+  .post.post-list-sm.square .thumb .inner {
+    height: 60px !important;
+    width: 60px !important;
+  }
+}
+
+/* Responsive typography enhancements */
+@media (max-width: 768px) {
+  h1 { font-size: 1.8rem !important; }
+  h2 { font-size: 1.5rem !important; }
+  h3 { font-size: 1.3rem !important; }
+  h4 { font-size: 1.1rem !important; }
+  h5 { font-size: 1rem !important; }
+  h6 { font-size: 0.9rem !important; }
+}
+
+@media (max-width: 480px) {
+  h1 { font-size: 1.6rem !important; }
+  h2 { font-size: 1.3rem !important; }
+  h3 { font-size: 1.1rem !important; }
+  h4 { font-size: 1rem !important; }
+  h5 { font-size: 0.9rem !important; }
+  h6 { font-size: 0.85rem !important; }
+}
+
+@media (max-width: 320px) {
+  h1 { font-size: 1.4rem !important; }
+  h2 { font-size: 1.2rem !important; }
+  h3 { font-size: 1rem !important; }
+  h4 { font-size: 0.9rem !important; }
+  h5 { font-size: 0.85rem !important; }
+  h6 { font-size: 0.8rem !important; }
+}
+
+/* ========== COMPREHENSIVE DARK MODE ENHANCEMENTS ========== */
+
+/* Enhanced dark mode for loading placeholders */
+body.dark-mode .loading-placeholder .thumb {
+  background-color: #444 !important;
+}
+
+body.dark-mode .loading-placeholder {
+  background-color: #2d2d2d !important;
+  color: #ffffff !important;
+}
+
+/* Dark mode for marquee elements */
+body.dark-mode .mini-header-left .theme-match-marquee .marquee-item {
+  color: #64dd96 !important;
+}
+
+body.dark-mode .mini-header-left .theme-match-marquee .marquee-separator {
+  color: #8f93ff !important;
+}
+
+body.dark-mode .mini-header-left .theme-match-marquee i.fas.fa-code {
+  color: #8f93ff !important;
+}
+
+/* Dark mode for post elements */
+body.dark-mode .post-list-sm .thumb img {
+  border: 2px solid #444 !important;
+}
+
+body.dark-mode .post.post-list-sm.square .thumb .inner {
+  border: 1px solid #444 !important;
+}
+
+/* Dark mode for featured posts */
+body.dark-mode .featured-post-lg .thumb::after {
+  background: rgba(18, 18, 18, 0.7) !important;
+}
+
+/* Global text color fixes for dark mode */
+body.dark-mode * {
+  color: inherit;
+}
+
+body.dark-mode body,
+body.dark-mode html {
+  color: #ffffff !important;
+  background-color: #121212 !important;
+}
+
+/* Ensure all text elements are visible in dark mode */
+body.dark-mode .text-dark {
+  color: #ffffff !important;
+}
+
+body.dark-mode .text-muted {
+  color: #b0b0b0 !important;
+}
+
+body.dark-mode .text-secondary {
+  color: #e0e0e0 !important;
+}
+
+body.dark-mode .text-primary {
+  color: #8ab4f8 !important;
+}
+
+/* Dark mode for borders and backgrounds */
+body.dark-mode .border {
+  border-color: #444 !important;
+}
+
+body.dark-mode .bg-light {
+  background-color: #1e1e1e !important;
+}
+
+body.dark-mode .bg-white {
+  background-color: #1e1e1e !important;
+}
+
+body.dark-mode .bg-secondary {
+  background-color: #2d2d2d !important;
+}
